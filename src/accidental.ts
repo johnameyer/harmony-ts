@@ -7,11 +7,13 @@ export enum Accidental {
 }
 
 export namespace Accidental {
+    export const names = ['bb', 'b', '', '#', '##'];
+
     export function toString(accidental: Accidental): string {
-        return ['bb', 'b', '', '#', '##'][accidental + 2];
+        return names[accidental + 2];
     }
 
     export function fromString(string: string): Accidental {
-        return ['bb', 'b', '', '#', '##'].indexOf(string) - 2;
+        return names.indexOf(string) - 2;
     }
 }

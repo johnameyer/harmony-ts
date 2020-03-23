@@ -1,6 +1,6 @@
 export enum ChordQuality {
-    DIMINISHED,
-    MINOR,
-    MAJOR,
-    AUGMENTED,
+    DIMINISHED = -2,
+    MINOR = -1,
+    MAJOR = 1,
+    AUGMENTED = 2,
 }

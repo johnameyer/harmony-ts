@@ -18,9 +18,8 @@ export class RomanNumeral {
     protected _figuredBass!: string;
 
     // TODO modal modifiers (b, #, etc)
-
     get name() {
-        let romanNumeral = ScaleDegree.romanNumeralOf(this._scaleDegree);
+        let romanNumeral = ScaleDegree.toRomanNumeral(this._scaleDegree);
         switch(this._quality) {
             case ChordQuality.DIMINISHED:
                 romanNumeral = romanNumeral.toLowerCase() + "o";
@@ -36,8 +35,10 @@ export class RomanNumeral {
                 break;
         }
 
+        //TODO inversion
+
         if(this._applied) {
-            return romanNumeral + '/' + ScaleDegree.romanNumeralOf(this._applied);
+            return romanNumeral + '/' + ScaleDegree.toRomanNumeral(this._applied);
         }
         return romanNumeral;
     }

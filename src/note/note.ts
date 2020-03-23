@@ -1,13 +1,6 @@
 import { Accidental } from "../accidental";
 import { Scale } from "../scale";
 
-function isNumber (value: string | number): value is number {
-    if(Number.isNaN(Number(value))) {
-        return false;
-    }
-    return true;
-}
-
 export class Note {
     protected _letter!: string;
     protected _accidental!: Accidental;

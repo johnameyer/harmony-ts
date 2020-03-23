@@ -9,7 +9,9 @@ export enum ScaleDegree {
 }
 
 export namespace ScaleDegree {
-    export function romanNumeralOf(scaleDegree: ScaleDegree){
-        return ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][scaleDegree - 1];
+    export const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+    
+    export function toRomanNumeral(scaleDegree: ScaleDegree){
+        return romanNumerals[scaleDegree - 1];
     }
 }

@@ -46,7 +46,7 @@ export class Interval {
         if(this._simpleSize == 1) {
             return 'U';
         }
-        return new String(this._simpleSize);
+        return String(this._simpleSize);
     }
 
     get quality() {
