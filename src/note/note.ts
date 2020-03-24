@@ -12,6 +12,7 @@ export class Note {
     get chromaticPosition(): number {
         return (Scale.Major.semitones[Scale.Major.notes.indexOf(this._letter)] + this._accidental + 12) % 12;
     }
+
     get letterName(): string {
         return this._letter;
     }
@@ -20,12 +21,16 @@ export class Note {
         return this._accidental;
     }
 
-    get name(): string {
+    get simpleName(): string {
         return this._letter + Accidental.toString(this._accidental);
     }
 
+    get name(): string {
+        return this.simpleName;
+    }
+
     parseValue() {
-        const match = this.value.match(new RegExp('^([a-zA-Z])(#{1,2}|b{1,2}|)?'));
+        const match = this.value.match(/^([a-zA-Z])(#{1,2}|b{1,2}|)?/);
         if(match == null) {
             throw name + ' is invalid';
         }
@@ -37,4 +42,19 @@ export class Note {
     get absolute(): boolean {
         return false;
     }
+
+    public applyAccidental(accidental: Accidental) {
+        return new Note(this.letterName + Accidental.toString(this.accidental + accidental));
+    }
+
+    
+    public static isNote(value: any): value is Note {
+        //TODO
+        for(let property in Note) {
+            if(!(property in value)) {
+                return false;
+            }
+        }
+        return true;
+    } 
 }

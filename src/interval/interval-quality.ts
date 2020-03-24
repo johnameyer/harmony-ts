@@ -13,6 +13,10 @@ export namespace IntervalQuality {
         return names[intervalQuality + 2];
     }
 
+    export function fromString(intervalQuality: string) {
+        return names.indexOf(intervalQuality) - 2;
+    }
+
     export function invert(intervalQuality: IntervalQuality) {
         return IntervalQuality[-intervalQuality];
     }

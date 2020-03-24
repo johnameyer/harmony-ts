@@ -14,4 +14,12 @@ export namespace ScaleDegree {
     export function toRomanNumeral(scaleDegree: ScaleDegree){
         return romanNumerals[scaleDegree - 1];
     }
+
+    export function fromRomanNumeral(romanNumeral: string){
+        const index = romanNumerals.indexOf(romanNumeral.toUpperCase());
+        if(index < 0) {
+            throw 'Invalid roman numeral ' + romanNumeral;
+        }
+        return index + 1;
+    }
 }

@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 jobs:
-  build:
+  CI:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Cache node modules
+      - name: Cache Node Modules
         uses: actions/cache@v1
         with:
           path: ~/.npm

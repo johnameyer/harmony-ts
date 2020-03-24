@@ -11,7 +11,7 @@ export class AbsoluteNote extends Note {
     }
 
     parseValue() {
-        const match = this.value.match(new RegExp('^([a-zA-Z])(#{1,2}|b{1,2}|)?([0-9])$'));
+        const match = this.value.match(/^([a-zA-Z])(#{1,2}|b{1,2}|)?([0-9])$/);
         if(match == null) {
             throw this.value + ' is invalid';
         }

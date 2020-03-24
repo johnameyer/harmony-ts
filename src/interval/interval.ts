@@ -5,33 +5,70 @@ import { Scale } from '../scale';
 
 export const scale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
+function isString(value: any): value is string {
+    if(String(value) === value) {
+        return true;
+    }
+    return false;
+}
+
+function isNumber(value: any): value is number {
+    if(Number(value) === value) {
+        return true;
+    }
+    return false;
+}
+
 export class Interval {
     protected _semitones!: number;
     protected _simpleSize!: number;
     protected _quality!: IntervalQuality;
 
-    constructor(one: Note, two: Note) {
-        let distance = scale.indexOf(two.letterName[0]) - scale.indexOf(one.letterName[0]);
-        if(distance < 0) {
-            distance += 7;
-        } 
-        
-        this._simpleSize = distance + 1;
-        
-        let chromaticDistance = two.chromaticPosition - one.chromaticPosition;
-        if(chromaticDistance < 0) {
-            chromaticDistance += 12;
+    constructor(name: string);
+    constructor(quality: IntervalQuality, size: number);
+    constructor(one: Note, two: Note);
+    constructor(one: IntervalQuality | Note | string, two?: number | Note) {
+        if(two === undefined && isString(one)) {
+            const match = one.match(/^([PMmAd])([U2-7])$/); 
+            if(match) {
+                const [quality, size] = match.slice(1);
+                this._quality = IntervalQuality.fromString(quality);
+                this._simpleSize = Number(size) || 1;
+                return;
+            }
         }
-        this._semitones = chromaticDistance;
+        if(isNumber(one) && isNumber(two)) {
+            this._quality = one;
+            this._simpleSize = two;
+            return;
+        }
 
-        const majorSemitones = Scale.Major.semitones[this._simpleSize - 1];
-        if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5) {
-            this._quality = Interval.perfectQualities[chromaticDistance - majorSemitones + 1];
-        } else if(this._simpleSize == 8) {
-            this._quality = Interval.perfectQualities[12 + chromaticDistance - majorSemitones + 1];
-        } else {
-            this._quality = Interval.imperfectQualities[chromaticDistance - majorSemitones + 2];
+        if(Note.isNote(one) && Note.isNote(two)) {
+            let distance = scale.indexOf(two.letterName[0]) - scale.indexOf(one.letterName[0]);
+            if(distance < 0) {
+                distance += 7;
+            } 
+            
+            this._simpleSize = distance + 1;
+            
+            let chromaticDistance = two.chromaticPosition - one.chromaticPosition;
+            if(chromaticDistance < 0) {
+                chromaticDistance += 12;
+            }
+            this._semitones = chromaticDistance;
+
+            const majorSemitones = Scale.Major.semitones[this._simpleSize - 1];
+            if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5) {
+                this._quality = Interval.perfectQualities[chromaticDistance - majorSemitones + 1];
+            } else if(this._simpleSize == 8) {
+                this._quality = Interval.perfectQualities[12 + chromaticDistance - majorSemitones + 1];
+            } else {
+                this._quality = Interval.imperfectQualities[chromaticDistance - majorSemitones + 2];
+            }
+            return;
         }
+        
+        throw 'Invalid invocation of Interval constructor';
     }
 
     get semitones() {

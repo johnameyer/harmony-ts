@@ -7,6 +7,7 @@ import { Note } from "../note/note";
 import { Chord } from "../chord/chord";
 import { Interval } from "../interval/interval";
 import { AbsoluteNote } from "../note/absolute-note";
+import { PartWriting } from "./part-writing";
 
 function isDefined<T>(t: T | undefined): t is T {
     return !!t;
@@ -18,18 +19,12 @@ function isDefined<T>(t: T | undefined): t is T {
  */
 function compareConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compare = <T>(one: T | undefined, two: T | undefined) => !one && !two && one != two;
-    if(compare(one.soprano, two.soprano)) {
-        return false;
+    for(let voicePart in one.voices) {
+        if(compare(one.voices[voicePart], two.voices[voicePart])) {
+            return false;
+        }
     }
-    if(compare(one.alto, two.alto)) {
-        return false;
-    }
-    if(compare(one.tenor, two.tenor)) {
-        return false;
-    }
-    if(compare(one.bass, two.bass)) {
-        return false;
-    }
+    
     if(compare(one.root, two.root)) {
         return false;
     }
@@ -38,11 +33,11 @@ function compareConstraints(one: IncompleteChord, two: IncompleteChord) {
     }
     if(one.romanNumeral) {
         // TODO one should always have root in this case
-        if(!two.notes.filter(isDefined).every(note => one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root) : undefined).includes(note))){
+        if(!two.voices.filter(isDefined).every(note => one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined).includes(note.simpleName))){
             return false;
         }
     } else if(two.romanNumeral) {
-        if(!two.notes.filter(isDefined).every(note => one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root) : undefined).includes(note))){
+        if(!one.voices.filter(isDefined).every(note => two.romanNumeral?.intervals.map(interval => two.root ? interval.transposeUp(two.root).simpleName : undefined).includes(note.simpleName))){
             return false;
         }
     }
@@ -54,16 +49,25 @@ function *findSolutions(previous: HarmonizedChord, constraint: IncompleteChord, 
         new AbsoluteNote(note.name + [previous.octavePosition]),
         new AbsoluteNote(note.name + [previous.octavePosition + 1])
     ];
-    const sopranoNotes = constraint.soprano ? [constraint.soprano]  : [...needed].flatMap(mapToNearby(previous.soprano));
-    const altoNotes = constraint.alto       ? [constraint.alto]     : [...needed].flatMap(mapToNearby(previous.alto));
-    const tenorNotes = constraint.tenor     ? [constraint.tenor]    : [...needed].flatMap(mapToNearby(previous.tenor));
-    const bassNotes = constraint.bass       ? [constraint.bass]     : [...needed].flatMap(mapToNearby(previous.bass));
+
+    const get = (voicePart: number) => {
+        let voice = constraint.voices[voicePart];
+        if(isDefined(voice)) {
+            return [voice];
+        } else {
+            return [...needed].flatMap(mapToNearby(previous.voices[voicePart]));
+        }
+    };
+    const sopranoNotes = get(0);
+    const altoNotes = get(1);
+    const tenorNotes = get(2)
+    const bassNotes = get(3);
     //TODO make more efficient by following doubling rules outright
     const compare = (note: Note) => (one: Note, two: Note) => new Interval(note, one).semitones - new Interval(note, two).semitones;
-    for(const soprano of sopranoNotes.sort(compare(previous.soprano))) { //try smaller intervals first
-        for(const alto of altoNotes.sort(compare(previous.alto))) {
-            for(const tenor of tenorNotes.sort(compare(previous.tenor))) {
-                for(const bass of bassNotes.sort(compare(previous.bass))) {
+    for(const soprano of sopranoNotes.sort(compare(previous.voices[0]))) { //try smaller intervals first
+        for(const alto of altoNotes.sort(compare(previous.voices[1]))) {
+            for(const tenor of tenorNotes.sort(compare(previous.voices[2]))) {
+                for(const bass of bassNotes.sort(compare(previous.voices[3]))) {
                     yield [soprano, alto, tenor, bass];
                 }
             }
@@ -100,8 +104,8 @@ export namespace Harmony {
                 const chordNotes = optionChord.romanNumeral.intervals.map(interval => optionChord.root ? interval.transposeUp(optionChord.root) : undefined).filter(isDefined);
                 for(const foundSolution of findSolutions(previous[0], constraintChord, chordNotes)) {
                     const [soprano, alto, tenor, bass] = foundSolution;
-                    const solution = new HarmonizedChord(soprano, alto, tenor, bass);
-                    if(!Progression.Checks.checkAll(solution, previous[0])) {
+                    const solution = new HarmonizedChord([soprano, alto, tenor, bass], optionChord.romanNumeral);
+                    if(!PartWriting.checkAll(solution, previous[0])) {
                         break;
                     }
                     //TODO ranking of solutions

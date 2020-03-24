@@ -2,9 +2,9 @@ import { Chord } from './chord/chord';
 import { AbsoluteNote } from './note/absolute-note';
 
 const chords: Chord[] = [
-    new Chord(new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')),
-    new Chord(new AbsoluteNote('D5'), new AbsoluteNote('G4'), new AbsoluteNote('F4'), new AbsoluteNote('B3')),
-    new Chord(new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')),
+    new Chord([new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')]),
+    new Chord([new AbsoluteNote('D5'), new AbsoluteNote('G4'), new AbsoluteNote('F4'), new AbsoluteNote('B3')]),
+    new Chord([new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')]),
 ];
 
 // (window as any).click = async () => {

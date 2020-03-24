@@ -1,0 +1,92 @@
+import { RomanNumeral } from "./roman-numeral";
+import { Scale } from "../scale";
+
+describe('RomanNumeral', () => {
+    describe('valid', () => {
+        describe('root', () => {
+            test.each([
+                ['I', Scale.Major.notes, 'C'],
+                ['ii', Scale.Major.notes, 'D'],
+                ['viio', Scale.Major.notes, 'B'],
+            ])('%p', (value, scale, root) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.root.name).toBe(root);
+            });
+        });
+
+        describe('root position triad', () => {
+            test.each([
+                ['I', Scale.Major.notes],
+                ['ii', Scale.Major.notes],
+                ['viio', Scale.Major.notes],
+            ])('%p', (value, scale) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.name).toBe(value);
+            });
+        });
+
+        describe('inverted triad', () => {
+            test.each([
+                ['I6', Scale.Major.notes],
+                ['ii6', Scale.Major.notes],
+                ['viio6', Scale.Major.notes],
+            ])('%p', (value, scale) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.name).toBe(value);
+            });
+        });
+
+        describe('root seventh', () => {
+            test.each([
+                ['ii7', Scale.Major.notes],
+                ['V7', Scale.Major.notes],
+                ['vii07', Scale.Major.notes],
+                ['viio7', Scale.HarmonicMinor.notes],
+            ])('%p', (value, scale) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.name).toBe(value);
+                expect(romanNumeral.hasSeventh).toBe(true);
+            });
+        });
+
+        describe('inverted seventh', () => {
+            test.each([
+                ['ii43', Scale.Major.notes],
+                ['V42', Scale.Major.notes],
+                ['vii065', Scale.Major.notes],
+                ['viio65', Scale.HarmonicMinor.notes],
+            ])('%p', (value, scale) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.name).toBe(value);
+                expect(romanNumeral.hasSeventh).toBe(true);
+            });
+        });
+
+        describe('roman numeral embellishment', () => {
+            test.skip.each([
+                ['V64', Scale.Major.notes],
+                ['I6', Scale.Major.notes],
+            ])('%p', (value, scale) => {
+                const embellished = new RomanNumeral(value, scale);
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(embellished.name).toBe(value);
+                expect(embellished.intervals).not.toBe(romanNumeral.intervals);
+                //TODO or something similar
+            });
+        });
+
+        describe('applied chord', () => {
+            test.skip.each([
+                ['V42/V', Scale.Major.notes],
+                ['viio6/ii', Scale.Major.notes],
+                ['vii07/vi', Scale.Major.notes],
+            ])('%p', (value, scale) => {
+                const embellished = new RomanNumeral(value, scale);
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(embellished.name).toBe(value);
+                expect(embellished.intervals).not.toBe(romanNumeral.intervals);
+                //TODO or something similar
+            });
+        });
+    });
+});
