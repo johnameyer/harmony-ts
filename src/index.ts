@@ -1,11 +1,13 @@
-import { Chord } from './chord/chord';
 import { AbsoluteNote } from './note/absolute-note';
+import { IncompleteChord } from './chord/incomplete-chord';
+import { Scale } from './scale';
+import { Harmony } from './harmony/harmony';
+import { RomanNumeral } from './harmony/roman-numeral';
 
-const chords: Chord[] = [
-    new Chord([new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')]),
-    new Chord([new AbsoluteNote('D5'), new AbsoluteNote('G4'), new AbsoluteNote('F4'), new AbsoluteNote('B3')]),
-    new Chord([new AbsoluteNote('C5'), new AbsoluteNote('G4'), new AbsoluteNote('E4'), new AbsoluteNote('C4')]),
-];
+const soprano = ['G4', 'A4', 'B4', 'C5'].map(note => new AbsoluteNote(note)); 
+const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
+const scale = Scale.Major.notes;
+const result = Harmony.harmonizeAll(scale, constraints, new RomanNumeral('I', scale));
 
 // (window as any).click = async () => {
 //     const Tone = await import('tone');
@@ -16,19 +18,23 @@ const chords: Chord[] = [
 //     soprano.context.resume();
 
 //     let x = 1;
-//     for (const chord of chords) {
-//         if (chord.soprano) {
-//             soprano.triggerAttackRelease(chord.soprano.name, '1m', x + 'm');
+//     if(result != null){
+//         for(let chord of result) {
+//             document.write(...chord.voices.map(note => note.name + ' '));
+//             document.write('<br>');
+//             if (chord.voices[0]) {
+//                 soprano.triggerAttackRelease(chord.voices[0].name, '1m', x + 'm');
+//             }
+//             if (chord.voices[1]) {
+//                 alto.triggerAttackRelease(chord.voices[1].name, '1m', x + 'm');
+//             }
+//             if (chord.voices[2]) {
+//                 tenor.triggerAttackRelease(chord.voices[2].name, '1m', x + 'm');
+//             }
+//             if (chord.voices[3]) {
+//                 bass.triggerAttackRelease(chord.voices[3].name, '1m', x + 'm');
+//             }
+//             x++;
 //         }
-//         if (chord.alto) {
-//             alto.triggerAttackRelease(chord.alto.name, '1m', x + 'm');
-//         }
-//         if (chord.tenor) {
-//             tenor.triggerAttackRelease(chord.tenor.name, '1m', x + 'm');
-//         }
-//         if (chord.bass) {
-//             bass.triggerAttackRelease(chord.bass.name, '1m', x + 'm');
-//         }
-//         x++;
 //     }
 // };

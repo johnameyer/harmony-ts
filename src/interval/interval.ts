@@ -67,7 +67,7 @@ export class Interval {
             }
             return;
         }
-        
+        console.trace()
         throw 'Invalid invocation of Interval constructor';
     }
 

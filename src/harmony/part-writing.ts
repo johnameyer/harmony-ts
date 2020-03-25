@@ -13,6 +13,8 @@ export namespace PartWriting {
     const tenorRange = ['G3', 'C3', 'G4', 'A4'].map(absoluteNote);
     const bassRange = ['D2', 'E2', 'C4', 'D4'].map(absoluteNote);
 
+    export const voiceRange = [sopranoRange, altoRange, tenorRange, bassRange];
+
     /**
      * Checks that the chord maintains proper vocal ranges
      * @param chord the chord to check
@@ -29,7 +31,7 @@ export namespace PartWriting {
                     return false;
                 } else {
                     //warning
-                    console.log(toCheck, 'low');
+                    // console.log(toCheck, 'low');
                 }
             }
             if (range[2].midi < toCheck.midi) {
@@ -37,7 +39,7 @@ export namespace PartWriting {
                     return false;
                 } else {
                     //warning
-                    console.log(toCheck, 'high');
+                    // console.log(toCheck, 'high');
                 }
             }
         }
@@ -79,27 +81,29 @@ export namespace PartWriting {
      * @param chord the chord to check
      * @param prev the chord before this chord
      */
-    function checkCompleteness(chord: HarmonizedChord, prev: HarmonizedChord) {
+    export function checkCompleteness(chord: HarmonizedChord, prev?: HarmonizedChord) {
         //chord necessarially has root
         if(chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('3')).length == 0) {
             return false;
         }
         if (!chord.romanNumeral.hasSeventh) {
-            //chord has seventh for this to be present
-            if (chord.romanNumeral.inversion.name != 'PU') {
-                // can leave out fifth
-            } else {
+            // if (chord.romanNumeral.inversion.name != 'PU') {
+            //     // can leave out fifth
+            // } else {
                 return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
-            }
+            // }
         } else {
-            if (chord.romanNumeral.inversion.name =='PU') {
-                // can leave out fifth if preceded by complete V7
-                if(!prev.romanNumeral.name.startsWith('V7')) { //TODO and is complete
-                    return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
-                }
-            } else {
-                return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+            if(!chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).some(Interval.ofSize('7'))) {
+                return false;
             }
+            // if (chord.romanNumeral.inversion.name =='PU') {
+            //     // can leave out fifth if preceded by complete V7
+            //     if(!prev.romanNumeral.name.startsWith('V7')) { //TODO and is complete
+            //         return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+            //     }
+            // } else {
+                return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+            // }
         }
         return true;
     }
@@ -201,18 +205,33 @@ export namespace PartWriting {
      */
     function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord) {
         if (prev.romanNumeral.name.startsWith('V')) {
-            let index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
+            const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
             }
         } else if(prev.romanNumeral.name.startsWith('viio')) {
-            let index = prev.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
+            const index = prev.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
             }
         }
 
-        //check 7th
+        //check 7ths
+        if(prev.romanNumeral.hasSeventh && prev.romanNumeral.name != chord.romanNumeral.name) { //TODO just compare root name
+            const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+            if (new Interval(chord.voices[index], prev.voices[index]).simpleSize != '2') {
+                return false;
+            }
+        }
+        
+        if(chord.romanNumeral.hasSeventh && !chord.romanNumeral.name.startsWith('V')) { //TODO need to watch out for VI?
+            const index = chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+            if (new Interval(chord.voices[index], prev.voices[index]).simpleSize != '2' &&
+                new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2' &&
+                new Interval(chord.voices[index], prev.voices[index]).name != 'PU') {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -236,18 +255,30 @@ export namespace PartWriting {
     export function checkAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord) {
         //TODO make combined version of previous
         let failed = [
+            checkRange,
+            checkVoiceCrossingAndOverlap,
+            checkSpacing,
             checkCompleteness,
+            checkParallels,
             checkContraryFifths,
             checkHiddenFifths,
-            checkInvalidIntervals,
             checkLeadingToneDoubling,
-            checkParallels,
-            checkRange,
             checkSeventhDoubling,
-            checkSpacing,
+            checkInvalidIntervals,
             checkTendencyTones,
-            checkVoiceCrossingAndOverlap,
         ].findIndex(func => !func.apply(null, [chordToCheck, prev]));
+        return failed == -1;
+    }
+
+    export function checkSingular(chordToCheck: HarmonizedChord) {
+        //TODO make combined version of previous
+        let failed = [
+            checkRange,
+            checkSpacing,
+            checkCompleteness,
+            checkLeadingToneDoubling,
+            checkSeventhDoubling,
+        ].findIndex(func => !func.apply(null, [chordToCheck]));
         return failed == -1;
     }
 }

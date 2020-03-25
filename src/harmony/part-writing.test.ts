@@ -7,7 +7,7 @@ import { Scale } from "../scale";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
-const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index + 1], arr[index]] as [T, T])
+const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index], arr[index + 1]] as [T, T])
 
 describe('PartWriting', () => {
     test.each(pair([

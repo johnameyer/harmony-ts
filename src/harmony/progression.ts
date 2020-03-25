@@ -6,13 +6,15 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { Motion } from "./motion";
 import { ComplexInterval } from "../interval/complex-interval";
+import { RomanNumeral } from "./roman-numeral";
+import { Scale } from "../scale";
 
-export type Predicate = (key: Key, ...previousChords: HarmonizedChord[]) => boolean;
-export type Producer = (key: Key, ...previousChords: HarmonizedChord[]) => IncompleteChord[];
+export type Predicate = (scale: Scale, ...previousChords: HarmonizedChord[]) => boolean;
+export type Producer = (scale: Scale, ...previousChords: HarmonizedChord[]) => IncompleteChord[];
 
-const withChordSymbol = (chordSymbol: string) => (key: Key, chord: HarmonizedChord) => chordSymbol == chord.romanNumeral.name;
-const yieldChord = ( chordSymbol: string ) => (key: Key, ...previousChords: HarmonizedChord[]) => [];
-const yieldChords = ( ...chordSymbols: string[] ) => (key: Key, previousChords: HarmonizedChord[]) => [];
+const withChordSymbol = (chordSymbol: string) => (scale: Scale, chord: HarmonizedChord) => chordSymbol == chord.romanNumeral.name;
+const yieldChord = ( chordSymbol: string ) => (scale: Scale, ...previousChords: HarmonizedChord[]) => [new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) })];
+const yieldChords = ( ...chordSymbols: string[] ) => (scale: Scale, previousChords: HarmonizedChord[]) => chordSymbols.map(chordSymbol => new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) }));
 
 export namespace Progression {
     export namespace Major {

@@ -50,6 +50,9 @@ export class Note {
     
     public static isNote(value: any): value is Note {
         //TODO
+        if(!value) {
+            return false;
+        }
         for(let property in Note) {
             if(!(property in value)) {
                 return false;
