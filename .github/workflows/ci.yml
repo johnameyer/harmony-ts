@@ -1,9 +1,9 @@
 # This adapted from https://coryrylan.com/blog/building-angular-cli-projects-with-github-actions
-name: CI
+name: ci
 on: [push]
 
 jobs:
-  CI:
+  ci:
     runs-on: ubuntu-latest
     strategy:
       matrix:

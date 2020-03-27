@@ -12,12 +12,14 @@
         "eslint": "^6.8.0",
         "jest": "^25.2.0",
         "ts-jest": "^25.2.1",
+        "typedoc": "^0.17.3",
         "typescript": "^3.8.3"
     },
     "scripts": {
         "clean": "rm -rf dist",
         "tsc": "./node_modules/.bin/tsc",
         "build": "npm run clean && npm run tsc",
+        "docs": "typedoc",
         "test": "jest --config jest.config.json",
         "lint": "eslint --fix src/**.ts",
         "prepublishOnly": "npm test && npm run lint",
