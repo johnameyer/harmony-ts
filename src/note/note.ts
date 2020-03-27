@@ -32,7 +32,7 @@ export class Note {
     parseValue() {
         const match = this.value.match(/^([a-zA-Z])(#{1,2}|b{1,2}|)?/);
         if(match == null) {
-            throw name + ' is invalid';
+            throw this.value + ' is invalid';
         }
         let accidental;
         [this._letter, accidental] = match.slice(1);
@@ -46,18 +46,4 @@ export class Note {
     public applyAccidental(accidental: Accidental) {
         return new Note(this.letterName + Accidental.toString(this.accidental + accidental));
     }
-
-    
-    public static isNote(value: any): value is Note {
-        //TODO
-        if(!value) {
-            return false;
-        }
-        for(let property in Note) {
-            if(!(property in value)) {
-                return false;
-            }
-        }
-        return true;
-    } 
 }

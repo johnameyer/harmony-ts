@@ -43,7 +43,7 @@ export class Interval {
             return;
         }
 
-        if(Note.isNote(one) && Note.isNote(two)) {
+        if(one instanceof Note && two instanceof Note) {
             let distance = scale.indexOf(two.letterName[0]) - scale.indexOf(one.letterName[0]);
             if(distance < 0) {
                 distance += 7;
@@ -67,8 +67,7 @@ export class Interval {
             }
             return;
         }
-        console.trace()
-        throw 'Invalid invocation of Interval constructor';
+        throw 'Invalid invocation of Interval constructor with values ' + JSON.stringify(one) + ' and ' + JSON.stringify(two);
     }
 
     get semitones() {

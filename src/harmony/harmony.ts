@@ -83,7 +83,7 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
                 return [voice];
             } else {
                 const low = PartWriting.voiceRange[voicePart][1].octavePosition;
-                const high = PartWriting.voiceRange[voicePart][2].octavePosition;
+                const high = PartWriting.voiceRange[voicePart][2].octavePosition + 1;
                 return [...needed].flatMap(note => [...Array(high - low).keys()].map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))));
             }
         };
@@ -171,7 +171,6 @@ export namespace Harmony {
         if(!constraints.length) {
             return [];
         }
-        console.log([...previous].reverse().map(chord => chord.romanNumeral.name));
         for(let solution of harmonize(scale, constraints, previous)){
             const result = harmonizeRecursive(scale, constraints.slice(solution.length), [...[...solution].reverse(), ...previous]);
             if(result != null) {

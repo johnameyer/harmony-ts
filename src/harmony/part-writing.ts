@@ -204,6 +204,7 @@ export namespace PartWriting {
      * @param prev the chord before this chord
      */
     function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord) {
+        //TODO frustrated leading tone
         if (prev.romanNumeral.name.startsWith('V')) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
@@ -217,6 +218,8 @@ export namespace PartWriting {
         }
 
         //check 7ths
+
+        //TODO V42 can support 3 4 5
         if(prev.romanNumeral.hasSeventh && prev.romanNumeral.name != chord.romanNumeral.name) { //TODO just compare root name
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
             if (new Interval(chord.voices[index], prev.voices[index]).simpleSize != '2') {

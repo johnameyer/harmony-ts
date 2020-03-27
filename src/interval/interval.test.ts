@@ -9,13 +9,17 @@ describe('Interval', () => {
             ['A', 'A', 'PU'],
             ['C', 'Eb', 'm3'],
             ['C', 'E', 'M3'],
+            ['E', 'G#', 'M3'],
+            ['Ab', 'C', 'M3'],
             ['C', 'F', 'P4'],
+            ['C#', 'F#', 'P4'],
             ['C', 'F#', 'A4'],
             ['C', 'Gb', 'd5'],
             ['D', 'Ab', 'd5'],
             ['D', 'C', 'm7'],
             ['D', 'B#', 'A6'],
             ['G', 'B', 'M3'],
+            ['G#', 'B', 'm3'],
             ['G', 'D', 'P5'],
         ])('from "%s" to "%s" (%s)', (first, second, name) => {
             test('has correct name', () => {

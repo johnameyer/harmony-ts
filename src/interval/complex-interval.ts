@@ -10,7 +10,6 @@ export class ComplexInterval extends Interval {
 
     constructor(one: AbsoluteNote, two: AbsoluteNote) {
         if(two.midi < one.midi) {
-            console.trace();
             throw 'Expected the second note to be higher than the first';
         }
         super(one, two);

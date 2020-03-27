@@ -1,76 +1,31 @@
 {
     "name": "harmony-ts",
-    "version": "0.0.1",
-    "description": "",
-    "main": "src/index.ts",
+    "version": "0.1.0",
+    "description": "This project is an engine for generating and analyzing four-part textures (and eventually other forms) in the style of Bach and the classical era. Currently, it allows one to pass a series of constraints, such as chord/type/inversion and voice parts, and it will produce the complete texture using the settings provided. It also gives many useful basic music theory functions like intervals and chords though.",
+    "main": "dist/index.js",
+    "types": "dist/index.dt.ts",
     "dependencies": {},
     "devDependencies": {
         "@types/jest": "^25.1.4",
         "@typescript-eslint/eslint-plugin": "^2.24.0",
         "@typescript-eslint/parser": "^2.24.0",
         "eslint": "^6.8.0",
-        "jest": "^25.1.0",
+        "jest": "^25.2.0",
         "ts-jest": "^25.2.1",
-        "typescript": "^3.8.3",
-        "webpack": "^4.42.0",
-        "webpack-cli": "^3.3.11"
-    },
-    "resolutions": {
-        "minimist": "^1.2.5"
+        "typescript": "^3.8.3"
     },
     "scripts": {
-        "clean": "rm -rf build dist",
+        "clean": "rm -rf dist",
         "tsc": "./node_modules/.bin/tsc",
-        "webpack": "webpack",
-        "build": "npm run clean && npm run tsc && npm run webpack",
-        "serve": "npx serve",
-        "test": "jest",
+        "build": "npm run clean && npm run tsc",
+        "test": "jest --config jest.config.json",
         "lint": "eslint --fix src/**.ts",
-        "preinstall": "npx npm-force-resolutions"
+        "prepublishOnly": "npm test && npm run lint",
+        "prepare": "npm run build"
     },
     "author": "Jack Meyer",
-    "license": "None",
-    "eslintConfig": {
-        "env": {
-            "es6": true,
-            "jest": true
-        },
-        "extends": [
-            "eslint:recommended",
-            "plugin:@typescript-eslint/eslint-recommended",
-            "plugin:@typescript-eslint/recommended"
-        ],
-        "globals": {
-            "Atomics": "readonly",
-            "SharedArrayBuffer": "readonly"
-        },
-        "parser": "@typescript-eslint/parser",
-        "parserOptions": {
-            "ecmaVersion": 2018,
-            "sourceType": "module"
-        },
-        "plugins": [
-            "@typescript-eslint"
-        ],
-        "rules": {
-            "indent": [
-                "error",
-                4
-            ],
-            "linebreak-style": [
-                "error",
-                "unix"
-            ],
-            "quotes": [
-                "error",
-                "single"
-            ],
-            "semi": [
-                "error",
-                "always"
-            ],
-            "@typescript-eslint/no-namespace": "off",
-            "no-inner-declarations": "off"
-        }
-    }
+    "license": "",
+    "files": [
+        "lib/**/*"
+    ]
 }
