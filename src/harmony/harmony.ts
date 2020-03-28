@@ -1,6 +1,5 @@
 import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
-import { Interval } from "../interval/interval";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { PartWriting } from "./part-writing";
@@ -18,26 +17,28 @@ function isDefined<T>(t: T | undefined): t is T {
  * TODO does not need to be symmetric
  */
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
-    const compare = <T>(one: T | undefined, two: T | undefined) => !one && !two && one != two;
+    const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
     for(let voicePart in one.voices) {
-        if(compare(one.voices[voicePart], two.voices[voicePart])) {
+        if(!compatible(one.voices[voicePart]?.name, two.voices[voicePart]?.name)) {
             return null;
         }
     }
     
-    if(compare(one.root, two.root)) {
+    if(!compatible(one.root?.name, two.root?.name)) {
         return null;
     }
-    if(compare(one.romanNumeral?.name, two.romanNumeral?.name)) {
+    if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
         return null;
     }
     if(one.romanNumeral) {
         // TODO one should always have root in this case
-        if(!two.voices.filter(isDefined).every(note => one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined).includes(note.simpleName))){
+        const oneNotes = one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined);
+        if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
             return null;
         }
     } else if(two.romanNumeral) {
-        if(!one.voices.filter(isDefined).every(note => two.romanNumeral?.intervals.map(interval => two.root ? interval.transposeUp(two.root).simpleName : undefined).includes(note.simpleName))){
+        const twoNotes = two.romanNumeral?.intervals.map(interval => two.root ? interval.transposeUp(two.root).simpleName : undefined);
+        if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))){
             return null;
         }
     }
@@ -75,7 +76,11 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
         sopranoNotes = get(0).sort(compare(previous.voices[0]));
         altoNotes = get(1).sort(compare(previous.voices[1]));
         tenorNotes = get(2).sort(compare(previous.voices[2]));
-        bassNotes = mapToNearby(previous.voices[3])(bassNote).sort(compare(previous.voices[3]));
+        if(reconciledConstraint.voices[3] == undefined) {
+            bassNotes = mapToNearby(previous.voices[3])(bassNote).sort(compare(previous.voices[3]));
+        } else {
+            bassNotes = [reconciledConstraint.voices[3]];
+        }
     } else {
         const get = (needed: Note[]) => (voicePart: number) => {
             let voice = reconciledConstraint.voices[voicePart];
@@ -109,43 +114,51 @@ export namespace Harmony {
         Progression.Major.basicRoot,
         Progression.Major.firstInversions,
         Progression.Major.fiveInversions,
-        Progression.Major.predominants
+        Progression.Major.predominants,
+        Progression.Major.cad64
     ].flat();
 
-    export function harmonize(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[]) {
+    export function *harmonize(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[]) {
         let options: IncompleteChord[][];
-        options = enabled.filter(([predicate, _]) => predicate(scale, ...previous)).map(([_, producer]) => producer(scale, ...previous));
-        let fit: HarmonizedChord[] = [];
-        let solutions: HarmonizedChord[][] = [];
+        options = enabled.filter(([predicate, _]) => predicate(scale, previous)).flatMap(([_, producer]) => producer(scale, previous));
         for (const option of options) {
-            fit = [];
-            for (const index in option) {
-                const optionChord = option[index];
-                const constraintChord = constraints[index];
-                if(!constraintChord) {
-                    continue;
-                }
-                const reconciledConstraint = reconcileConstraints(optionChord, constraintChord);
-                if(!reconciledConstraint || !reconciledConstraint.romanNumeral) {
-                    continue;
-                }
-                //TODO fix undefined errors
-                for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
-                    const [soprano, alto, tenor, bass] = foundSolution;
-                    const solution = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral);
-                    if(!PartWriting.checkAll(solution, previous[0])) {
-                        continue;
-                    }
-                    //TODO ranking of solutions or make generator?
-                    fit.push(solution);
-                    break;
-                }
-            }
-            if(fit.length == option.length) {
-                solutions.push(fit);
+            let result = harmonizeOptions(scale, constraints, option, previous);
+            if(result != null) {
+                yield result;
             }
         }
-        return solutions;
+    }
+
+    function harmonizeOptions(scale: Scale, constraints: IncompleteChord[], option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
+        // console.log([...previous].reverse().map(chord => chord.romanNumeral.name), option[0].romanNumeral?.name);
+        const optionChord = option[0];
+        const constraintChord = constraints[0];
+        if(!constraintChord) {
+            return [];
+        }
+        const reconciledConstraint = reconcileConstraints(optionChord, constraintChord);
+        if(!reconciledConstraint || !reconciledConstraint.romanNumeral) {
+            return null;
+        }
+        //instead of previous need to use previous fit
+        for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
+            const [soprano, alto, tenor, bass] = foundSolution;
+            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral);
+            if(!PartWriting.checkAll(chord, previous[0])) {
+                continue;
+            }
+            //TODO ranking of solutions or make generator?
+            let result;
+            if(option.length > 1) {
+                result = harmonizeOptions(scale, constraints.slice(1), option.slice(1), [chord, ...previous]);
+                if(result != null) {
+                    return [chord, ...result];
+                }
+            } else {
+                return [ chord ];
+            }
+        }
+        return null;
     }
 
     export function harmonizeAll(scale: Scale, constraints: IncompleteChord[], start: RomanNumeral): HarmonizedChord[] | null {

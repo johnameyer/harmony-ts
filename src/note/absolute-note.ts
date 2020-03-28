@@ -34,4 +34,25 @@ export class AbsoluteNote extends Note {
     get absolute(): boolean {
         return true;
     }
+
+    static getClosest(noteToFind: Note, close: AbsoluteNote) {
+        // TODO more sophisticated math
+        if(Scale.Major.notes.indexOf(close.letterName) > Scale.Major.notes.length / 2) {
+            const one = new AbsoluteNote(noteToFind.name + close.octavePosition);
+            const two = new AbsoluteNote(noteToFind.name + (close.octavePosition + 1));
+            if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
+                return one;
+            } else {
+                return two;
+            }
+        } else {
+            const one = new AbsoluteNote(noteToFind.name + (close.octavePosition - 1));
+            const two = new AbsoluteNote(noteToFind.name + close.octavePosition);
+            if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
+                return one;
+            } else {
+                return two;
+            }
+        }
+    }
 }

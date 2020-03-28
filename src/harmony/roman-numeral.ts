@@ -2,11 +2,9 @@ import { ScaleDegree } from "./scale-degree";
 import { ChordQuality } from "../chord/chord-quality";
 import { Interval } from "../interval/interval";
 import { Note } from "../note/note";
-import { Key } from "../key";
-import { Accidental } from "../accidental";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
-import { Chord } from "../chord/chord";
+import { HarmonicFunction } from "./harmonic-function";
 
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
     return new Interval(new Note(scale[lower]), new Note(scale[upper]));
@@ -16,20 +14,6 @@ function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, 
     return qualityOfScalarInterval(scaleDegree, (scaleDegree + size - 1) % 7, scale);
 }
 
-function qualityOfScaleDegree(scaleDegree: ScaleDegree, scale: Scale) {
-    const fifth = qualityOfScalarIntervalBuiltOn(scaleDegree, 5, scale);
-    if(fifth.quality == IntervalQuality.AUGMENTED) {
-        return ChordQuality.AUGMENTED;
-    } else if(fifth.quality == IntervalQuality.DIMINISHED) {
-        return ChordQuality.DIMINISHED;
-    }
-    const third = qualityOfScalarIntervalBuiltOn(scaleDegree, 3, scale);
-    if(third.quality == IntervalQuality.MAJOR) {
-        return ChordQuality.MAJOR;
-    } else if(third.quality == IntervalQuality.MINOR) {
-        return ChordQuality.MINOR;
-    }
-}
 
 export class RomanNumeral {
 
@@ -37,6 +21,7 @@ export class RomanNumeral {
 
     protected _scaleDegree!: ScaleDegree;
     protected _inversion!: Interval;
+    protected _harmonicFunction?: HarmonicFunction;
 
     // protected _accidental!: Accidental;
     // protected _applied!: ScaleDegree | null;
@@ -53,9 +38,10 @@ export class RomanNumeral {
      */
     protected _figuredBass!: string;
 
-    constructor(value: string, scale: string[]) {
+    constructor(value: string, scale: string[], harmonicFunction?: HarmonicFunction) {
         this._name = value;
         this._scale = scale;
+        this._harmonicFunction = harmonicFunction;
         const match = value.match(/^(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?$/);
         if(!match) {
             throw 'Invalid roman numeral ' + value;
@@ -141,5 +127,21 @@ export class RomanNumeral {
 
     get hasSeventh(): boolean {
         return this.intervals.some(interval => interval.simpleSize == '7');
+    }
+
+    get harmonicFunction(): HarmonicFunction {
+        if(!this._harmonicFunction) {
+            switch(this._scaleDegree) {
+                case ScaleDegree.TONIC:
+                    return HarmonicFunction.TONIC;
+                case ScaleDegree.DOMINANT:
+                case ScaleDegree.SUBTONIC:
+                    return HarmonicFunction.DOMINANT;
+                case ScaleDegree.SUPERTONIC:
+                case ScaleDegree.SUBDOMINANT:
+                    return HarmonicFunction.PREDOMINANT;
+            }
+        }
+        return HarmonicFunction.PREDOMINANT;
     }
 }
