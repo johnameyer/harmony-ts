@@ -41,34 +41,36 @@ const cadential64Resolution = (cad64: string, resolution: string) => (scale: Sca
 //TODO flags instead of grouping
 export namespace Progression {
     export namespace Major {
-        export const basicRoot = [
+        export const basic = [
             /* I-V */
             [ withChordSymbol('I'), yieldChord('V') ],
             [ withChordSymbol('V'), yieldChord('I') ],
 
             /* I-V7 */
-            // [ withChordSymbol('I'),  yieldChord('V7') ],
-            // [ withChordSymbol('V7'), yieldChord('I') ],
+            [ withChordSymbol('I'),  yieldChord('V7') ],
+            [ withChordSymbol('V7'), yieldChord('I') ],
 
             /* V-V7 intensification */
-            // [ withChordSymbol('V'),  yieldChord('V7') ],
+            [ withChordSymbol('V'),  yieldChord('V7') ],
         ] as [Predicate, Producer][];
 
-        export const firstInversions = [
+        export const basicInversions = [
             /* I-I6 arpeggiation */
             [ withChordSymbol('I'),  yieldChord('I6') ],
             [ withChordSymbol('I6'), yieldChord('I') ],
+
+            [ withChordSymbol('I6'), yieldChord('V') ],
 
             /* V6 */
             [ withChordSymbol('I'),  yieldChord('V6') ],
             [ withChordSymbol('V6'), yieldChord('I') ],
 
             /* viio */
-            [ withChordSymbol('I'),  yieldChords('vii06', 'I6') ],
-            [ withChordSymbol('I6'), yieldChords('vii06', 'I') ]
+            [ withChordSymbol('I'),  yieldChords('viio6', 'I6') ],
+            [ withChordSymbol('I6'), yieldChords('viio6', 'I') ]
         ] as [Predicate, Producer][];
 
-        export const fiveInversions = [
+        export const dominantSevenths = [
             /* V65 */
             [ withChordSymbol('I'), yieldChord('V65') ],
 
@@ -103,7 +105,7 @@ export namespace Progression {
 
         ] as [Predicate, Producer][];
 
-        export const predominants = [
+        export const basicPredominant = [
             /* IV */
             [ withChordSymbol('I'),  yieldChord('IV') ],
             [ withChordSymbol('I6'), yieldChord('IV') ],
@@ -119,6 +121,9 @@ export namespace Progression {
             [ withChordSymbol('ii'), yieldChord('V7') ],
 
             /* ii6 */
+            [ withChordSymbol('I'),  yieldChord('ii6') ],
+            [ withChordSymbol('I6'),  yieldChord('ii6') ],
+
             [ withChordSymbol('ii6'), yieldChord('V') ],
             [ withChordSymbol('ii6'), yieldChord('V7') ],
 
@@ -134,8 +139,16 @@ export namespace Progression {
             [ withChordSymbol('IV'), yieldChord('ii6') ],
             [ withChordSymbol('IV'), yieldChord('ii') ]
         ] as [Predicate, Producer][];
+        
+        export const cad64 = [
+            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V') ],
+            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V7') ],
+            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V42') ],
+        ] as [Predicate, Producer][];
 
         export const submediant = [
+            [ withChordSymbol('I'), yieldChord('vi') ],
+
             /* vi root motion by 3rd */
             [ withChordSymbol('vi'), yieldChord('IV') ],
             [ withChordSymbol('vi'), yieldChord('IV6') ],
@@ -158,10 +171,62 @@ export namespace Progression {
             // 12-5?
         ] as [Predicate, Producer][];
 
-        export const cad64 = [
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V') ],
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V7') ],
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V42') ],
+        export const subdominantSevenths = [
+            [ withChordSymbol('I'), yieldChord('ii7') ],
+            [ withChordSymbol('I'), yieldChord('ii65') ],
+            [ withChordSymbol('I'), yieldChord('ii43') ],
+            [ withChordSymbol('I'), yieldChord('ii42') ],
+
+            [ withChordSymbol('ii7'), yieldChord('V') ],
+            [ withChordSymbol('ii65'), yieldChord('V') ],
+            [ withChordSymbol('ii7'), yieldChord('V7') ],
+            [ withChordSymbol('ii65'), yieldChord('V7') ],
+
+            [ withChordSymbol('vi'), yieldChord('ii65') ],
+            [ withChordSymbol('IV6'), yieldChord('ii65') ],
+            [ withChordSymbol('IV'), yieldChord('ii7') ],
+            [ withChordSymbol('ii65'), yieldChord('ii7') ],
+            [ withChordSymbol('ii65'), yieldChords('I6', 'ii7') ],
+            [ withChordSymbol('ii'), yieldChords('I6', 'ii65') ],
+            [ withChordSymbol('ii65'), yieldChord('V42') ],
+            
+            [ withChordSymbol('vi'), yieldChords('ii65') ],
+
+            
+            [ withChordSymbol('ii43'), yieldChords('V') ],
+            [ withChordSymbol('ii43'), yieldChords('V7') ],
+            [ withChordSymbol('ii43'), yieldChords('ii65') ],
+            
+            [ withChordSymbol('ii6'), yieldChords('ii7') ],
+
+            
+            [ withChordSymbol('ii42'), yieldChords('V6') ],
+            [ withChordSymbol('ii42'), yieldChords('V65') ],
+
+            
+            [ withChordSymbol('I'), yieldChords('IV7') ],
+            [ withChordSymbol('IV'), yieldChords('IV7') ],
+            [ withChordSymbol('IV7'), yieldChords('V') ],
+            [ withChordSymbol('I'), yieldChords('IV65') ],
+            [ withChordSymbol('IV65'), yieldChords('V6', 'I') ],
+            [ withChordSymbol('IV65'), yieldChords('V65', 'I') ],
+        ] as [Predicate, Producer][];
+
+        export const tonicSubstitutes = [
+            [ withChordSymbol('I'), yieldChords('IV', 'I') ],
+            [ withChordSymbol('I6'), yieldChords('IV', 'I') ],
+            [ withChordSymbol('I'), yieldChords('IV', 'I6') ],
+
+            [ withChordSymbol('I'), yieldChords('IV6', 'I6') ],
+            [ withChordSymbol('I'), yieldChords('vi', 'I6') ],
+
+            [ withChordSymbol('V'), yieldChord('vi') ],
+            [ withChordSymbol('V7'), yieldChord('vi') ],
+            [ withChordSymbol('V7'), yieldChord('IV6') ],
+            [ withChordSymbol('V7'), yieldChord('IV6') ],
+
+            [ withChordSymbol('V'), yieldChords('vi', 'V6') ],
+            [ withChordSymbol('V'), yieldChords('vi', 'V65') ],
         ] as [Predicate, Producer][];
     }
 }

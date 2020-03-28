@@ -211,7 +211,7 @@ export namespace PartWriting {
                 return false;
             }
         } else if(prev.romanNumeral.name.startsWith('viio')) {
-            const index = prev.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
+            const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
             }

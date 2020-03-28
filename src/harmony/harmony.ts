@@ -3,7 +3,7 @@ import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { PartWriting } from "./part-writing";
-import { Progression } from "./progression";
+import { Progression, Predicate, Producer } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Accidental } from "../accidental";
@@ -110,15 +110,7 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
 }
 
 export namespace Harmony {
-    const enabled = [
-        Progression.Major.basicRoot,
-        Progression.Major.firstInversions,
-        Progression.Major.fiveInversions,
-        Progression.Major.predominants,
-        Progression.Major.cad64
-    ].flat();
-
-    export function *harmonize(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[]) {
+    export function *harmonize(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[], enabled: [Predicate, Producer][]) {
         let options: IncompleteChord[][];
         options = enabled.filter(([predicate, _]) => predicate(scale, previous)).flatMap(([_, producer]) => producer(scale, previous));
         for (const option of options) {
@@ -161,7 +153,7 @@ export namespace Harmony {
         return null;
     }
 
-    export function harmonizeAll(scale: Scale, constraints: IncompleteChord[], start: RomanNumeral): HarmonizedChord[] | null {
+    export function harmonizeAll(scale: Scale, constraints: IncompleteChord[], start: RomanNumeral, enabled: [Predicate, Producer][]): HarmonizedChord[] | null {
         //TODO harmonize tonic or come up with options
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
@@ -172,7 +164,7 @@ export namespace Harmony {
             if(!PartWriting.checkSingular(chord)) {
                 continue;
             }
-            const result = harmonizeRecursive(scale, constraints.slice(1), [chord]);
+            const result = harmonizeRecursive(scale, constraints.slice(1), [chord], enabled);
             if(result != null) {
                 return [chord, ...result];
             }
@@ -180,12 +172,12 @@ export namespace Harmony {
         return null;
     }
 
-    export function harmonizeRecursive(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
+    export function harmonizeRecursive(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[], enabled: [Predicate, Producer][]): HarmonizedChord[] | null {
         if(!constraints.length) {
             return [];
         }
-        for(let solution of harmonize(scale, constraints, previous)){
-            const result = harmonizeRecursive(scale, constraints.slice(solution.length), [...[...solution].reverse(), ...previous]);
+        for(let solution of harmonize(scale, constraints, previous, enabled)){
+            const result = harmonizeRecursive(scale, constraints.slice(solution.length), [...[...solution].reverse(), ...previous], enabled);
             if(result != null) {
                 return [...solution, ...result];
             }

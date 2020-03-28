@@ -62,19 +62,6 @@ describe('RomanNumeral', () => {
             });
         });
 
-        describe('roman numeral embellishment', () => {
-            test.skip.each([
-                ['V64', Scale.Major.notes],
-                ['I6', Scale.Major.notes],
-            ])('%p', (value, scale) => {
-                const embellished = new RomanNumeral(value, scale);
-                const romanNumeral = new RomanNumeral(value, scale);
-                expect(embellished.name).toBe(value);
-                expect(embellished.intervals).not.toBe(romanNumeral.intervals);
-                //TODO or something similar
-            });
-        });
-
         describe('applied chord', () => {
             test.skip.each([
                 ['V42/V', Scale.Major.notes],
