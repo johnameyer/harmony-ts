@@ -1,23 +1,11 @@
 import { Note } from '../note/note';
 import { IntervalQuality } from './interval-quality';
 import { Accidental } from '../accidental';
-import { Scale } from '../scale';
+import { isString, isNumber } from '../util';
 
-export const scale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-
-function isString(value: any): value is string {
-    if(String(value) === value) {
-        return true;
-    }
-    return false;
-}
-
-function isNumber(value: any): value is number {
-    if(Number(value) === value) {
-        return true;
-    }
-    return false;
-}
+// TODO possible to have in only one place a la circular dependency
+let notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
 
 export class Interval {
     protected _semitones!: number;
@@ -34,17 +22,49 @@ export class Interval {
                 const [quality, size] = match.slice(1);
                 this._quality = IntervalQuality.fromString(quality);
                 this._simpleSize = Number(size) || 1;
+                this._semitones = semitones[this._simpleSize - 1];
+                switch(this._quality) {
+                    case IntervalQuality.AUGMENTED:
+                        this._semitones += 1;
+                        break;
+                    case IntervalQuality.MINOR:
+                        this._semitones -= 1;
+                        break;
+                    case IntervalQuality.DIMINISHED:
+                        if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5 || this._simpleSize == 8) {
+                            this._semitones -= 1;
+                        } else {
+                            this._semitones -= 2;
+                        }
+                        break;
+                }
                 return;
             }
         }
         if(isNumber(one) && isNumber(two)) {
             this._quality = one;
             this._simpleSize = two;
+            this._semitones = semitones[this._simpleSize - 1];
+            switch(this._quality) {
+                case IntervalQuality.AUGMENTED:
+                    this._semitones += 1;
+                    break;
+                case IntervalQuality.MINOR:
+                    this._semitones -= 1;
+                    break;
+                case IntervalQuality.DIMINISHED:
+                    if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5 || this._simpleSize == 8) {
+                        this._semitones -= 1;
+                    } else {
+                        this._semitones -= 2;
+                    }
+                    break;
+            }
             return;
         }
 
         if(one instanceof Note && two instanceof Note) {
-            let distance = scale.indexOf(two.letterName[0]) - scale.indexOf(one.letterName[0]);
+            let distance = notes.indexOf(two.letterName[0]) - notes.indexOf(one.letterName[0]);
             if(distance < 0) {
                 distance += 7;
             } 
@@ -57,7 +77,7 @@ export class Interval {
             }
             this._semitones = chromaticDistance;
 
-            const majorSemitones = Scale.Major.semitones[this._simpleSize - 1];
+            const majorSemitones = semitones[this._simpleSize - 1];
             if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5) {
                 this._quality = Interval.perfectQualities[chromaticDistance - majorSemitones + 1];
             } else if(this._simpleSize == 8) {
@@ -90,24 +110,24 @@ export class Interval {
     }
 
     transposeUp(note: Note): Note {
-        let index = scale.indexOf(note.letterName) + this._simpleSize - 1;
+        let index = notes.indexOf(note.letterName) + this._simpleSize - 1;
         if(index >= 7) {
             index = index - 7;
         }
-        const letterName = scale[index];
+        const letterName = notes[index];
         let result = new Note(letterName);
-        const accidental = Accidental.toString(note.chromaticPosition + this._semitones - result.chromaticPosition);
+        const accidental = Accidental.toString((12 + note.chromaticPosition + this._semitones - result.chromaticPosition + 1) % 12 - 1);
         return new Note(letterName + accidental);
     }
     
     transposeDown(note: Note): Note {
-        let index = scale.indexOf(note.letterName) - this._simpleSize + 1;
+        let index = notes.indexOf(note.letterName) - this._simpleSize + 1;
         if(index < 0) {
             index = index + 7;
         }
-        const letterName = scale[index];
+        const letterName = notes[index];
         let result = new Note(letterName);
-        const accidental = Accidental.toString((note.chromaticPosition - this._semitones - result.chromaticPosition) % 12);
+        const accidental = Accidental.toString((24 + note.chromaticPosition - this._semitones - result.chromaticPosition + 1)%12 - 1);
         return new Note(letterName + accidental);
     }
     

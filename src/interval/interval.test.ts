@@ -21,6 +21,8 @@ describe('Interval', () => {
             ['G', 'B', 'M3'],
             ['G#', 'B', 'm3'],
             ['G', 'D', 'P5'],
+            ['Gb', 'Cb', 'P4'],
+            ['B', 'A#', 'M7']
         ])('from "%s" to "%s" (%s)', (first, second, name) => {
             test('has correct name', () => {
                 const interval = createSimpleInterval(first, second);
@@ -34,6 +36,16 @@ describe('Interval', () => {
 
             test('transposes down correctly', () => {
                 const interval = createSimpleInterval(first, second);
+                expect(interval.transposeDown(new Note(second)).name).toBe(first);
+            });
+
+            test('transposes up correctly', () => {
+                const interval = new Interval(name);
+                expect(interval.transposeUp(new Note(first)).name).toBe(second);
+            });
+
+            test('transposes down correctly', () => {
+                const interval = new Interval(name);
                 expect(interval.transposeDown(new Note(second)).name).toBe(first);
             });
         });

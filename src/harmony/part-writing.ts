@@ -208,13 +208,13 @@ export namespace PartWriting {
      * @param prev the chord before this chord
      */
     function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord) {
-        //TODO frustrated leading tone
-        if (prev.romanNumeral.name.startsWith('V')) {
+        //TODO frustrated leading tone and delayed resolution
+        if (prev.romanNumeral.name.startsWith('V') && !(chord.romanNumeral.name.startsWith('V') || chord.romanNumeral.name.startsWith('viio'))) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
             }
-        } else if(prev.romanNumeral.name.startsWith('viio')) {
+        } else if(prev.romanNumeral.name.startsWith('viio') && !(chord.romanNumeral.name.startsWith('V') || chord.romanNumeral.name.startsWith('viio'))) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
@@ -279,7 +279,11 @@ export namespace PartWriting {
             checkInvalidIntervals,
             checkTendencyTones,
         ].findIndex(func => !func.apply(null, [chordToCheck, prev]));
-        return failed == -1;
+        return failed;
+    }
+    
+    export function testAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord) {
+        return checkAll(chordToCheck, prev) == -1;
     }
 
     export function checkSingular(chordToCheck: HarmonizedChord) {
@@ -291,6 +295,10 @@ export namespace PartWriting {
             checkLeadingToneDoubling,
             checkSeventhDoubling,
         ].findIndex(func => !func.apply(null, [chordToCheck]));
-        return failed == -1;
+        return failed;
+    }
+
+    export function testSingular(chordToCheck: HarmonizedChord) {
+        return checkSingular(chordToCheck) == -1;
     }
 }

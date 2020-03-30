@@ -14,6 +14,17 @@ describe('RomanNumeral', () => {
             });
         });
 
+        describe('root', () => {
+            test.each([
+                ['i', Scale.NaturalMinor.notes, 'C'],
+                ['iio', Scale.NaturalMinor.notes, 'D'],
+                ['VII', Scale.NaturalMinor.notes, 'Bb'],
+            ])('%p', (value, scale, root) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                expect(romanNumeral.root.name).toBe(root);
+            });
+        });
+
         describe('root position triad', () => {
             test.each([
                 ['I', Scale.Major.notes],

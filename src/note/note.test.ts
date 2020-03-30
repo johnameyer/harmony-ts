@@ -7,7 +7,9 @@ describe('Note', () => {
             ['A', 9],
             ['G', 7],
             ['Ab', 8],
-            ['G#', 8]
+            ['G#', 8],
+            ['Cb', 11],
+            ['B#', 0]
         ])('"%s"', (value, chromaticPosition) => {
             test('constructor', () => {
                 const note = new Note(value);

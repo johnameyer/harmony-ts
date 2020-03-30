@@ -3,13 +3,7 @@ import { Interval } from '../interval/interval';
 import { ChordQuality } from './chord-quality';
 import { IntervalQuality } from '../interval/interval-quality';
 import { AbsoluteNote } from '../note/absolute-note';
-
-function isDefined <T> (value: T | undefined): value is T {
-    if(value === undefined) {
-        return false;
-    }
-    return true;
-}
+import { isDefined } from '../util';
 
 export class Chord {
     protected _notes: Note[];

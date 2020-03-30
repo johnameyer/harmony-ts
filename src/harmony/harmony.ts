@@ -7,10 +7,7 @@ import { Progression, Predicate, Producer } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Accidental } from "../accidental";
-
-function isDefined<T>(t: T | undefined): t is T {
-    return !!t;
-} 
+import { isDefined } from "../util";
 
 /**
  * 
@@ -114,21 +111,32 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
 }
 
 export namespace Harmony {
-    export function *harmonize(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[], enabled: [Predicate, Producer][]) {
+    export interface Parameters {
+        constraints: IncompleteChord[];
+        scale: Scale;
+        enabled: [Predicate, Producer][];
+    }
+
+    export interface Result {
+        solution: HarmonizedChord[] | null;
+        furthest: number;
+    }
+
+    export function *harmonize(params: Parameters, previous: HarmonizedChord[]) {
         let options: IncompleteChord[][];
-        options = enabled.filter(([predicate, _]) => predicate(scale, previous)).flatMap(([_, producer]) => producer(scale, previous));
+        options = params.enabled.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
         for (const option of options) {
-            let result = harmonizeOptions(scale, constraints, option, previous);
+            let result = harmonizeOptions(params, option, previous);
             if(result != null) {
                 yield result;
             }
         }
     }
 
-    function harmonizeOptions(scale: Scale, constraints: IncompleteChord[], option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
+    function harmonizeOptions(params: Parameters, option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
         // console.log([...previous].reverse().map(chord => chord.romanNumeral.name), option[0].romanNumeral?.name);
         const optionChord = option[0];
-        const constraintChord = constraints[0];
+        const constraintChord = params.constraints[previous.length];
         if(!constraintChord) {
             return [];
         }
@@ -140,13 +148,13 @@ export namespace Harmony {
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
             const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.harmonicFunction);
-            if(!PartWriting.checkAll(chord, previous[0])) {
+            if(!PartWriting.testAll(chord, previous[0])) {
                 continue;
             }
             //TODO ranking of solutions or make generator?
             let result;
             if(option.length > 1) {
-                result = harmonizeOptions(scale, constraints.slice(1), option.slice(1), [chord, ...previous]);
+                result = harmonizeOptions(params, option.slice(1), [chord, ...previous]);
                 if(result != null) {
                     return [chord, ...result];
                 }
@@ -157,35 +165,42 @@ export namespace Harmony {
         return null;
     }
 
-    export function harmonizeAll(scale: Scale, constraints: IncompleteChord[], start: RomanNumeral, enabled: [Predicate, Producer][]): HarmonizedChord[] | null {
+    export function harmonizeAll(params: Parameters): Result {
         //TODO harmonize tonic or come up with options
-        const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
+        const start = new RomanNumeral('I',  params.scale);
+        const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
-            return null;
+            return {solution: null, furthest: 0};
         }
+        let furthest = 0;
         for(const beginning of findSolutions(reconciledConstraint)) {
             const chord = new HarmonizedChord(beginning, start);
-            if(!PartWriting.checkSingular(chord)) {
+            if(!PartWriting.testSingular(chord)) {
                 continue;
             }
-            const result = harmonizeRecursive(scale, constraints.slice(1), [chord], enabled);
-            if(result != null) {
-                return [chord, ...result];
+            const result = harmonizeRecursive(params, [chord]);
+            if(result.solution != null) {
+                return {solution: [chord, ...result.solution], furthest: result.furthest};
+            } else {
+                furthest = result.furthest > furthest ? result.furthest : furthest;
             }
         }
-        return null;
+        return {solution: null, furthest: furthest};
     }
 
-    export function harmonizeRecursive(scale: Scale, constraints: IncompleteChord[], previous: HarmonizedChord[], enabled: [Predicate, Producer][]): HarmonizedChord[] | null {
-        if(!constraints.length) {
-            return [];
+    export function harmonizeRecursive(params: Parameters, previous: HarmonizedChord[]): Result {
+        if(params.constraints.length == previous.length) {
+            return {solution: [], furthest: previous.length};
         }
-        for(let solution of harmonize(scale, constraints, previous, enabled)){
-            const result = harmonizeRecursive(scale, constraints.slice(solution.length), [...[...solution].reverse(), ...previous], enabled);
-            if(result != null) {
-                return [...solution, ...result];
+        let furthest = previous.length;
+        for(let solution of harmonize(params, previous)){
+            const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
+            if(result.solution != null) {
+                return {solution: [...solution, ...result.solution], furthest: result.furthest};
+            } else {
+                furthest = result.furthest > furthest ? result.furthest : furthest;
             }
         }
-        return null;
+        return {solution: null, furthest: furthest};
     }
 }

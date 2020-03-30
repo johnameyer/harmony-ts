@@ -1,5 +1,5 @@
 import { AbsoluteNote } from "../note/absolute-note";
-import { Interval, scale } from "./interval";
+import { Interval } from "./interval";
 import { Accidental } from "../accidental";
 import { IntervalQuality } from "./interval-quality";
 import { Scale } from "../scale";

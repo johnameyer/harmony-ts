@@ -10,10 +10,17 @@ export namespace Accidental {
     export const names = ['bb', 'b', '', '#', '##'];
 
     export function toString(accidental: Accidental): string {
+        if(accidental > 2 || accidental < -2) {
+            throw 'Accidental outside of expected range ' + accidental;
+        }
         return names[accidental + 2];
     }
 
-    export function fromString(string: string): Accidental {
-        return names.indexOf(string) - 2;
+    export function fromString(accidental: string): Accidental {
+        const index = names.indexOf(accidental);
+        if(index == -1) {
+            throw 'Invalid accidental ' + accidental;
+        }
+        return index - 2;
     }
 }
