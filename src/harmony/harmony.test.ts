@@ -26,7 +26,7 @@ describe('Harmony', () => {
             [['C3', 'G3', 'G3'], [...Progression.Major.basic]],
             [['C3', 'D3', 'E3'], [...Progression.Major.basic, ...Progression.Major.basicInversions]],
             [['C3', 'D3', 'E3'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths]],
-            [['C3', 'C3', 'B3', 'C3'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths, ...Progression.Major.subdominantSevenths]],
+            //TODO [['C3', 'C3', 'B3', 'C3'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths, ...Progression.Major.subdominantSevenths]],
         ])('bass line %s', (notes, featureSet) => {
             // const soprano = ['G4', 'F4', 'E4', 'D4', 'C4'].map(note => new AbsoluteNote(note));
             const bass = notes.map(note => new AbsoluteNote(note));
@@ -49,6 +49,7 @@ describe('Harmony', () => {
             [['I', 'I64', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.cad64]],
             [['I', 'vi', 'I6'], [...Progression.Major.basic, ...Progression.Major.tonicSubstitutes]],
             [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.cad64, ...Progression.Major.tonicSubstitutes]],
+            //TODO [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.cad64, ...Progression.Major.tonicSubstitutes]],
         ])('roman numerals %s', (numerals, featureSet) => {
             const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, Scale.Major.notes)}));
             const scale = Scale.Major.notes;

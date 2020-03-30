@@ -30,6 +30,9 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
         return null;
     }
+    if(!compatible(one.harmonicFunction, two.harmonicFunction)) {
+        return null;
+    }
     if(one.romanNumeral) {
         // TODO one should always have root in this case
         const oneNotes = one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined);
@@ -44,8 +47,9 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     }
 
     const romanNumeral = one.romanNumeral || two.romanNumeral;
+    const harmonicFunction = one.harmonicFunction || two.harmonicFunction;
     const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
-    return new IncompleteChord({romanNumeral, voices});
+    return new IncompleteChord({romanNumeral, voices, harmonicFunction});
 }
 
 function *findSolutions(reconciledConstraint: IncompleteChord, previous?: HarmonizedChord) {
@@ -135,7 +139,7 @@ export namespace Harmony {
         //instead of previous need to use previous fit
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
-            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral);
+            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.harmonicFunction);
             if(!PartWriting.checkAll(chord, previous[0])) {
                 continue;
             }

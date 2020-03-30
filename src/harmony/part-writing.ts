@@ -4,6 +4,7 @@ import { Interval } from "../interval/interval";
 import { IntervalQuality } from "../interval/interval-quality";
 import { ComplexInterval } from "../interval/complex-interval";
 import { Motion } from "./motion";
+import { Scale } from "..";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -109,12 +110,15 @@ export namespace PartWriting {
     }
 
     /**
-     * Checks that the chord does not have too much space between the voice parts
+     * Checks that the chord does not have too much space between the voice parts or that one voice is above another
      * @param chord the chord to check
      */
     function checkSpacing(chord: HarmonizedChord) {
         for(let i = 0; i < chord.voices.length - 2; i ++) {
             if (chord.voices[i].midi - chord.voices[i + 1].midi > 12) {
+                return false;
+            }
+            if (chord.voices[i].midi < chord.voices[i + 1].midi) {
                 return false;
             }
         }
@@ -239,7 +243,7 @@ export namespace PartWriting {
     }
 
     /**
-     * Checks if there is a melodic A2
+     * Checks if there is a melodic A2 or too large of intervals
      * @param chord 
      * @param prev 
      */
@@ -249,6 +253,11 @@ export namespace PartWriting {
             if(interval.simpleSize == '2' && interval.quality == IntervalQuality.AUGMENTED) {
                 return false;
             } else if(interval.simpleSize == '7' && interval.quality == IntervalQuality.DIMINISHED) {
+                return false;
+            }
+
+            const difference = Math.abs(prev.voices[voice].midi - chord.voices[voice].midi);
+            if(difference > 7 && !(voice == '3' && interval.simpleSize == 'U')) {
                 return false;
             }
         }

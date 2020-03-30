@@ -13,11 +13,13 @@ export type Predicate = (scale: Scale, previousChords: HarmonizedChord[]) => boo
 export type Producer = (scale: Scale, previousChords: HarmonizedChord[]) => IncompleteChord[][];
 
 const withChordSymbol = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => chordSymbol == previousChords[0].romanNumeral.name;
-const ofFunction = (harmonicFunction: HarmonicFunction) => (scale: Scale, previousChords: HarmonizedChord[]) => harmonicFunction == previousChords[0].romanNumeral.harmonicFunction;
-const ofFunctions = (...harmonicFunctions: HarmonicFunction[]) => (scale: Scale, previousChords: HarmonizedChord[]) => harmonicFunctions.some(harmonicFunction => harmonicFunction == previousChords[0].romanNumeral.harmonicFunction);
+const ofFunction = (harmonicFunction: HarmonicFunction) => (scale: Scale, previousChords: HarmonizedChord[]) => harmonicFunction == previousChords[0].harmonicFunction;
+const ofFunctions = (...harmonicFunctions: HarmonicFunction[]) => (scale: Scale, previousChords: HarmonizedChord[]) => harmonicFunctions.some(harmonicFunction => harmonicFunction == previousChords[0].harmonicFunction);
 
 const yieldChord = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => [[new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) })]];
 const yieldChords = (...chordSymbols: string[]) => (scale: Scale, previousChords: HarmonizedChord[]) => [chordSymbols.map(chordSymbol => new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) }))];
+
+const yieldChordsWithFunction = (harmonicFunction: HarmonicFunction, ...chordSymbols: string[]) => (scale: Scale, previousChords: HarmonizedChord[]) => [chordSymbols.map(chordSymbol => new IncompleteChord({ harmonicFunction, romanNumeral: new RomanNumeral(chordSymbol, scale) }))];
 
 const cadential64Resolution = (cad64: string, resolution: string) => (scale: Scale, previousChords: HarmonizedChord[]) => {
     const cad64RomanNumeral = new RomanNumeral(cad64, scale);
@@ -66,8 +68,8 @@ export namespace Progression {
             [ withChordSymbol('V6'), yieldChord('I') ],
 
             /* viio */
-            [ withChordSymbol('I'),  yieldChords('viio6', 'I6') ],
-            [ withChordSymbol('I6'), yieldChords('viio6', 'I') ]
+            [ withChordSymbol('I'),  yieldChordsWithFunction(HarmonicFunction.TONIC, 'viio6', 'I6') ],
+            [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'viio6', 'I') ]
         ] as [Predicate, Producer][];
 
         export const dominantSevenths = [
@@ -97,11 +99,11 @@ export namespace Progression {
             [ withChordSymbol('V7'), yieldChord('V42') ],
 
             /* double neighbor */
-            [ withChordSymbol('I'), yieldChords('V65', 'V43', 'I') ],
-            [ withChordSymbol('I'), yieldChords('V43', 'V65', 'I') ],
+            [ withChordSymbol('I'), yieldChordsWithFunction(HarmonicFunction.TONIC,'V65', 'V43', 'I') ],
+            [ withChordSymbol('I'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'V43', 'V65', 'I') ],
 
-            [ withChordSymbol('I6'), yieldChords('V43', 'V42', 'I6') ],
-            [ withChordSymbol('I6'), yieldChords('V42', 'V43', 'I6') ],
+            [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'V43', 'V42', 'I6') ],
+            [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'V42', 'V43', 'I6') ],
 
         ] as [Predicate, Producer][];
 
@@ -132,8 +134,8 @@ export namespace Progression {
             [ withChordSymbol('ii6'), yieldChord('ii') ],
 
             /* ii-ii6 with passing */
-            [ withChordSymbol('ii'),  yieldChords('I6', 'ii6') ],
-            [ withChordSymbol('ii6'), yieldChords('I6', 'ii') ],
+            [ withChordSymbol('ii'),  yieldChordsWithFunction(HarmonicFunction.PREDOMINANT, 'I6', 'ii6') ],
+            [ withChordSymbol('ii6'), yieldChordsWithFunction(HarmonicFunction.PREDOMINANT, 'I6', 'ii') ],
 
             /* IV-ii root motion by 3rd */
             [ withChordSymbol('IV'), yieldChord('ii6') ],
@@ -186,8 +188,8 @@ export namespace Progression {
             [ withChordSymbol('IV6'), yieldChord('ii65') ],
             [ withChordSymbol('IV'), yieldChord('ii7') ],
             [ withChordSymbol('ii65'), yieldChord('ii7') ],
-            [ withChordSymbol('ii65'), yieldChords('I6', 'ii7') ],
-            [ withChordSymbol('ii'), yieldChords('I6', 'ii65') ],
+            [ withChordSymbol('ii65'), yieldChordsWithFunction(HarmonicFunction.PREDOMINANT, 'I6', 'ii7') ],
+            [ withChordSymbol('ii'), yieldChordsWithFunction(HarmonicFunction.PREDOMINANT, 'I6', 'ii65') ],
             [ withChordSymbol('ii65'), yieldChord('V42') ],
             
             [ withChordSymbol('vi'), yieldChords('ii65') ],
