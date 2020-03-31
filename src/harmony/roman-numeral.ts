@@ -4,7 +4,6 @@ import { Interval } from "../interval/interval";
 import { Note } from "../note/note";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
-import { HarmonicFunction } from "./harmonic-function";
 
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
     return new Interval(new Note(scale[lower]), new Note(scale[upper]));
@@ -19,9 +18,13 @@ export class RomanNumeral {
 
     protected _name!: string;
 
-    protected _scaleDegree!: ScaleDegree;
-    protected _inversion!: Interval;
-    protected _quality?: ChordQuality;
+    protected _scaleDegree: ScaleDegree;
+    protected _inversion: Interval;
+    protected _quality: ChordQuality;
+
+    protected _symbol: string;
+
+    protected _seventh: boolean;
 
     // protected _accidental!: Accidental;
     // protected _applied!: ScaleDegree | null;
@@ -45,10 +48,11 @@ export class RomanNumeral {
         if(!match) {
             throw 'Invalid roman numeral ' + value;
         }
-        const [scaleDegreeMajor, augmented, scaleDegreeMinor, dimished, intervals, seventhIntervals] = match.slice(1);
+        const [scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals] = match.slice(1);
         this._scaleDegree = ScaleDegree.fromRomanNumeral(scaleDegreeMajor || scaleDegreeMinor);
 
-        this._quality = scaleDegreeMajor ? (augmented ? ChordQuality.AUGMENTED : ChordQuality.MAJOR) : (dimished ? ChordQuality.DIMINISHED : ChordQuality.MINOR);  
+        this._symbol = scaleDegreeMajor ? (scaleDegreeMajor + (augmented || '')) : (scaleDegreeMinor + (diminished || ''));
+        this._quality = scaleDegreeMajor ? (augmented ? ChordQuality.AUGMENTED : ChordQuality.MAJOR) : (diminished ? ChordQuality.DIMINISHED : ChordQuality.MINOR);  
 
         this._intervals = [new Interval(IntervalQuality.PERFECT, 1)];
 
@@ -70,7 +74,9 @@ export class RomanNumeral {
                 break;
         }
         this._intervals.push(new Interval(third, 3), new Interval(fifth, 5));
+        this._seventh = false;
         if(seventhIntervals) {
+            this._seventh = true;
             let seventh = IntervalQuality.MINOR;
             switch(this._quality) {
                 case ChordQuality.AUGMENTED:
@@ -84,7 +90,7 @@ export class RomanNumeral {
                 case ChordQuality.MINOR:
                     break;
                 case ChordQuality.DIMINISHED:
-                    if(dimished == 'o') {
+                    if(diminished == 'o') {
                         seventh = IntervalQuality.DIMINISHED;
                     }
                     break;
@@ -108,6 +114,10 @@ export class RomanNumeral {
         return this._name;
     }
 
+    get symbol() {
+        return this._symbol;
+    }
+
     get intervals() {
         return [...this._intervals];
     }
@@ -129,7 +139,7 @@ export class RomanNumeral {
     }
 
     get hasSeventh(): boolean {
-        return this.intervals.some(interval => interval.simpleSize == '7');
+        return this._seventh;
     }
 
     get quality() {

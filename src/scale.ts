@@ -1,7 +1,7 @@
-import { Key } from "./key";
-import { isNumber, isString } from "./util";
-import { Note } from "./note/note";
-import { Interval } from "./interval/interval";
+import { Key } from './key';
+import { isNumber, isString } from './util';
+import { Note } from './note/note';
+import { Interval } from './interval/interval';
 
 export type Scale = string[];
 

@@ -83,28 +83,30 @@ export namespace PartWriting {
      * @param prev the chord before this chord
      */
     export function checkCompleteness(chord: HarmonizedChord, prev?: HarmonizedChord) {
-        //chord necessarially has root
-        if(chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('3')).length == 0) {
+        const numVoicesWithInterval = (chord: HarmonizedChord, interval: string) => chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize(interval)).length;
+        if(numVoicesWithInterval(chord, 'U') == 0) {
             return false;
         }
-        if (!chord.romanNumeral.hasSeventh) {
-            // if (chord.romanNumeral.inversion.name != 'PU') {
-            //     // can leave out fifth
-            // } else {
-                return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
-            // }
-        } else {
-            if(!chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).some(Interval.ofSize('7'))) {
+        if(numVoicesWithInterval(chord, '3') == 0) {
+            return false;
+        }
+        if (chord.romanNumeral.hasSeventh) {
+            if(numVoicesWithInterval(chord, '7') == 0) {
                 return false;
             }
-            // if (chord.romanNumeral.inversion.name =='PU') {
-            //     // can leave out fifth if preceded by complete V7
-            //     if(!prev.romanNumeral.name.startsWith('V7')) { //TODO and is complete
-            //         return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
-            //     }
-            // } else {
+            // can leave out fifth of V7
+            if (chord.romanNumeral.symbol != 'V' || chord.romanNumeral.inversion.name != 'PU') {
+                return numVoicesWithInterval(chord, '5') >= 1;
+            }
+        } else {
+            if (chord.romanNumeral.inversion.name =='PU') {
+                // can leave out fifth if preceded by complete V7
+                if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') >= 0) {
+                    return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+                }
+            } else {
                 return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
-            // }
+            }
         }
         return true;
     }
@@ -207,14 +209,14 @@ export namespace PartWriting {
      * @param chord the chord to check
      * @param prev the chord before this chord
      */
-    function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord) {
+    function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord, before?: HarmonizedChord) {
         //TODO frustrated leading tone and delayed resolution
-        if (prev.romanNumeral.name.startsWith('V') && !(chord.romanNumeral.name.startsWith('V') || chord.romanNumeral.name.startsWith('viio'))) {
+        if (prev.romanNumeral.symbol == 'V' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
             }
-        } else if(prev.romanNumeral.name.startsWith('viio') && !(chord.romanNumeral.name.startsWith('V') || chord.romanNumeral.name.startsWith('viio'))) {
+        } else if(prev.romanNumeral.symbol == 'viio' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
             if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                 return false;
@@ -224,14 +226,31 @@ export namespace PartWriting {
         //check 7ths
 
         //TODO V42 can support 3 4 5
-        if(prev.romanNumeral.hasSeventh && prev.romanNumeral.name != chord.romanNumeral.name) { //TODO just compare root name
+        if (before
+            && before.romanNumeral.symbol.toLowerCase() == 'i'
+            && before.romanNumeral.inversion.simpleSize == 'U'
+            && prev.romanNumeral.symbol == 'V'
+            && prev.romanNumeral.inversion.simpleSize == '5'
+            && prev.romanNumeral.hasSeventh
+            && chord.romanNumeral.symbol.toLowerCase() == 'i'
+            && chord.romanNumeral.inversion.simpleSize == '3'
+        ) {
+            const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+            if(new Interval(before.voices[0], before.voices[index]).simpleSize == '3'
+                && new Interval(prev.voices[0], prev.voices[index]).simpleSize == '3'
+                && new Interval(chord.voices[0], chord.voices[index]).simpleSize == '3'
+            ) {
+                    return true;
+            }
+        }
+        if(prev.romanNumeral.hasSeventh && prev.romanNumeral.symbol != chord.romanNumeral.symbol) {
             const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
             if (new Interval(chord.voices[index], prev.voices[index]).simpleSize != '2') {
                 return false;
             }
         }
         
-        if(chord.romanNumeral.hasSeventh && !chord.romanNumeral.name.startsWith('V')) { //TODO need to watch out for VI?
+        if(chord.romanNumeral.hasSeventh && !(chord.romanNumeral.symbol == 'V')) {
             const index = chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
             if (new Interval(chord.voices[index], prev.voices[index]).simpleSize != '2' &&
                 new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2' &&
@@ -264,7 +283,7 @@ export namespace PartWriting {
         return true;
     }
 
-    export function checkAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord) {
+    export function checkAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord, before?: HarmonizedChord) {
         //TODO make combined version of previous
         let failed = [
             checkRange,
@@ -278,7 +297,7 @@ export namespace PartWriting {
             checkSeventhDoubling,
             checkInvalidIntervals,
             checkTendencyTones,
-        ].findIndex(func => !func.apply(null, [chordToCheck, prev]));
+        ].findIndex(func => !func.apply(null, [chordToCheck, prev, before]));
         return failed;
     }
     

@@ -12,6 +12,7 @@ describe('Harmony', () => {
             [['E4', 'D4', 'E4'], [...Progression.Major.basic]],
             [['E4', 'D4', 'D4'], [...Progression.Major.basic, ...Progression.Major.basicPredominant]],
             [['C4', 'C4', 'C4'], [...Progression.Major.basic, ...Progression.Major.tonicSubstitutes]],
+            [['E4', 'F4', 'G4'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths]],
         ])('soprano line %s', (notes, enabled) => {
             const soprano = notes.map(note => new AbsoluteNote(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
