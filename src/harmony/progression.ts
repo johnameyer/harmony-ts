@@ -5,6 +5,7 @@ import { Scale } from "../scale";
 import { HarmonicFunction } from "./harmonic-function";
 import { Interval } from "../interval/interval";
 import { AbsoluteNote } from "../note/absolute-note";
+import { isDefined } from "../util";
 
 const findAll = <T>(arr: T[], filter: ((item: T) => boolean)) => arr.reduce<number[]>(function(arr, e, i) { if (filter(e)) arr.push(i); return arr; }, []);
 const setAndReturn = <T>(arr: T[], i: number, t: T) => { arr[i] = t; return arr; }
@@ -21,23 +22,36 @@ const yieldChords = (...chordSymbols: string[]) => (scale: Scale, previousChords
 
 const yieldChordsWithFunction = (harmonicFunction: HarmonicFunction, ...chordSymbols: string[]) => (scale: Scale, previousChords: HarmonizedChord[]) => [chordSymbols.map(chordSymbol => new IncompleteChord({ harmonicFunction, romanNumeral: new RomanNumeral(chordSymbol, scale) }))];
 
-const cadential64Resolution = (cad64: string, resolution: string) => (scale: Scale, previousChords: HarmonizedChord[]) => {
+const cadential64Preparation = (cad64: string) => (scale: Scale, previousChords: HarmonizedChord[]) => {
     const cad64RomanNumeral = new RomanNumeral(cad64, scale);
-    const resolutionRomanNumeral = new RomanNumeral(cad64, scale);
-    const potentialFourths = findAll(previousChords[0].voices, (note => ['U','2'].some(size => new Interval(cad64RomanNumeral.root, note).simpleSize == size)));
+    const potentialFourths = findAll(previousChords[0].voices.slice(0, previousChords[0].voices.length - 1), (note => ['U','2'].some(size => new Interval(cad64RomanNumeral.root, note).simpleSize == size)));
     return potentialFourths.map(fourthVoice => {
         const fourthInterval = cad64RomanNumeral.intervals.find(Interval.ofSize('U'));
-        const thirdInterval = resolutionRomanNumeral.intervals.find(Interval.ofSize('3'));
-        if(!fourthInterval || !thirdInterval) {
+        if(!fourthInterval) {
             throw 'This doesn\'t look like a cadential 64';
         }
         const fourth = AbsoluteNote.getClosest(fourthInterval.transposeUp(cad64RomanNumeral.root), previousChords[0].voices[fourthVoice]);
-        const third = AbsoluteNote.getClosest(thirdInterval.transposeUp(cad64RomanNumeral.root), fourth);
-        return [
-            new IncompleteChord({ voices: setAndReturn([], fourthVoice, fourth), romanNumeral: new RomanNumeral(cad64, scale) }),
-            new IncompleteChord({ voices: setAndReturn([], fourthVoice, third), romanNumeral: new RomanNumeral(resolution, scale) })
-        ];
+        return [new IncompleteChord({ voices: setAndReturn([], fourthVoice, fourth), romanNumeral: cad64RomanNumeral })];
     });
+}
+
+const cadential64Resolution = (resolution: string) => (scale: Scale, previousChords: HarmonizedChord[]) => {
+    const cad64RomanNumeral = previousChords[0].romanNumeral;
+    const resolutionRomanNumeral = new RomanNumeral(resolution, scale);
+    const sixthVoices = findAll(previousChords[0].voices.slice(0, previousChords[0].voices.length - 1), note => new Interval(cad64RomanNumeral.root, note).simpleSize == '3');
+    const sixthVoiceResolvesTo = resolutionRomanNumeral.intervals.find(Interval.ofSize('5'))?.transposeUp(resolutionRomanNumeral.root);
+    const fourthVoice = previousChords[0].voices.findIndex(note => new Interval(cad64RomanNumeral.root, note).simpleSize == 'U');
+    const fourthVoiceResolvesTo = resolutionRomanNumeral.intervals.find(Interval.ofSize('3'))?.transposeUp(resolutionRomanNumeral.root);
+    if(!fourthVoiceResolvesTo || !sixthVoiceResolvesTo) return [];
+    const fourthResolution = AbsoluteNote.getClosest(fourthVoiceResolvesTo, previousChords[0].voices[fourthVoice]);
+    const voicesWithFourth: (AbsoluteNote | undefined)[] = [];
+    voicesWithFourth[fourthVoice] = fourthResolution;
+    return sixthVoices.map((sixthVoice) => {
+        const sixthResolution = AbsoluteNote.getClosest(sixthVoiceResolvesTo, previousChords[0].voices[fourthVoice]);
+        const voices = [...voicesWithFourth];
+        voices[sixthVoice] = sixthResolution;
+        return [new IncompleteChord({ voices, romanNumeral: resolutionRomanNumeral })];
+    }).filter(isDefined);
 }
 
 //TODO flags instead of grouping
@@ -143,9 +157,10 @@ export namespace Progression {
         ] as [Predicate, Producer][];
         
         export const cad64 = [
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V') ],
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V7') ],
-            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Resolution('I64', 'V42') ],
+            [ ofFunctions(HarmonicFunction.TONIC, HarmonicFunction.PREDOMINANT), cadential64Preparation('I64') ],
+            [ withChordSymbol('I64'), cadential64Resolution('V')],
+            [ withChordSymbol('I64'), cadential64Resolution('V7')],
+            [ withChordSymbol('I64'), cadential64Resolution('V42')]
         ] as [Predicate, Producer][];
 
         export const submediant = [

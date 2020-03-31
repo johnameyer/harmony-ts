@@ -23,12 +23,14 @@ describe('PartWriting', () => {
         ['V43', 'B4', 'G4', 'F4', 'D3'],
         ['I',   'C5', 'G4', 'E4', 'C3'],
         ['V',   'B4', 'G4', 'D4', 'G3'],
-        ['V43', 'B4', 'G4', 'D4', 'F3'],
+        ['V42', 'B4', 'G4', 'D4', 'F3'],
         ['I6',  'C5', 'G4', 'E4', 'E3'],
+        ['I64',  'C5', 'G4', 'E4', 'G3'],
+        ['V7',  'B4', 'F4', 'D4', 'G3'],
     ]))('checkAll %s to %s', (prev: any, chord: any) => {
         chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes)),
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
-        expect(PartWriting.checkAll(chord, prev)).toBe(-1);
-        expect(PartWriting.testAll(chord, prev)).toBe(true);
+        expect(PartWriting.Rules.checkAll(chord, prev)).toBe(-1);
+        expect(PartWriting.Rules.testAll(chord, prev)).toBe(true);
     })
 });

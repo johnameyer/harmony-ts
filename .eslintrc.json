@@ -38,6 +38,7 @@
             "always"
         ],
         "@typescript-eslint/no-namespace": "off",
-        "no-inner-declarations": "off"
+        "no-inner-declarations": "off",
+        "prefer-const": "error"
     }
 }

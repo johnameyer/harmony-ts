@@ -9,6 +9,7 @@ import { Accidental } from './accidental';
 import { Progression } from './harmony/progression';
 import { ChordQuality } from './chord/chord-quality';
 import { IntervalQuality } from './interval/interval-quality';
+import { Key } from './key';
 
 export {
     AbsoluteNote,
@@ -21,5 +22,6 @@ export {
     Note,
     Progression,
     ChordQuality,
-    IntervalQuality
+    IntervalQuality,
+    Key
 };
