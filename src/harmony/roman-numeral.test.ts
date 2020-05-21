@@ -19,6 +19,7 @@ describe('RomanNumeral', () => {
                 ['i', Scale.NaturalMinor.notes, 'C'],
                 ['iio', Scale.NaturalMinor.notes, 'D'],
                 ['VII', Scale.NaturalMinor.notes, 'Bb'],
+                ['viio6', Scale.NaturalMinor.notes, 'B'], // special case
             ])('%p', (value, scale, root) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.root.name).toBe(root);

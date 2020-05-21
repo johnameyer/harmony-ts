@@ -112,6 +112,7 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
 
 export namespace Harmony {
     export interface Parameters {
+        start?: string;
         constraints: IncompleteChord[];
         scale: Scale;
         enabled: [Predicate, Producer][];
@@ -192,7 +193,7 @@ export namespace Harmony {
     
     export function harmonizeAll(params: Parameters): Result {
         //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral('I',  params.scale);
+        const start = new RomanNumeral(params.start || 'I',  params.scale);
         const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             return {solution: null, furthest: 0};

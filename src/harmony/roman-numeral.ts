@@ -127,11 +127,14 @@ export class RomanNumeral {
     }
 
     get root(): Note {
+        if(this.symbol == 'V') {
+            // dominant 5 is always built on the fifth of the tonic triad
+            return new Interval('P5').transposeUp(new Note(this._scale[0]));
+        } else if(this.symbol == 'viio' || this.symbol == 'vii0'){
+            // leading tone is always a semitone below the note
+            return new Interval('m2').transposeDown(new Note(this._scale[0]));
+        }
         return new Note(this._scale[this._scaleDegree - 1]);
-    }
-
-    get scaleDegree() {
-        return this._scaleDegree;
     }
 
     get inversion(): Interval {

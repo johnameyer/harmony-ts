@@ -23,19 +23,20 @@ export class HarmonizedChord {
     }
 
     get harmonicFunction(): HarmonicFunction {
-        if(!this._harmonicFunction) {
-            switch(this.romanNumeral.scaleDegree) {
-                case ScaleDegree.TONIC:
-                    return HarmonicFunction.TONIC;
-                case ScaleDegree.DOMINANT:
-                case ScaleDegree.SUBTONIC:
-                    return HarmonicFunction.DOMINANT;
-                case ScaleDegree.SUPERTONIC:
-                case ScaleDegree.SUBDOMINANT:
-                    return HarmonicFunction.PREDOMINANT;
-            }
-            return HarmonicFunction.PREDOMINANT;
-        }
-        return this.harmonicFunction;
+        // TODO rewrite
+        // if(!this._harmonicFunction) {
+        //     switch(this.romanNumeral.scaleDegree) {
+        //         case ScaleDegree.TONIC:
+        //             return HarmonicFunction.TONIC;
+        //         case ScaleDegree.DOMINANT:
+        //         case ScaleDegree.SUBTONIC:
+        //             return HarmonicFunction.DOMINANT;
+        //         case ScaleDegree.SUPERTONIC:
+        //         case ScaleDegree.SUBDOMINANT:
+        //             return HarmonicFunction.PREDOMINANT;
+        //     }
+        //     return HarmonicFunction.PREDOMINANT;
+        // }
+        return this._harmonicFunction || HarmonicFunction.PREDOMINANT;
     }
 }

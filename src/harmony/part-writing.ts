@@ -209,6 +209,8 @@ export namespace PartWriting {
          * @param prev the chord before this chord
          */
         function checkTendencyTones(chord: HarmonizedChord, prev: HarmonizedChord, before?: HarmonizedChord) {
+            //check that tritone as d5 resolves inwards (A4 can go to P4) not to P5 unless 10ths with soprano bass (can be only the two chords)
+
             //TODO frustrated leading tone and delayed resolution
             if (prev.romanNumeral.symbol == 'V' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
                 const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
