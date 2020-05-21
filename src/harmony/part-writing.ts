@@ -12,7 +12,7 @@ const numVoicesWithInterval = (chord: HarmonizedChord, interval: string) => chor
 export namespace PartWriting {
     const sopranoRange = ['B3', 'C4', 'G5', 'A5'].map(absoluteNote);
     const altoRange = ['G3', 'G3', 'C5', 'D5'].map(absoluteNote);
-    const tenorRange = ['G3', 'C3', 'G4', 'A4'].map(absoluteNote);
+    const tenorRange = ['C3', 'C3', 'G4', 'A4'].map(absoluteNote);
     const bassRange = ['D2', 'E2', 'C4', 'D4'].map(absoluteNote);
 
     export const voiceRange = [sopranoRange, altoRange, tenorRange, bassRange];

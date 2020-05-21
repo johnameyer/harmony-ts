@@ -132,6 +132,7 @@ export namespace Harmony {
     export function *harmonize(params: Parameters, previous: HarmonizedChord[]) {
         let options: IncompleteChord[][];
         options = params.enabled.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
+        //TODO is this necessary if roman numeral is already provided
         for (const option of options) {
             let result = harmonizeOptions(params, option, previous);
             if(result != null) {
@@ -170,18 +171,23 @@ export namespace Harmony {
                     }
                 }
             } else {
-                return [ chord ];
+                if(params.greedy) {
+                    return [chord];
+                } else {
+                    results.push([chord]);
+                }
             }
         }
         if(!params.greedy && results.length > 0) {
+            //TODO need to check or average over all in the results array
             (results as any).sort((a: HarmonizedChord[], b: HarmonizedChord[]) => {
-                let aScore = PartWriting.Preferences.evaluateAll(a[0], a[1]);
-                let bScore = PartWriting.Preferences.evaluateAll(b[0], b[1]);
+                let aScore = PartWriting.Preferences.evaluateAll(previous[0], a[0]);
+                let bScore = PartWriting.Preferences.evaluateAll(previous[0], b[0]);
                 for(let i = 0; i < aScore.length; i++) {
                     if(aScore[i] > bScore[i]){
-                        return 1;
-                    } else if(aScore[i] < bScore[i]) {
                         return -1;
+                    } else if(aScore[i] < bScore[i]) {
+                        return 1;
                     }
                 }
                 return 0;
@@ -196,6 +202,7 @@ export namespace Harmony {
         const start = new RomanNumeral(params.start || 'I',  params.scale);
         const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
+            console.error('Failed to reconcile first constraint');
             return {solution: null, furthest: 0};
         }
         let furthest = 0;
@@ -223,9 +230,9 @@ export namespace Harmony {
                 let bScore = PartWriting.Preferences.evaluateSingle(b);
                 for(let i = 0; i < aScore.length; i++) {
                     if(aScore[i] > bScore[i]){
-                        return 1;
-                    } else if(aScore[i] < bScore[i]) {
                         return -1;
+                    } else if(aScore[i] < bScore[i]) {
+                        return 1;
                     }
                 }
                 return 0;
@@ -234,6 +241,8 @@ export namespace Harmony {
                 const result = harmonizeRecursive(params, [chord]);
                 if(result.solution != null) {
                     return {solution: [chord, ...result.solution], furthest: result.furthest};
+                } else {
+                    furthest = result.furthest > furthest ? result.furthest : furthest;
                 }
             }
         }
@@ -275,6 +284,8 @@ export namespace Harmony {
                 const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
                 if(result.solution) {
                     return {solution: [...solution, ...result.solution], furthest: result.furthest};
+                } else {
+                    furthest = result.furthest > furthest ? result.furthest : furthest;
                 }
             }
         }

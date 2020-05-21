@@ -26,7 +26,7 @@ describe('Harmony', () => {
                     expect(result.solution.map(chords => chords.voices[0].name)).toEqual(notes);
                 }
             });
-
+            
             test.each([
                 [['C3', 'G3', 'G3'], [...Progression.Major.basic]],
                 [['C3', 'D3', 'E3'], [...Progression.Major.basic, ...Progression.Major.basicInversions]],
@@ -45,7 +45,7 @@ describe('Harmony', () => {
                     expect(result.solution.map(chords => chords.voices[3].name)).toEqual(notes);
                 }
             });
-
+            
             test.each([
                 [['I', 'V', 'I'], [...Progression.Major.basic]],
                 [['I', 'I6', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.basicInversions]],
@@ -69,7 +69,7 @@ describe('Harmony', () => {
                     expect(result.solution.map(chords => chords.romanNumeral.name)).toEqual(numerals);
                 }
             });
-
+            
             test.each([
                 [Key.B,     ['F#4', 'E4', 'D#4']],
                 [Key.AFlat, ['Eb4', 'Db4', 'C4']],
@@ -87,6 +87,77 @@ describe('Harmony', () => {
                     expect(result.solution.map(chords => chords.voices[0].name)).toEqual(notes);
                 }
             });
+        });
+        
+        test.each([
+            [
+                'I V I',
+                [
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                    [['D4', 'B3', 'G3', 'G2'], 'V'] as [string[], string],
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
+                ],
+                [...Progression.Major.basic]
+            ],
+            [
+                'I V7 I',
+                [
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                    [['F4', 'B3', 'G3', 'G2'], 'V7'] as [string[], string],
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
+                ],
+                [...Progression.Major.basic]
+            ],
+            [
+                'I V64 V I',
+                [
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                    [['E4', 'C4', 'G3', 'G2'], 'I64'] as [string[], string],
+                    [['D4', 'B3', 'G3', 'G2'], 'V'] as [string[], string],
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
+                ],
+                [...Progression.Major.basic, ...Progression.Major.cad64]
+            ],
+            [
+                'I ii42 V65 I',
+                [
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                    [['F4', 'D4', 'A3', 'C3'], 'ii42'] as [string[], string],
+                    [['F4', 'D4', 'G3', 'B2'], 'V65'] as [string[], string],
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
+                ],
+                [...Progression.Major.basic, ...Progression.Major.dominantSevenths, ...Progression.Major.subdominantSevenths]
+            ],
+            [
+                'I viio6 I6',
+                [
+                    [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                    [['D4', 'B3', 'F3', 'D3'], 'viio6'] as [string[], string],
+                    [['C4', 'C4', 'G3', 'E3'], 'I6'] as [string[], string]
+                ],
+                [...Progression.Major.basic, ...Progression.Major.basicInversions]
+            ]
+        ])('specific voicing %s', (_, expected, enabled) => {
+            const scale = Scale.Major.notes;
+            const constraints = [];
+            let first = true;
+            for(const [voices, romanNumeral] of expected) {
+                if(first) {
+                    constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                    first = false;
+                } else {
+                    constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, undefined], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                }
+            }
+            const params: Harmony.Parameters = {scale, enabled, constraints, greedy: false };
+            const result = Harmony.harmonizeAll(params);
+            expect(result.furthest).toBe(expected.length);
+            expect(result.solution).not.toBeNull();
+            if(result.solution != null) {
+                for(let i = 0; i < expected.length; i++) {
+                    expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+                }
+            }
         });
     });
 });
