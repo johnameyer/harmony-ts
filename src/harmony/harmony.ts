@@ -60,7 +60,7 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
         return;
     }
     const needed = reconciledConstraint.romanNumeral.intervals.map(interval => reconciledConstraint.root ? interval.transposeUp(reconciledConstraint.root) : undefined).filter(isDefined);
-    let bassNote = reconciledConstraint.romanNumeral.inversion.transposeUp(reconciledConstraint.romanNumeral.root);
+    let bassNote = reconciledConstraint.romanNumeral.inversionInterval.transposeUp(reconciledConstraint.romanNumeral.root);
     
     let sopranoNotes, altoNotes, tenorNotes, bassNotes;
     if(previous) {
@@ -192,6 +192,8 @@ export namespace Harmony {
                 }
                 return 0;
             });
+            // console.log(previous[0].romanNumeral.name);
+            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(previous[0], result[0])));
             return results[0];
         }
         return null;

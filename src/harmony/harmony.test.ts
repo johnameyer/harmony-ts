@@ -136,7 +136,16 @@ describe('Harmony', () => {
                     [['C4', 'C4', 'G3', 'E3'], 'I6'] as [string[], string]
                 ],
                 [...Progression.Major.basic, ...Progression.Major.basicInversions]
-            ]
+            ],
+            // [
+            //     'I V7 vi',
+            //     [
+            //         [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+            //         [['D4', 'B3', 'F3', 'G2'], 'V7'] as [string[], string],
+            //         [['C4', 'C4', 'E3', 'A2'], 'vi'] as [string[], string]
+            //     ],
+            //     [...Progression.Major.basic, ...Progression.Major.basicInversions]
+            // ]
         ])('specific voicing %s', (_, expected, enabled) => {
             const scale = Scale.Major.notes;
             const constraints = [];

@@ -44,7 +44,7 @@ export namespace PartWriting {
             if(!chord.voices.every(note => chord.romanNumeral.intervals.map(interval => interval.name).includes(new Interval(chord.romanNumeral.root, note).name))) {
                 return false;
             }
-            return chord.voices[chord.voices.length - 1].simpleName == chord.romanNumeral.inversion.transposeUp(chord.romanNumeral.root).name;
+            return chord.voices[chord.voices.length - 1].simpleName == chord.romanNumeral.inversionInterval.transposeUp(chord.romanNumeral.root).name;
         }
 
         /**
@@ -94,11 +94,12 @@ export namespace PartWriting {
                     return false;
                 }
                 // can leave out fifth of V7
-                if (chord.romanNumeral.symbol != 'V' || chord.romanNumeral.inversion.simpleSize != 'U') {
+                // TODO only before I
+                if (chord.romanNumeral.symbol != 'V' || chord.romanNumeral.inversionInterval.simpleSize != 'U') {
                     return numVoicesWithInterval(chord, '5') >= 1;
                 }
             } else {
-                if (chord.romanNumeral.inversion.simpleSize =='U') {
+                if (chord.romanNumeral.inversionInterval.simpleSize =='U') {
                     // can leave out fifth if preceded by complete V7
                     if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') == 0) {
                         return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
@@ -229,12 +230,12 @@ export namespace PartWriting {
             //V42 can support 3 4 5
             if (before
                 && before.romanNumeral.symbol.toLowerCase() == 'i'
-                && before.romanNumeral.inversion.simpleSize == 'U'
+                && before.romanNumeral.inversionInterval.simpleSize == 'U'
                 && prev.romanNumeral.symbol == 'V'
-                && prev.romanNumeral.inversion.simpleSize == '5'
+                && prev.romanNumeral.inversionInterval.simpleSize == '5'
                 && prev.romanNumeral.hasSeventh
                 && chord.romanNumeral.symbol.toLowerCase() == 'i'
-                && chord.romanNumeral.inversion.simpleSize == '3'
+                && chord.romanNumeral.inversionInterval.simpleSize == '3'
             ) {
                 const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
                 if(new Interval(before.voices[0], before.voices[index]).simpleSize == '3'
@@ -284,13 +285,26 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that a cadential 64 does not double the tonic
+         * @param chord 
+         */
+        function checkCad64Doubling(chord: HarmonizedChord) {
+            if (chord.romanNumeral.name == 'I64') {
+                if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('U')).length > 1) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         export function checkAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord, before?: HarmonizedChord) {
             //TODO make combined version of previous
             let failed = [
                 checkRange,
                 checkVoiceOverlap,
                 checkSpacingAndCrossing,
-                checkSpelling, //TODO do we actually need this or does is I64 still problem
+                checkSpelling, //TODO do we actually need this or is I64 still problem
                 checkCompleteness,
                 checkParallels,
                 checkContraryFifths,
@@ -299,6 +313,7 @@ export namespace PartWriting {
                 checkSeventhDoubling,
                 checkInvalidIntervals,
                 checkTendencyTones,
+                checkCad64Doubling //TODO is this needed or can the producer also give their own checks?
             ].findIndex(func => !func.apply(null, [chordToCheck, prev, before]));
             return failed;
         }
@@ -316,6 +331,7 @@ export namespace PartWriting {
                 checkCompleteness,
                 checkLeadingToneDoubling,
                 checkSeventhDoubling,
+                checkCad64Doubling
             ].findIndex(func => !func.apply(null, [chordToCheck]));
             return failed;
         }
@@ -339,12 +355,12 @@ export namespace PartWriting {
                     if(numVoicesWithInterval(chord, 'U') != 3) {
                         return -1;
                     }
-                } else if(chord.romanNumeral.inversion.simpleSize == 'U') {
+                } else if(chord.romanNumeral.inversionInterval.simpleSize == 'U') {
                     //root position prefer double root
                     if(numVoicesWithInterval(chord, 'U') != 2) {
                         return -1;
                     }
-                } else if(chord.romanNumeral.inversion.simpleSize == '3') {
+                } else if(chord.romanNumeral.inversionInterval.simpleSize == '3') {
                     //first inversion any can be doubled
                 } else {
                     //second inversion prefer doubling fifth

@@ -19,7 +19,8 @@ export class RomanNumeral {
     protected _name!: string;
 
     protected _scaleDegree: ScaleDegree;
-    protected _inversion: Interval;
+    protected _inversion: number;
+    protected _inversionInterval: Interval;
     protected _quality: ChordQuality;
 
     protected _symbol: string;
@@ -27,7 +28,7 @@ export class RomanNumeral {
     protected _seventh: boolean;
 
     // protected _accidental!: Accidental;
-    // protected _applied!: ScaleDegree | null;
+    protected _applied!: ScaleDegree | null;
 
     protected _scale: string[];
 
@@ -44,12 +45,16 @@ export class RomanNumeral {
     constructor(value: string, scale: string[]) {
         this._name = value;
         this._scale = scale;
-        const match = value.match(/^(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?$/);
+        const match = value.match(/^(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?(?:\/(VI{0,2}|I{2,3}|IV|vi{0,2}|i{2,3}|iv))?$/);
         if(!match) {
-            throw 'Invalid roman numeral ' + value;
+            throw new Error('Invalid roman numeral ' + value);
         }
-        const [scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals] = match.slice(1);
+        const [scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals, applied] = match.slice(1);
         this._scaleDegree = ScaleDegree.fromRomanNumeral(scaleDegreeMajor || scaleDegreeMinor);
+        this._applied = ScaleDegree.fromRomanNumeral(applied || 'I');
+        if(this._applied === ScaleDegree.TONIC) {
+            this._applied = null;
+        }
 
         this._symbol = scaleDegreeMajor ? (scaleDegreeMajor + (augmented || '')) : (scaleDegreeMinor + (diminished || ''));
         this._quality = scaleDegreeMajor ? (augmented ? ChordQuality.AUGMENTED : ChordQuality.MAJOR) : (diminished ? ChordQuality.DIMINISHED : ChordQuality.MINOR);  
@@ -97,17 +102,26 @@ export class RomanNumeral {
             }
             this._intervals.push(new Interval(seventh, 7));
         }
-        let inversion = -1;
         if((!intervals && !seventhIntervals) || intervals == '5' || intervals == '53' || seventhIntervals == '7' || seventhIntervals == '753') {
-            inversion = 0;
+            this._inversion = 0;
         } else if(intervals == '6' || intervals == '63' || seventhIntervals == '65' || seventhIntervals == '653') {
-            inversion = 1;
+            this._inversion = 1;
         } else if(intervals == '64' || seventhIntervals == '643' || seventhIntervals == '43') {
-            inversion = 2;
+            this._inversion = 2;
         } else if(seventhIntervals == '642' || seventhIntervals == '42') {
-            inversion = 3;
+            this._inversion = 3;
+        } else {
+            throw new Error('Unknown inversion symbol ' + intervals);
         }
-        this._inversion = this._intervals[inversion];
+        this._inversionInterval = this._intervals[this._inversion];
+
+        if(this._applied !== null) {
+            if((this._scaleDegree !== ScaleDegree.DOMINANT && this._scaleDegree !== ScaleDegree.SUBTONIC)
+                || (this._scaleDegree === ScaleDegree.DOMINANT && this._quality !== ChordQuality.MAJOR)
+                || (this._scaleDegree === ScaleDegree.SUBTONIC && this._quality !== ChordQuality.DIMINISHED)) {
+                throw new Error('Only V and viio can be applied chords, tried to apply ' + this._symbol);
+            }
+        }
     }
 
     get name() {
@@ -129,16 +143,26 @@ export class RomanNumeral {
     get root(): Note {
         if(this.symbol == 'V') {
             // dominant 5 is always built on the fifth of the tonic triad
+            if(this._applied) {
+                return new Interval('P5').transposeUp(new Note(this._scale[this._applied - 1]));
+            }
             return new Interval('P5').transposeUp(new Note(this._scale[0]));
         } else if(this.symbol == 'viio' || this.symbol == 'vii0'){
             // leading tone is always a semitone below the note
+            if(this._applied) {
+                return new Interval('m2').transposeDown(new Note(this._scale[this._applied - 1]));
+            }
             return new Interval('m2').transposeDown(new Note(this._scale[0]));
         }
         return new Note(this._scale[this._scaleDegree - 1]);
     }
 
-    get inversion(): Interval {
+    get inversion(): number {
         return this._inversion;
+    }
+
+    get inversionInterval(): Interval {
+        return this._inversionInterval;
     }
 
     get hasSeventh(): boolean {
@@ -152,21 +176,21 @@ export class RomanNumeral {
     get inversionSymbol() {
         // TODO handle flats and sharps
         if(this.hasSeventh) {
-            if(this._inversion.simpleSize == 'U') {
+            if(this._inversionInterval.simpleSize == 'U') {
                 return ['7', ''];
-            } else if(this._inversion.simpleSize == '3') {
+            } else if(this._inversionInterval.simpleSize == '3') {
                 return ['6', '5'];
-            } else if(this._inversion.simpleSize == '5') {
+            } else if(this._inversionInterval.simpleSize == '5') {
                 return ['4', '3'];
-            } else if(this._inversion.simpleSize == '7') {
+            } else if(this._inversionInterval.simpleSize == '7') {
                 return ['4', '2'];
             }
         } else {
-            if(this._inversion.simpleSize == 'U') {
+            if(this._inversionInterval.simpleSize == 'U') {
                 return ['', ''];
-            } else if(this._inversion.simpleSize == '3') {
+            } else if(this._inversionInterval.simpleSize == '3') {
                 return ['6', ''];
-            } else if(this._inversion.simpleSize == '5') {
+            } else if(this._inversionInterval.simpleSize == '5') {
                 return ['6', '4'];
             }
         }

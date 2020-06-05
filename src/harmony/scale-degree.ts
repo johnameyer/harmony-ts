@@ -18,7 +18,7 @@ export namespace ScaleDegree {
     export function fromRomanNumeral(romanNumeral: string){
         const index = romanNumerals.indexOf(romanNumeral.toUpperCase());
         if(index < 0) {
-            throw 'Invalid roman numeral ' + romanNumeral;
+            throw 'Invalid scale degree ' + romanNumeral;
         }
         return index + 1;
     }
