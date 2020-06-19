@@ -59,11 +59,16 @@
         /* Experimental Options */
         // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
         // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
-        
+        "inlineSourceMap": true,
+
         /* Advanced Options */
         "forceConsistentCasingInFileNames": true,  /* Disallow inconsistently-cased references to the same file. */
         "downlevelIteration": true,
-        "declaration": true
+        "declaration": true,
+        "incremental": true
     },
-    "exclude": [ "**/*.test.ts" ],
+    "exclude": [
+        "**/*.test.ts",
+        "dist/**"
+     ],
 }

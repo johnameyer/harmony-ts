@@ -1,5 +1,4 @@
 import { AbsoluteNote } from "../note/absolute-note";
-import { Chord } from "../chord/chord";
 import { PartWriting } from "./part-writing";
 import { HarmonizedChord } from "../chord/harmonized-chord";
 import { RomanNumeral } from "./roman-numeral";
@@ -25,12 +24,14 @@ describe('PartWriting', () => {
         ['V',   'B4', 'G4', 'D4', 'G3'],
         ['V42', 'B4', 'G4', 'D4', 'F3'],
         ['I6',  'C5', 'G4', 'E4', 'E3'],
-        ['I64',  'C5', 'G4', 'E4', 'G3'],
-        ['V7',  'B4', 'F4', 'D4', 'G3'],
+        ['V',  'B4', 'G4', 'D4', 'G3'],
+        ['V7',  'B4', 'F4', 'D4', 'G2'],
     ]))('checkAll %s to %s', (prev: any, chord: any) => {
         chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes)),
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
-        expect(PartWriting.Rules.checkAll(chord, prev)).toBe(-1);
-        expect(PartWriting.Rules.testAll(chord, prev)).toBe(true);
+        expect(PartWriting.Rules.checkSingular(undefined, chord)).toBe(-1);
+        expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
+        expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
     })
 });

@@ -74,6 +74,8 @@ export class Interval {
             let chromaticDistance = two.chromaticPosition - one.chromaticPosition;
             if(chromaticDistance < 0) {
                 chromaticDistance += 12;
+            } else if(chromaticDistance === 0 && distance === 6) {
+                chromaticDistance += 12;
             }
             this._semitones = chromaticDistance;
 
@@ -116,7 +118,7 @@ export class Interval {
         }
         const letterName = notes[index];
         let result = new Note(letterName);
-        const accidental = Accidental.toString((12 + note.chromaticPosition + this._semitones - result.chromaticPosition + 1) % 12 - 1);
+        const accidental = Accidental.toString((12 + note.chromaticPosition + this._semitones - result.chromaticPosition + 2) % 12 - 2);
         return new Note(letterName + accidental);
     }
     
@@ -127,7 +129,7 @@ export class Interval {
         }
         const letterName = notes[index];
         let result = new Note(letterName);
-        const accidental = Accidental.toString((24 + note.chromaticPosition - this._semitones - result.chromaticPosition + 1)%12 - 1);
+        const accidental = Accidental.toString((24 + note.chromaticPosition - this._semitones - result.chromaticPosition + 2) % 12 - 2);
         return new Note(letterName + accidental);
     }
     

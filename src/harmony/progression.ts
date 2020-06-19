@@ -37,6 +37,7 @@ const cadential64Preparation = (cad64: string) => (scale: Scale, previousChords:
     });
 }
 
+// TODO consider moving into part-writing
 const cadential64Resolution = (resolution: string) => (scale: Scale, previousChords: HarmonizedChord[]) => {
     const cad64RomanNumeral = previousChords[0].romanNumeral;
     const resolutionRomanNumeral = new RomanNumeral(resolution, scale);
@@ -90,7 +91,7 @@ export namespace Progression {
 
         export const dominantSevenths = [
             /* V65 */
-            [ withChordSymbol('I'), yieldChord('V65') ],
+            [ withInversionsOf('I', 0, 1), yieldChord('V65') ],
 
             [ withChordSymbol('V65'), yieldChord('I') ],
 
@@ -109,7 +110,7 @@ export namespace Progression {
             [ withChordSymbol('V6'), yieldChord('V65') ],
 
             /* passing figures */
-            [ withInversionsOf('V', 0), yieldChord('V42') ],
+            [ withChordSymbol('V'), yieldChord('V42') ],
 
             /* double neighbor */
             [ withChordSymbol('I'), yieldChordsWithFunction(HarmonicFunction.TONIC,'V65', 'V43', 'I') ],
@@ -222,6 +223,7 @@ export namespace Progression {
             [ withChordSymbol('I6'), yieldChord('IV7') ],
             [ withChordSymbol('IV'), yieldChords('IV7') ],
             [ withChordSymbol('IV7'), yieldChords('V') ],
+
             [ withChordSymbol('V'), yieldChords('IV65', 'V6', 'I') ],
             [ withChordSymbol('V'), yieldChords('IV65', 'V65', 'I') ],
         ] as [Predicate, Producer][];

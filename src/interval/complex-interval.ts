@@ -15,7 +15,7 @@ export class ComplexInterval extends Interval {
         super(one, two);
         this._complexSize = this._simpleSize;
 
-        if(Scale.Major.notes.indexOf(one.letterName) < Scale.Major.notes.indexOf(two.letterName)) {
+        if(Scale.Major.notes.indexOf(one.letterName) <= Scale.Major.notes.indexOf(two.letterName)) {
             for(let i = one.octavePosition; i < two.octavePosition; i++) {
                 this._complexSize = this._complexSize + 7;
             }

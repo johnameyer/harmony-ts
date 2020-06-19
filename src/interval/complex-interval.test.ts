@@ -5,7 +5,7 @@ const createComplexInterval = (one: string, two: string) => new ComplexInterval(
 
 describe('ComplexInterval', () => {
     describe('valid', () => {
-        describe.each([
+        describe.only.each([
             ['A0', 'A0', 'PU'],
             ['C0', 'Eb0', 'm3'],
             ['C0', 'E0', 'M3'],
@@ -19,6 +19,8 @@ describe('ComplexInterval', () => {
             ['G0', 'D1', 'P5'],
             ['G0', 'D2', 'P12'],
             ['G0', 'B2', 'M17'],
+            ['G2', 'G3', 'P8'],
+            ['G2', 'G#3', 'A8'],
         ])('from "%s" to "%s" (%s)', (first, second, name) => {
             test('has correct name', () => {
                 const interval = createComplexInterval(first, second);

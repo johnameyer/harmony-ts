@@ -1,6 +1,6 @@
 {
     "name": "harmony-ts",
-    "version": "0.5.3",
+    "version": "0.6.1",
     "description": "This project is an engine for generating and analyzing four-part textures (and eventually other forms) in the style of Bach and the classical era. Currently, it allows one to pass a series of constraints, such as chord/type/inversion and voice parts, and it will produce the complete texture using the settings provided. It also gives many useful basic music theory functions like intervals and chords though.",
     "main": "dist/index.js",
     "types": "dist/index.dt.ts",
@@ -16,7 +16,7 @@
         "typescript": "^3.8.3"
     },
     "scripts": {
-        "clean": "rm -rf dist",
+        "clean": "rm -rf dist tsconfig.tsbuildinfo",
         "tsc": "./node_modules/.bin/tsc",
         "build": "npm run clean && npm run tsc",
         "docs": "typedoc",

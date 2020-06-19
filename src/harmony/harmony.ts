@@ -2,7 +2,7 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
-import { PartWriting } from "./part-writing";
+import { PartWriting, PartWritingParameters, voiceRange } from "./part-writing";
 import { Predicate, Producer } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
@@ -51,9 +51,9 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
 
 function *findSolutions(reconciledConstraint: IncompleteChord, previous?: HarmonizedChord) {
     const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
-        new AbsoluteNote(note.name + [previous.octavePosition - 1]),
+        new AbsoluteNote(note.name + [previous.octavePosition + 1]),
         new AbsoluteNote(note.name + [previous.octavePosition]),
-        new AbsoluteNote(note.name + [previous.octavePosition + 1])
+        new AbsoluteNote(note.name + [previous.octavePosition - 1]),
     ];
     
     if(!reconciledConstraint.romanNumeral) {
@@ -88,9 +88,13 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
             if(isDefined(voice)) {
                 return [voice];
             } else {
-                const low = PartWriting.voiceRange[voicePart][1].octavePosition;
-                const high = PartWriting.voiceRange[voicePart][2].octavePosition + 1;
-                return [...needed].flatMap(note => [...Array(high - low).keys()].map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))));
+                const low = voiceRange[voicePart][1].octavePosition;
+                const high = voiceRange[voicePart][2].octavePosition + 1;
+                const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
+                return [...needed]
+                    .flatMap(note => [...Array(high - low).keys()]
+                    .map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))))
+                    .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
             }
         };
         sopranoNotes = get(needed)(0);
@@ -110,26 +114,64 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
     }
 }
 
+export interface HarmonyParameters {
+    /**
+     * The roman numeral to begin on
+     * Should agree with the initial constraint
+     */
+    start?: string;
+    /**
+     * The data to build the harmony around
+     */
+    constraints: IncompleteChord[];
+    /**
+     * The scale to build off of
+     */
+    scale: Scale;
+    /**
+     * The chords that are enabled if using progressions
+     */
+    enabled: [Predicate, Producer][];
+
+    /**
+     * Whether to ignore preferences and just choose the first option that is valid
+     */
+    greedy?: boolean;
+
+    /*
+    * If not greedy, whether to compare the total sum of all
+    * TODO?
+    */
+    // deep?: boolean;
+
+    /**
+     * Whether to check against the internal progressions or use as-is
+     * Requires complete roman numerals
+     */
+    useProgressions?: boolean;
+
+    /**
+     * Choose the least terrible of the failures, if not possible
+     */
+    // goodEnough?: boolean;
+
+    partWritingParameters?: PartWritingParameters;
+}
+
+export interface HarmonyResult {
+    solution: HarmonizedChord[] | null;
+    furthest: number;
+}
+
 export namespace Harmony {
-    export interface Parameters {
-        start?: string;
-        constraints: IncompleteChord[];
-        scale: Scale;
-        enabled: [Predicate, Producer][];
-        greedy: boolean;
-        /*
-        * If greedy, whether to compare the total sum of all
-        * TODO?
-        culmulative: boolean;
-        */
-    }
     
-    export interface Result {
-        solution: HarmonizedChord[] | null;
-        furthest: number;
-    }
-    
-    export function *harmonize(params: Parameters, previous: HarmonizedChord[]) {
+    export function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
+        if(!params.useProgressions && params.constraints[previous.length]) {
+            let result = harmonizeOptions(params, [], previous);
+            if(result != null) {
+                yield result;
+            }
+        }
         let options: IncompleteChord[][];
         options = params.enabled.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
         //TODO is this necessary if roman numeral is already provided
@@ -141,14 +183,14 @@ export namespace Harmony {
         }
     }
     
-    function harmonizeOptions(params: Parameters, option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
+    function harmonizeOptions(params: HarmonyParameters, option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
         // console.log([...previous].reverse().map(chord => chord.romanNumeral.name), option[0].romanNumeral?.name);
         const optionChord = option[0];
         const constraintChord = params.constraints[previous.length];
         if(!constraintChord) {
             return [];
         }
-        const reconciledConstraint = reconcileConstraints(optionChord, constraintChord);
+        const reconciledConstraint = optionChord ? reconcileConstraints(optionChord, constraintChord) : constraintChord;
         if(!reconciledConstraint || !reconciledConstraint.romanNumeral) {
             return null;
         }
@@ -157,7 +199,7 @@ export namespace Harmony {
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
             const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.harmonicFunction);
-            if(!PartWriting.Rules.testAll(chord, previous[0])) {
+            if(!PartWriting.Rules.testAll(params.partWritingParameters, chord, previous[0], ...previous.slice(1))) {
                 continue;
             }
             let result;
@@ -181,8 +223,8 @@ export namespace Harmony {
         if(!params.greedy && results.length > 0) {
             //TODO need to check or average over all in the results array
             (results as any).sort((a: HarmonizedChord[], b: HarmonizedChord[]) => {
-                let aScore = PartWriting.Preferences.evaluateAll(previous[0], a[0]);
-                let bScore = PartWriting.Preferences.evaluateAll(previous[0], b[0]);
+                let aScore = PartWriting.Preferences.evaluateAll(a[0], previous[0]);
+                let bScore = PartWriting.Preferences.evaluateAll(b[0], previous[0]);
                 for(let i = 0; i < aScore.length; i++) {
                     if(aScore[i] > bScore[i]){
                         return -1;
@@ -199,7 +241,7 @@ export namespace Harmony {
         return null;
     }
     
-    export function harmonizeAll(params: Parameters): Result {
+    export function harmonizeAll(params: HarmonyParameters): HarmonyResult {
         //TODO harmonize tonic or come up with options
         const start = new RomanNumeral(params.start || 'I',  params.scale);
         const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
@@ -212,7 +254,7 @@ export namespace Harmony {
         // TODO enable accumulate results before recursing
         for(const beginning of findSolutions(reconciledConstraint)) {
             const chord = new HarmonizedChord(beginning, start);
-            if(!PartWriting.Rules.testSingular(chord)) {
+            if(!PartWriting.Rules.testSingular(params.partWritingParameters, chord)) {
                 continue;
             }
             if(params.greedy) {
@@ -251,7 +293,7 @@ export namespace Harmony {
         return {solution: null, furthest: furthest};
     }
     
-    export function harmonizeRecursive(params: Parameters, previous: HarmonizedChord[]): Result {
+    export function harmonizeRecursive(params: HarmonyParameters, previous: HarmonizedChord[]): HarmonyResult {
         if(params.constraints.length == previous.length) {
             return {solution: [], furthest: previous.length};
         }

@@ -1,10 +1,12 @@
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
-import { Harmony } from "./harmony";
+import { Harmony, HarmonyParameters } from "./harmony";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Progression } from "./progression";
 import { Key } from "../key";
+
+const useProgressions = true;
 
 describe('Harmony', () => {
     describe('harmonizeAll', () => {
@@ -18,7 +20,7 @@ describe('Harmony', () => {
                 const soprano = notes.map(note => new AbsoluteNote(note));
                 const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
                 const scale = Scale.Major.notes;
-                const params: Harmony.Parameters = {scale, enabled, constraints, greedy };
+                const params: HarmonyParameters = {scale, enabled, constraints, greedy, useProgressions };
                 const result = Harmony.harmonizeAll(params);
                 expect(result.furthest).toBe(notes.length);
                 expect(result.solution).not.toBeNull();
@@ -37,7 +39,7 @@ describe('Harmony', () => {
                 const bass = notes.map(note => new AbsoluteNote(note));
                 const constraints = bass.map(bass => new IncompleteChord({voices: [undefined, undefined, undefined, bass]}));
                 const scale = Scale.Major.notes;
-                const params: Harmony.Parameters = {scale, enabled, constraints, greedy };
+                const params: HarmonyParameters = {scale, enabled, constraints, greedy, useProgressions };
                 const result = Harmony.harmonizeAll(params);
                 expect(result.furthest).toBe(notes.length);
                 expect(result.solution).not.toBeNull();
@@ -61,7 +63,7 @@ describe('Harmony', () => {
             ])('roman numerals %s', (numerals, enabled) => {
                 const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, Scale.Major.notes)}));
                 const scale = Scale.Major.notes;
-                const params: Harmony.Parameters = {scale, enabled, constraints, greedy };
+                const params: HarmonyParameters = {scale, enabled, constraints, greedy, useProgressions };
                 const result = Harmony.harmonizeAll(params);
                 expect(result.furthest).toBe(numerals.length);
                 expect(result).not.toBeNull();
@@ -79,7 +81,7 @@ describe('Harmony', () => {
                 const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
                 const scale = Scale.transpose(Scale.Major.notes, key);
                 const enabled = [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths];
-                const params: Harmony.Parameters = {scale, enabled, constraints, greedy };
+                const params: HarmonyParameters = {scale, enabled, constraints, greedy, useProgressions };
                 const result = Harmony.harmonizeAll(params);
                 expect(result.furthest).toBe(notes.length);
                 expect(result.solution).not.toBeNull();
@@ -100,13 +102,13 @@ describe('Harmony', () => {
                 [...Progression.Major.basic]
             ],
             [
-                'I V7 I',
+                'I V65 I',
                 [
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
-                    [['F4', 'B3', 'G3', 'G2'], 'V7'] as [string[], string],
+                    [['F4', 'D4', 'G3', 'B2'], 'V65'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic]
+                [...Progression.Major.basic, ...Progression.Major.dominantSevenths]
             ],
             [
                 'I V64 V I',
@@ -146,7 +148,7 @@ describe('Harmony', () => {
             //     ],
             //     [...Progression.Major.basic, ...Progression.Major.basicInversions]
             // ]
-        ])('specific voicing %s', (_, expected, enabled) => {
+        ])('specific voicing %s with soprano', (_, expected, enabled) => {
             const scale = Scale.Major.notes;
             const constraints = [];
             let first = true;
@@ -158,7 +160,41 @@ describe('Harmony', () => {
                     constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, undefined], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
                 }
             }
-            const params: Harmony.Parameters = {scale, enabled, constraints, greedy: false };
+            const params: HarmonyParameters = {scale, enabled, constraints, greedy: false, useProgressions };
+            const result = Harmony.harmonizeAll(params);
+            expect(result.furthest).toBe(expected.length);
+            expect(result.solution).not.toBeNull();
+            if(result.solution != null) {
+                for(let i = 0; i < expected.length; i++) {
+                    expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+                }
+            }
+        });
+
+        
+        test.each([
+            [
+                'I V V7',
+                [
+                    [['C5', 'G4', 'E4', 'C3'], 'I'] as [string[], string],
+                    [['B4', 'G4', 'D4', 'G3'], 'V'] as [string[], string],
+                    [['B4', 'F4', 'D4', 'G2'], 'V7'] as [string[], string]
+                ],
+                [...Progression.Major.basic]
+            ],
+        ])('specific voicing %s with bassline', (_, expected, enabled) => {
+            const scale = Scale.Major.notes;
+            const constraints = [];
+            let first = true;
+            for(const [voices, romanNumeral] of expected) {
+                if(first) {
+                    constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                    first = false;
+                } else {
+                    constraints.push(new IncompleteChord({voices: [undefined, undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                }
+            }
+            const params: HarmonyParameters = {scale, enabled, constraints, greedy: false, useProgressions };
             const result = Harmony.harmonizeAll(params);
             expect(result.furthest).toBe(expected.length);
             expect(result.solution).not.toBeNull();
