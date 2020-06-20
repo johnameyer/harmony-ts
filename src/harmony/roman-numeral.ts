@@ -173,7 +173,7 @@ export class RomanNumeral {
         return this._quality;
     }
 
-    get inversionSymbol() {
+    get inversionSymbol(): string[] {
         // TODO handle flats and sharps
         if(this.hasSeventh) {
             if(this._inversionInterval.simpleSize == 'U') {
@@ -194,6 +194,7 @@ export class RomanNumeral {
                 return ['6', '4'];
             }
         }
+        return ['',''];
     }
 
     get applied() {

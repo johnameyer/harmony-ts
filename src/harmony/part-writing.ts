@@ -47,7 +47,9 @@ const ordering = [
     'leadingToneResolution',
     'crossRelations',
     'diminishedFifthResolution',
-    'cad64Doubling',
+    'accented64Doubling',
+    'accented64Preparation',
+    'accented64Resolution'
 ]
 
 export const defaultPartWritingParameters: PartWritingParameters = {
@@ -67,13 +69,15 @@ export const defaultPartWritingParameters: PartWritingParameters = {
     invalidIntervals: true,
     crossRelations: true,
     diminishedFifthResolution: true,
-    cad64Doubling: true,
+    accented64Doubling: true,
     seventhResolution: {
         scope: 2
     },
     leadingToneResolution: {
         frustratedLeadingTone: true
-    }
+    },
+    accented64Preparation: true,
+    accented64Resolution: true
 }
 
 export namespace PartWriting {
@@ -170,8 +174,11 @@ export namespace PartWriting {
                 }
             } else {
                 if (chord.romanNumeral.inversionInterval.simpleSize =='U') {
+                    if(!prev) {
+                        return true;
+                    }
                     // can leave out fifth if preceded by complete V7
-                    if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') == 0) {
+                    if(prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') == 0) {
                         return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
                     }
                 } else {
@@ -429,17 +436,88 @@ export namespace PartWriting {
         }
 
         /**
-         * Checks that a cadential 64 does not double the tonic
+         * Checks that a accented (cadential) 64 does not double the tonic
          * @param chord 
          */
-        export function checkCad64Doubling(settings: PartWritingRuleSetting, chord: HarmonizedChord) {
+        export function checkAccented64Doubling(settings: PartWritingRuleSetting, chord: HarmonizedChord) {
             if(settings === false) {
                 return true;
             }
-            if (chord.romanNumeral.name == 'I64') {
+            if (chord.romanNumeral.inversion === 2 && chord.romanNumeral.hasSeventh === false) {
                 if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('U')).length > 1) {
                     return false;
                 }
+            }
+            return true;
+        }
+
+        export function checkAccented64Preparation(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
+            if(settings === false) {
+                return true;
+            }
+            if (chord.romanNumeral.inversion === 2 && chord.romanNumeral.hasSeventh === false) {
+                const fourthVoice = chord.voices.findIndex(note => new Interval(chord.romanNumeral.root, note).simpleSize === 'U');
+                if(fourthVoice === -1) {
+                    return false;
+                }
+                const fourthNote = chord.voices[fourthVoice];
+                const fourthPrep = prev.voices[fourthVoice];
+                try {
+                    if(new ComplexInterval(fourthNote, fourthPrep).complexSize === 'U'
+                    && new ComplexInterval(fourthNote, fourthPrep).complexSize === '2') {
+                        return true;
+                    }
+                } catch {}
+                try {
+                    if(new ComplexInterval(fourthPrep, fourthPrep).complexSize !== '2') {
+                        return true;
+                    }
+                } catch {}
+                return false;
+            }
+            return true;
+        }
+
+        export function checkAccented64Resolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
+            if(settings === false) {
+                return true;
+            }
+            if (prev.romanNumeral.inversion === 2 && prev.romanNumeral.hasSeventh === false) {
+                if(chord.romanNumeral.root.simpleName !== prev.romanNumeral.inversionInterval.transposeUp(prev.romanNumeral.root).simpleName) {
+                    return true;
+                }
+                const fourthVoice = prev.voices.findIndex(note => new Interval(prev.romanNumeral.root, note).simpleSize === 'U');
+                if(fourthVoice === -1) {
+                    return false;
+                }
+                const fourthNote = prev.voices[fourthVoice];
+                const fourthResolution = chord.voices[fourthVoice];
+                try {
+                    if(new ComplexInterval(fourthResolution, fourthNote).complexSize !== '2') {
+                        return false;
+                    }
+                } catch {
+                    return false;
+                }
+                let sixthResolves = false;
+                for (let voice = 0; voice < chord.voices.length; voice++) {
+                    const note = prev.voices[voice];
+                    if(new Interval(prev.romanNumeral.root, note).simpleSize !== '3') {
+                        continue;
+                    }
+                    const sixthNote = prev.voices[voice];
+                    const sixthResolution = chord.voices[voice];
+                    try {
+                        if(new ComplexInterval(sixthResolution, sixthNote).complexSize === '2') {
+                            sixthResolves = true;
+                            break;
+                        }
+                    } catch {}
+                }
+                if(!sixthResolves) {
+                    return false;
+                }
+                
             }
             return true;
         }
@@ -467,7 +545,7 @@ export namespace PartWriting {
                 checkCompleteness,
                 checkLeadingToneDoubling,
                 checkSeventhDoubling,
-                checkCad64Doubling
+                checkAccented64Doubling
             ].findIndex(func => !func.apply(null, [parameters, chordToCheck]));
             return failed;
         }
@@ -486,7 +564,7 @@ export namespace PartWriting {
                     if(numVoicesWithInterval(chord, 'U') != 2) {
                         return -2;
                     }
-                    // return -1;
+                    return -1;
                 }
             } else {
                 if(numVoicesWithInterval(chord, '5') == 0) {
@@ -494,6 +572,7 @@ export namespace PartWriting {
                     if(numVoicesWithInterval(chord, 'U') != 3) {
                         return -2;
                     }
+                    return -1;
                 } else if(chord.romanNumeral.inversionInterval.simpleSize == 'U') {
                     //root position prefer double root
                     if(numVoicesWithInterval(chord, 'U') != 2) {
@@ -631,4 +710,6 @@ defaultPartWritingRules.leadingToneResolution = PartWriting.Rules.checkLeadingTo
 defaultPartWritingRules.seventhResolution = PartWriting.Rules.checkSeventhResolution;
 defaultPartWritingRules.crossRelations = PartWriting.Rules.checkCrossRelations;
 defaultPartWritingRules.diminishedFifthResolution = PartWriting.Rules.checkDiminishedFifthResolution;
-defaultPartWritingRules.cad64Doubling = PartWriting.Rules.checkCad64Doubling;
+defaultPartWritingRules.accented64Doubling = PartWriting.Rules.checkAccented64Doubling;
+defaultPartWritingRules.accented64Preparation = PartWriting.Rules.checkAccented64Preparation;
+defaultPartWritingRules.accented64Resolution = PartWriting.Rules.checkAccented64Resolution;

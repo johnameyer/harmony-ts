@@ -26,6 +26,10 @@ describe('PartWriting', () => {
         ['I6',  'C5', 'G4', 'E4', 'E3'],
         ['V',  'B4', 'G4', 'D4', 'G3'],
         ['V7',  'B4', 'F4', 'D4', 'G2'],
+        ['I',   'C5', 'E4', 'C4', 'C3'],
+        ['I',   'E5', 'G4', 'C4', 'C3'],
+        ['I64',  'E5', 'G4', 'C4', 'G3'],
+        ['V',   'D5', 'G4', 'B3', 'G3'],
     ]))('checkAll %s to %s', (prev: any, chord: any) => {
         chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes)),
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
@@ -33,5 +37,18 @@ describe('PartWriting', () => {
         expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
         expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
         expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
-    })
+    });
+
+    test.each(pair([
+        ['I',   'E5', 'G4', 'C4', 'C3'],
+        ['I64',  'E5', 'G4', 'C4', 'G3'],
+        ['V',   'D5', 'G4', 'B3', 'G3'],
+    ]))('checkAll %s to %s', (prev: any, chord: any) => {
+        chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes)),
+        prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
+        expect(PartWriting.Rules.checkSingular(undefined, chord)).toBe(-1);
+        expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
+        expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
+    });
 });

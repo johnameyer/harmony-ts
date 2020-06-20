@@ -34,7 +34,7 @@ export class ComplexInterval extends Interval {
         if(this._complexSize == 1) {
             return 'U';
         }
-        return new String(this._complexSize);
+        return String(this._complexSize);
     }
 
     transposeUp(note: AbsoluteNote): AbsoluteNote {
