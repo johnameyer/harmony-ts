@@ -55,9 +55,9 @@ describe('Harmony', () => {
                 [['I', 'vi', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.submediant]],
                 [['I', 'V65', 'I'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths]],
                 [['I', 'ii65', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.subdominantSevenths]],
-                [['I', 'I64', 'V7', 'I'], [...Progression.Major.basic, ...Progression.Major.cad64]],
-                [['I', 'vi', 'I6'], [...Progression.Major.basic, ...Progression.Major.tonicSubstitutes]],
-                [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.cad64, ...Progression.Major.tonicSubstitutes]],
+                [['I', 'I64', 'V7', 'I'], [...Progression.Major.basic]],
+                [['I', 'vi', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.tonicSubstitutes]],
+                [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
                 [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
                 [['I', 'V', 'V42', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
             ])('roman numerals %s', (numerals, enabled) => {
@@ -118,7 +118,7 @@ describe('Harmony', () => {
                     [['D4', 'B3', 'G3', 'G2'], 'V'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic, ...Progression.Major.cad64]
+                [...Progression.Major.basic]
             ],
             [
                 'I ii42 V65 I',

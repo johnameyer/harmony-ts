@@ -49,7 +49,8 @@ const ordering = [
     'diminishedFifthResolution',
     'accented64Doubling',
     'accented64Preparation',
-    'accented64Resolution'
+    'accented64Resolution',
+    'sequence'
 ]
 
 export const defaultPartWritingParameters: PartWritingParameters = {
@@ -77,7 +78,8 @@ export const defaultPartWritingParameters: PartWritingParameters = {
         frustratedLeadingTone: true
     },
     accented64Preparation: true,
-    accented64Resolution: true
+    accented64Resolution: true,
+    sequence: true
 }
 
 export namespace PartWriting {
@@ -119,6 +121,9 @@ export namespace PartWriting {
          */
         export function checkLeadingToneDoubling(settings: PartWritingRuleSetting, chord: HarmonizedChord) {
             if(settings === false) {
+                return true;
+            }
+            if(chord.flags?.sequence) {
                 return true;
             }
             if (chord.romanNumeral.name.startsWith('V')) {
@@ -169,7 +174,7 @@ export namespace PartWriting {
                     return false;
                 }
                 // can leave out fifth of root position 7
-                if (chord.romanNumeral.symbol != 'V' || chord.romanNumeral.inversionInterval.simpleSize != 'U') {
+                if (chord.romanNumeral.inversionInterval.simpleSize != 'U') {
                     return numVoicesWithInterval(chord, '5') >= 1;
                 }
             } else {
@@ -196,13 +201,17 @@ export namespace PartWriting {
             if(settings === false) {
                 return true;
             }
-            for(let i = 0; i < chord.voices.length - 2; i ++) {
+            let i = 0;
+            for(i = 0; i < chord.voices.length - 2; i ++) {
                 if (chord.voices[i].midi - chord.voices[i + 1].midi > 12) {
                     return false;
                 }
                 if (chord.voices[i].midi < chord.voices[i + 1].midi) {
                     return false;
                 }
+            }
+            if (chord.voices[i].midi < chord.voices[i+1].midi) {
+                return false;
             }
             return true;
         }
@@ -303,6 +312,9 @@ export namespace PartWriting {
          */
         export function checkLeadingToneResolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
             if(settings === false) {
+                return true;
+            }
+            if(chord.flags?.sequence) {
                 return true;
             }
             //TODO delayed resolution
@@ -464,12 +476,12 @@ export namespace PartWriting {
                 const fourthPrep = prev.voices[fourthVoice];
                 try {
                     if(new ComplexInterval(fourthNote, fourthPrep).complexSize === 'U'
-                    && new ComplexInterval(fourthNote, fourthPrep).complexSize === '2') {
+                    || new ComplexInterval(fourthNote, fourthPrep).complexSize === '2') {
                         return true;
                     }
                 } catch {}
                 try {
-                    if(new ComplexInterval(fourthPrep, fourthPrep).complexSize !== '2') {
+                    if(new ComplexInterval(fourthPrep, fourthNote).complexSize === '2') {
                         return true;
                     }
                 } catch {}
@@ -522,6 +534,24 @@ export namespace PartWriting {
             return true;
         }
 
+        export function checkSequence(settings: PartWritingRuleSetting, chord: HarmonizedChord, _: HarmonizedChord, prev: HarmonizedChord) {
+            if(settings === false) {
+                return true;
+            }
+            // console.log(chord.flags);
+            if(chord.flags?.sequence && prev?.flags?.sequence) {
+                // console.log(new Interval(chord.romanNumeral.root, prev.romanNumeral.root).simpleSize);
+                for(let voice = 0; voice < chord.voices.length; voice++) {
+                    // console.log(new Interval(chord.voices[voice], prev.voices[voice]).simpleSize);
+                    if(new Interval(chord.romanNumeral.root, prev.romanNumeral.root).simpleSize !== new Interval(chord.voices[voice], prev.voices[voice]).simpleSize) {
+                        // console.log(false);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         export function *checkAll(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
             //TODO make combined version of previous
             //TODO add ordering
@@ -567,7 +597,7 @@ export namespace PartWriting {
                     return -1;
                 }
             } else {
-                if(numVoicesWithInterval(chord, '5') == 0) {
+                if(numVoicesWithInterval(chord, '5') == 0 && chord.romanNumeral.inversionInterval.simpleSize == 'U') {
                     //prefer root tripled if no fifth
                     if(numVoicesWithInterval(chord, 'U') != 3) {
                         return -2;
@@ -667,9 +697,17 @@ export namespace PartWriting {
             return 0;
         }
 
+        export function checkSequence(chord: HarmonizedChord) {
+            if(chord.flags?.sequence) {
+                return 1;
+            }
+            return 0;
+        }
+
         export function evaluateSingle(chordToCheck: HarmonizedChord): number[] {
             //TODO make combined version of previous
             let checks = [
+                checkSequence,
                 checkRange,
                 checkDoubling,
                 checkSharedPitch
@@ -681,6 +719,7 @@ export namespace PartWriting {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = [
+                checkSequence,
                 checkRange,
                 checkDoubling,
                 checkVoiceCrossing,
@@ -689,7 +728,6 @@ export namespace PartWriting {
                 checkVoiceDisjunction,
                 checkSharedPitch
             ].map(func => func.apply(null, [chordToCheck, prev]));
-            // console.log(checks);
             return checks;
         }
     }
@@ -713,3 +751,4 @@ defaultPartWritingRules.diminishedFifthResolution = PartWriting.Rules.checkDimin
 defaultPartWritingRules.accented64Doubling = PartWriting.Rules.checkAccented64Doubling;
 defaultPartWritingRules.accented64Preparation = PartWriting.Rules.checkAccented64Preparation;
 defaultPartWritingRules.accented64Resolution = PartWriting.Rules.checkAccented64Resolution;
+defaultPartWritingRules.sequence = PartWriting.Rules.checkSequence;

@@ -8,10 +8,12 @@ export class HarmonizedChord {
     protected _voices: AbsoluteNote[];
     protected _romanNumeral!: RomanNumeral;
     protected _harmonicFunction!: HarmonicFunction | undefined;
+    protected _flags: {[key: string]: boolean};
 
-    constructor(voices: AbsoluteNote[], romanNumeral: RomanNumeral, harmonicFunction?: HarmonicFunction) {
+    constructor(voices: AbsoluteNote[], romanNumeral: RomanNumeral, flags: {[key: string]: boolean} = {}, harmonicFunction?: HarmonicFunction) {
         this._voices = voices;
         this._romanNumeral = romanNumeral;
+        this._flags = flags;
     }
 
     get voices() {
@@ -38,5 +40,9 @@ export class HarmonizedChord {
         //     return HarmonicFunction.PREDOMINANT;
         // }
         return this._harmonicFunction || HarmonicFunction.PREDOMINANT;
+    }
+
+    get flags() {
+        return this._flags;
     }
 }
