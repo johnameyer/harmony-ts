@@ -82,7 +82,7 @@ export namespace Expansion {
 
     export const submediant = [
         // 5-6 technique
-        startingWith('vi', insert('iv6')),
+        startingWith('vi', insert('IV6')),
 
         // not in minor
         startingWith('vi', insert('I', insert('V6'))),
@@ -203,7 +203,7 @@ export namespace Expansion {
     ];
 
     export const otherSeventhChords = [movingTo, movingToWithinSequence].flatMap(movingTo => [
-        ...[['7','7'],['7','53'],['65','53'],['43','53'],['43','7'],['42','63'],['42','65']].flatMap(([firstInversion, secondInversion]) => [
+        ...[['7','7'],['7',''],['65',''],['43',''],['43','7'],['42','63'],['42','65']].flatMap(([firstInversion, secondInversion]) => [
             // descending fifths
             startingWith(`I`, movingTo(`iii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`]))),
             startingWith(`I`, movingTo(`vi${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`]))),

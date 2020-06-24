@@ -713,6 +713,11 @@ export namespace PartWriting {
             }
             return 0;
         }
+        
+        export function checkRepetition(chord: HarmonizedChord, previous: HarmonizedChord) {
+            // TODO remove
+            return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
+        }
 
         export function evaluateSingle(chordToCheck: HarmonizedChord): number[] {
             //TODO make combined version of previous
@@ -730,6 +735,7 @@ export namespace PartWriting {
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = [
                 checkSequence,
+                checkRepetition,
                 checkRange,
                 checkDoubling,
                 checkVoiceCrossing,

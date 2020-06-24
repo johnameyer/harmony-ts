@@ -204,9 +204,12 @@ export namespace Harmony {
         const expansions = params.enabledExpansions || defaultExpansions;
         let expandedOptions = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
         // TODO option chaining
-        // console.log('Applied options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        expandedOptions.sort((a, b) => b.length - a.length);
+        // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
         for(let option of expandedOptions) {
-            yield option;
+            if(previous.length + option.length <= params.constraints.length) {
+                yield option;
+            }
         }
     }
     
@@ -233,7 +236,7 @@ export namespace Harmony {
         if(!reconciledConstraint || !reconciledConstraint.romanNumeral) {
             return null;
         }
-        // console.log(new Array(i).fill(' ').join('') + 'Harmonizing options for', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '), '+', option.map(chord => chord.romanNumeral?.name).join(' '));
+        // console.log('Harmonizing options for', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '), '+', option.map(chord => chord.romanNumeral?.name).join(' '));
         //instead of previous need to use previous fit
         let results: HarmonizedChord[] = [];
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
@@ -275,8 +278,8 @@ export namespace Harmony {
                 }
                 return 0;
             });
-            // console.log(previous[0].romanNumeral.name);
-            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(previous[0], result[0])));
+            // console.log('Harmonize options scores after', previous[0].romanNumeral.name);
+            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result, previous[0])));
             if(option.length > 1) {
                 const result = harmonizeOptions(params, option.slice(1), [results[0], ...previous]);
                 if(result == null) {
@@ -330,6 +333,8 @@ export namespace Harmony {
                 }
                 return 0;
             });
+            // console.log('Harmonize all scores');
+            // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
             for(let chord of results) {
                 const result = harmonizeRecursive(params, [chord]);
                 if(result.solution != null) {
@@ -366,13 +371,15 @@ export namespace Harmony {
                 let bScore = PartWriting.Preferences.evaluateAll(b[0], previous[0]);
                 for(let i = 0; i < aScore.length; i++) {
                     if(aScore[i] > bScore[i]){
-                        return 1;
-                    } else if(aScore[i] < bScore[i]) {
                         return -1;
+                    } else if(aScore[i] < bScore[i]) {
+                        return 1;
                     }
                 }
                 return 0;
             });
+            // console.log('Harmonize recursive scores after', previous[0].romanNumeral.name);
+            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result[0], previous[0])));
             for(let solution of results) {
                 const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
                 if(result.solution) {
