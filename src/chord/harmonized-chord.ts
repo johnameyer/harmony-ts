@@ -1,7 +1,6 @@
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { AbsoluteNote } from "../note/absolute-note";
 import { HarmonicFunction } from "../harmony/harmonic-function";
-import { ScaleDegree } from "../harmony/scale-degree";
 
 export class HarmonizedChord {
 

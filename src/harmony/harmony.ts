@@ -3,12 +3,12 @@ import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { PartWriting, PartWritingParameters, voiceRange } from "./part-writing";
-import { Predicate, Producer } from "./progression";
+import { ProgressionPredicate, ProgressionProducer, Progression } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Accidental } from "../accidental";
 import { isDefined } from "../util";
-import { Expansion } from "./expansion";
+import { Expansion, ExpansionOperator } from "./expansion";
 
 /**
 * 
@@ -147,7 +147,12 @@ export interface HarmonyParameters {
     /**
      * The chords that are enabled if using progressions
      */
-    enabled: [Predicate, Producer][];
+    enabledProgressions?: [ProgressionPredicate, ProgressionProducer][];
+
+    /**
+     * The expansions that are enabled if using progressions
+     */
+    enabledExpansions?: ExpansionOperator[];
 
     /**
      * Whether to ignore preferences and just choose the first option that is valid
@@ -174,42 +179,45 @@ export interface HarmonyParameters {
     partWritingParameters?: PartWritingParameters;
 }
 
+export const defaultProgressions = [...Progression.Major.identity, ...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.submediant, ...Progression.Major.tonicSubstitutes, ...Progression.Major.secondaryDominant];
+export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords];
+
 export interface HarmonyResult {
     solution: HarmonizedChord[] | null;
     furthest: number;
 }
 
 export namespace Harmony {
-    
-    export function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
+    function * getOptions(params: HarmonyParameters, previous: HarmonizedChord[]) {
         if(!params.useProgressions && params.constraints[previous.length]) {
-            let result = harmonizeOptions(params, [], previous);
-            if(result != null) {
-                yield result;
-            }
+            yield [new IncompleteChord({})];
         }
-        let options: IncompleteChord[][];
-        options = params.enabled.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
+
+        // Get options available to us from current chord
+        const progressions = params.enabledProgressions || defaultProgressions;
+        const options = progressions.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
         
         // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
         // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
 
         //use expansions
-        const expansions = [...Expansion.identity, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords]
-        options = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
+        const expansions = params.enabledExpansions || defaultExpansions;
+        let expandedOptions = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
+        // TODO option chaining
         // console.log('Applied options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
-
-
-        //TODO is this necessary if roman numeral is already provided
-        for (const option of options) {
+        for(let option of expandedOptions) {
+            yield option;
+        }
+    }
+    
+    export function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
+        for (const option of getOptions(params, previous)) {
             let result = harmonizeOptions(params, option, previous);
             if(result !== null) {
                 yield result;
             }
         }
     }
-    
-    let i = 0;
 
     function harmonizeOptions(params: HarmonyParameters, option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
         // console.log([...previous].reverse().map(chord => chord.romanNumeral.name), option[0].romanNumeral?.name);
@@ -231,12 +239,13 @@ export namespace Harmony {
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
             const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags, reconciledConstraint.harmonicFunction,);
-            if(!PartWriting.Rules.testAll(params.partWritingParameters, chord, previous[0], ...previous.slice(1))) {
+            const array = [chord, ...previous];
+            if(!PartWriting.Rules.testAll(params.partWritingParameters, array)) {
                 continue;
             }
             if(option.length > 1) {
                 if(params.greedy) {
-                    const result = harmonizeOptions(params, option.slice(1), [chord, ...previous]);
+                    const result = harmonizeOptions(params, option.slice(1), array);
                     if(result) {
                         return [chord, ...result];
                     }

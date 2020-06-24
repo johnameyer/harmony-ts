@@ -4,8 +4,8 @@ import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { HarmonicFunction } from "./harmonic-function";
 
-export type Predicate = (scale: Scale, previousChords: HarmonizedChord[]) => boolean;
-export type Producer = (scale: Scale, previousChords: HarmonizedChord[]) => IncompleteChord[][];
+export type ProgressionPredicate = (scale: Scale, previousChords: HarmonizedChord[]) => boolean;
+export type ProgressionProducer = (scale: Scale, previousChords: HarmonizedChord[]) => IncompleteChord[][];
 
 const withChordSymbol = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => chordSymbol == previousChords[0].romanNumeral.name;
 //TODO play around with this
@@ -16,12 +16,13 @@ const yieldChords = (...chordSymbols: string[]) => (scale: Scale, previousChords
 
 const yieldChordsWithFunction = (harmonicFunction: HarmonicFunction, ...chordSymbols: string[]) => (scale: Scale, previousChords: HarmonizedChord[]) => [chordSymbols.map(chordSymbol => new IncompleteChord({ harmonicFunction, romanNumeral: new RomanNumeral(chordSymbol, scale) }))];
 
-//TODO flags instead of grouping
+// TODO move away from IncompleteChord model?
+
 export namespace Progression {
     export namespace Major {
         export const identity = [
             [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [[new IncompleteChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]]
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const basic = [
             /* I-V */
@@ -34,7 +35,7 @@ export namespace Progression {
 
             /* V-V7 intensification */
             [ withChordSymbol('V'),  yieldChord('V7') ],
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const basicInversions = [
             /* I-I6 arpeggiation */
@@ -53,7 +54,7 @@ export namespace Progression {
             /* viio */
             // [ withChordSymbol('I'),  yieldChordsWithFunction(HarmonicFunction.TONIC, 'viio6', 'I6') ],
             // [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'viio6', 'I') ]
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const dominantSevenths = [
             /* V65 */
@@ -85,7 +86,7 @@ export namespace Progression {
             // [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'V43', 'V42', 'I6') ],
             // [ withChordSymbol('I6'), yieldChordsWithFunction(HarmonicFunction.TONIC, 'V42', 'V43', 'I6') ],
 
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const basicPredominant = [
             /* IV */
@@ -119,7 +120,7 @@ export namespace Progression {
             /* IV-ii root motion by 3rd */
             // [ withChordSymbol('IV'), yieldChord('ii6') ],
             [ withChordSymbol('IV'), yieldChord('ii') ]
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const submediant = [
             [ withChordSymbol('I'), yieldChord('vi') ],
@@ -148,7 +149,7 @@ export namespace Progression {
             [ withChordSymbol('V'), yieldChords('IV6', 'V6', 'I') ],
             [ withChordSymbol('V'), yieldChords('IV6', 'V65', 'I') ],
             // 12-5?
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const subdominantSevenths = [
             [ withInversionsOf('I', 0, 1), yieldChord('ii7') ],
@@ -186,7 +187,7 @@ export namespace Progression {
 
             [ withChordSymbol('V'), yieldChords('IV65', 'V6', 'I') ],
             [ withChordSymbol('V'), yieldChords('IV65', 'V65', 'I') ],
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const tonicSubstitutes = [
             // [ withChordSymbol('I'), yieldChords('IV', 'I') ],
@@ -203,7 +204,7 @@ export namespace Progression {
 
             // [ withChordSymbol('V'), yieldChords('vi', 'V6') ],
             // [ withChordSymbol('V'), yieldChords('vi', 'V65') ],
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const secondaryDominant = [
             //TODO expand
@@ -233,6 +234,6 @@ export namespace Progression {
             // [ withChordSymbol('V43/V'), yieldChord('V6') ],
 
             // [ withChordSymbol('V42/V'), yieldChord('V6') ],
-        ] as [Predicate, Producer][];
+        ] as [ProgressionPredicate, ProgressionProducer][];
     }
 }

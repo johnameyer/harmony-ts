@@ -5,18 +5,18 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 
-type Operator = (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => IncompleteChord[];
+export type ExpansionOperator = (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => IncompleteChord[];
 
-const startingWith = (romanNumeral: string, next?: Operator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
-const movingTo = (romanNumeral: string, next?: Operator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+// TODO add operators that operate over all and each
+const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
+const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
 //TODO clone map
-const insert = (romanNumeral: string, next?: Operator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
-const insertMany = (...romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)})), ...chords.slice()];
-const sequenceInsert = (...romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale), flags: {sequence: true}})), ...chords.slice()];
-const replaceWith = (romanNumeral: string, next?: Operator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
-const notStartingWith = (romanNumeral: string, next?: Operator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== romanNumeral ? next(scale, chords, prev) : [];
-
-// const wrapOperators = function(arr: Operator) {};?
+const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
+const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)})), ...chords.slice()];
+const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale), flags: {sequence: true}})), ...chords.slice()];
+const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => { if(next && chords[0]?.romanNumeral?.name === romanNumeral) { chords = chords.slice(); chords[0] = new IncompleteChord({...chords[0]}); chords[0].flags.sequence = true; return next(scale, chords, prev); } return [] };
+const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
+const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== romanNumeral ? next(scale, chords, prev) : [];
 
 /**
  * Expansions consist of elaborations beyond basic progressions
@@ -26,10 +26,13 @@ const notStartingWith = (romanNumeral: string, next?: Operator) => (scale: Scale
  */
 export namespace Expansion {
     export const identity = [
-        (scale: Scale, chords: IncompleteChord[]) => chords
-    ];
+        (_: Scale, chords: IncompleteChord[]) => chords.map(chord => new IncompleteChord({romanNumeral: chord.romanNumeral}))
+    ]
 
-    // V - V7 ?
+    export const basic = [
+        startingWith('V', insert('V7')),
+        startingWith('V', replaceWith('V7')),
+    ];
 
     export const basicInversions = [
         startingWith('I', movingTo('I', insert('viio6'))),
@@ -40,7 +43,6 @@ export namespace Expansion {
 
         startingWith('I', movingTo('I', insert('V6'))),
     ];
-
     export const dominantInversions = [
         // V6 - V65?
         startingWith('I', movingTo('I', insert('V43'))),
@@ -48,7 +50,7 @@ export namespace Expansion {
 
         startingWith('I', movingTo('I6', insert('V43'))),
         startingWith('I6', movingTo('I', insert('V43'))),
-        startingWith('V', movingTo('I6', insert('V42'))),
+        startingWith('I6', movingTo('I6', insert('V42'))),
 
         /* double neighbor */
         startingWith('I', movingTo('I', insert('V65', insert('V43')))),
@@ -69,14 +71,14 @@ export namespace Expansion {
         startingWith('IV', insert('ii6')),
         
         // [startingWith('IV'), 'ii', 'V']?
-    ]
+    ];
 
     export const cadential64 = [
         // not preceded by V or vii
         notStartingWith('V', notStartingWith('viio', movingTo('V', insert('I64')))),
         notStartingWith('V', notStartingWith('viio', movingTo('V7', insert('I64')))),
         notStartingWith('V', notStartingWith('viio', movingTo('V', replaceWith('V42', insert('I64')))))
-    ]
+    ];
 
     export const submediant = [
         // 5-6 technique
@@ -89,7 +91,7 @@ export namespace Expansion {
         // // use major IV6 in minor
         startingWith('IV6', insert('I', insert('V6'))),
         startingWith('IV6', insert('I', insert('V65'))),
-    ]
+    ];
 
     export const supertonicSevenths = [
         // I6 passing tone
@@ -98,7 +100,7 @@ export namespace Expansion {
 
         startingWith('IV65', insert('I', insert('V6'))),
         startingWith('IV65', insert('I', insert('V65')))
-    ]
+    ];
 
     export const tonicSubstitutes = [
         startingWith('I', movingTo('I', insert('IV'))),
@@ -131,82 +133,85 @@ export namespace Expansion {
         startingWith('V6', movingTo('V6', insert('V42/V'))),
         startingWith('V', movingTo('V', insert('viio6/V'))),
         startingWith('V6', movingTo('V6', insert('viio6/V'))),
-    ]
+    ];
 
-    export const sequences = [
+    // TODO write out more compactly
+    export const sequences = [movingTo, movingToWithinSequence].flatMap(movingTo => [
         // descending fifths
-        startingWith('I', movingTo('iii', sequenceInsert('IV', 'viio'))),
-        startingWith('I', movingTo('vi', sequenceInsert('IV', 'viio', 'iii'))),
-        startingWith('I', movingTo('ii', sequenceInsert('IV', 'viio', 'iii', 'vi'))),
-        startingWith('I', movingTo('V', sequenceInsert('IV', 'viio', 'iii', 'vi', 'ii'))),
+        startingWith('I', movingTo('iii', sequenceInsert(['IV', 'viio']))),
+        startingWith('I', movingTo('vi', sequenceInsert(['IV', 'viio', 'iii']))),
+        startingWith('I', movingTo('ii', sequenceInsert(['IV', 'viio', 'iii', 'vi']))),
+        startingWith('I', movingTo('V', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii']))),
+        startingWith('I', movingTo('I', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii', 'V']))),
         
-        startingWith('I', movingTo('iii', sequenceInsert('IV6', 'viio'))),
-        startingWith('I', movingTo('vi', sequenceInsert('IV6', 'viio', 'iii6'))),
-        startingWith('I', movingTo('ii6', sequenceInsert('IV6', 'viio', 'iii6', 'vi'))),
-        startingWith('I', movingTo('V', sequenceInsert('IV6', 'viio', 'iii6', 'vi', 'ii6'))),
-    
+        startingWith('I', movingTo('iii', sequenceInsert(['IV6', 'viio']))),
+        startingWith('I', movingTo('vi', sequenceInsert(['IV6', 'viio', 'iii6']))),
+        startingWith('I', movingTo('ii6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi']))),
+        startingWith('I', movingTo('V', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6']))),
+        startingWith('I', movingTo('I6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6', 'V']))),
+
         // ascending 5-6
-        startingWith('I', movingTo('viio', sequenceInsert('vi', 'ii'))),
-        startingWith('I', movingTo('iii', sequenceInsert('vi', 'ii', 'viio'))),
-        startingWith('I', movingTo('IV', sequenceInsert('vi', 'ii', 'viio', 'iii'))),
-        startingWith('I', movingTo('I', sequenceInsert('vi', 'ii', 'viio', 'iii', 'I'))),
-        startingWith('I', movingTo('ii', sequenceInsert('vi', 'ii', 'viio', 'iii', 'I', 'IV'))),
+        startingWith('I', movingTo('viio', sequenceInsert(['vi', 'ii']))),
+        startingWith('I', movingTo('iii', sequenceInsert(['vi', 'ii', 'viio']))),
+        startingWith('I', movingTo('IV', sequenceInsert(['vi', 'ii', 'viio', 'iii']))),
+        startingWith('I', movingTo('I', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I']))),
+        startingWith('I', movingTo('ii', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I', 'IV']))),
 
-        startingWith('I', movingTo('viio6', sequenceInsert('vi6', 'ii'))),
-        startingWith('I', movingTo('iii', sequenceInsert('vi6', 'ii', 'viio6'))),
-        startingWith('I', movingTo('IV6', sequenceInsert('vi6', 'ii', 'viio6', 'iii'))),
-        startingWith('I', movingTo('I', sequenceInsert('vi6', 'ii', 'viio6', 'iii', 'I6'))),
-        startingWith('I', movingTo('ii6', sequenceInsert('vi6', 'ii', 'viio6', 'iii', 'I6', 'IV'))),
-
-        // ascending fifths
-        startingWith('I', movingTo('vi', sequenceInsert('V', 'ii'))),
-        startingWith('I', movingTo('iii', sequenceInsert('V', 'ii', 'vi'))),
-        startingWith('I', movingTo('viio', sequenceInsert('V', 'ii', 'vi', 'iii'))),
-        startingWith('I', movingTo('IV', sequenceInsert('V', 'ii', 'vi', 'iii', 'viio'))),
-        startingWith('I', movingTo('I', sequenceInsert('V', 'ii', 'vi', 'iii', 'viio', 'IV'))),
-
-        // skipping over iii - viio
-        startingWith('I', movingTo('IV', sequenceInsert('V', 'ii', 'vi'))),
-        startingWith('I', movingTo('I', sequenceInsert('V', 'ii', 'vi', 'IV'))),
+        startingWith('I', movingTo('viio6', sequenceInsert(['vi6', 'ii']))),
+        startingWith('I', movingTo('iii', sequenceInsert(['vi6', 'ii', 'viio6']))),
+        startingWith('I', movingTo('IV6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii']))),
+        startingWith('I', movingTo('I', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6']))),
+        startingWith('I', movingTo('ii6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6', 'IV']))),
 
         // ascending fifths
-        startingWith('I', movingTo('vi6', sequenceInsert('V6', 'ii'))),
-        startingWith('I', movingTo('iii', sequenceInsert('V6', 'ii', 'vi6'))),
-        startingWith('I', movingTo('viio6', sequenceInsert('V6', 'ii', 'vi6', 'iii'))),
-        startingWith('I', movingTo('IV', sequenceInsert('V6', 'ii', 'vi6', 'iii', 'viio6'))),
-        startingWith('I', movingTo('I6', sequenceInsert('V6', 'ii', 'vi6', 'iii', 'viio6', 'IV'))),
+        startingWith('I', movingTo('vi', sequenceInsert(['V', 'ii']))),
+        startingWith('I', movingTo('iii', sequenceInsert(['V', 'ii', 'vi']))),
+        startingWith('I', movingTo('viio', sequenceInsert(['V', 'ii', 'vi', 'iii']))),
+        startingWith('I', movingTo('IV', sequenceInsert(['V', 'ii', 'vi', 'iii', 'viio']))),
+        startingWith('I', movingTo('I', sequenceInsert(['V', 'ii', 'vi', 'iii', 'viio', 'IV']))),
 
         // skipping over iii - viio
-        startingWith('I', movingTo('IV', sequenceInsert('V6', 'ii', 'vi6'))),
-        startingWith('I', movingTo('I6', sequenceInsert('V6', 'ii', 'vi6', 'IV'))),
+        startingWith('I', movingTo('IV', sequenceInsert(['V', 'ii', 'vi']))),
+        startingWith('I', movingTo('I', sequenceInsert(['V', 'ii', 'vi', 'IV']))),
+
+        // ascending fifths
+        startingWith('I', movingTo('vi6', sequenceInsert(['V6', 'ii']))),
+        startingWith('I', movingTo('iii', sequenceInsert(['V6', 'ii', 'vi6']))),
+        startingWith('I', movingTo('viio6', sequenceInsert(['V6', 'ii', 'vi6', 'iii']))),
+        startingWith('I', movingTo('IV', sequenceInsert(['V6', 'ii', 'vi6', 'iii', 'viio6']))),
+        startingWith('I', movingTo('I6', sequenceInsert(['V6', 'ii', 'vi6', 'iii', 'viio6', 'IV']))),
+
+        // skipping over iii - viio
+        startingWith('I', movingTo('IV', sequenceInsert(['V6', 'ii', 'vi6']))),
+        startingWith('I', movingTo('I6', sequenceInsert(['V6', 'ii', 'vi6', 'IV']))),
 
         // descending 5-6
-        startingWith('I', movingTo('iii', sequenceInsert('V', 'vi'))),
-        startingWith('I', movingTo('IV', sequenceInsert('V', 'vi', 'iii'))),
-        startingWith('I', movingTo('I', sequenceInsert('V', 'vi', 'iii', 'IV'))),
-        startingWith('I', movingTo('ii', sequenceInsert('V', 'vi', 'iii', 'IV', 'I'))),
+        startingWith('I', movingTo('iii', sequenceInsert(['V', 'vi']))),
+        startingWith('I', movingTo('IV', sequenceInsert(['V', 'vi', 'iii']))),
+        startingWith('I', movingTo('I', sequenceInsert(['V', 'vi', 'iii', 'IV']))),
+        startingWith('I', movingTo('ii', sequenceInsert(['V', 'vi', 'iii', 'IV', 'I']))),
 
-        startingWith('I', movingTo('iii', sequenceInsert('V6', 'vi'))),
-        startingWith('I', movingTo('IV', sequenceInsert('V6', 'vi', 'iii6'))),
-        startingWith('I', movingTo('I', sequenceInsert('V6', 'vi', 'iii6', 'IV'))),
-        startingWith('I', movingTo('ii', sequenceInsert('V6', 'vi', 'iii6', 'IV', 'I6'))),
-    ]
+        startingWith('I', movingTo('iii', sequenceInsert(['V6', 'vi']))),
+        startingWith('I', movingTo('IV', sequenceInsert(['V6', 'vi', 'iii6']))),
+        startingWith('I', movingTo('I', sequenceInsert(['V6', 'vi', 'iii6', 'IV']))),
+        startingWith('I', movingTo('ii', sequenceInsert(['V6', 'vi', 'iii6', 'IV', 'I6']))),
+    ]);
 
     export const leadingToneSevenths = [
         startingWith('I', movingTo('I', insert('vii07'))),
         startingWith('I6', movingTo('I6', insert('vii043')))
-    ]
+    ];
 
-    export const otherSeventhChords = [
+    export const otherSeventhChords = [movingTo, movingToWithinSequence].flatMap(movingTo => [
         ...[['7','7'],['7','53'],['65','53'],['43','53'],['43','7'],['42','63'],['42','65']].flatMap(([firstInversion, secondInversion]) => [
             // descending fifths
-            startingWith(`I`, movingTo(`iii${firstInversion}`, sequenceInsert(`IV${firstInversion}`, `vii0${secondInversion}`))),
-            startingWith(`I`, movingTo(`vi${secondInversion}`, sequenceInsert(`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`))),
-            startingWith(`I`, movingTo(`ii${firstInversion}`, sequenceInsert(`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`))),
-            startingWith(`I`, movingTo(`V${secondInversion}`, sequenceInsert(`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`))),
-            startingWith(`I`, movingTo(`I${firstInversion}`, sequenceInsert(`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`, `V${secondInversion}`))),
+            startingWith(`I`, movingTo(`iii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`]))),
+            startingWith(`I`, movingTo(`vi${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`]))),
+            startingWith(`I`, movingTo(`ii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`]))),
+            startingWith(`I`, movingTo(`V${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`]))),
+            startingWith(`I`, movingTo(`I${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`, `V${secondInversion}`]))),
         ]),
-    ];
+    ]);
 
     export const secondaryDominants = [
         ...['ii', 'iii', 'IV', 'V', 'vi'].flatMap(root => [

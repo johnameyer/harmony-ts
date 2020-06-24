@@ -197,6 +197,10 @@ export class RomanNumeral {
         return ['',''];
     }
 
+    get inversionString() {
+        return this.inversionSymbol.join('');
+    }
+
     get applied() {
         return this._applied ? ScaleDegree.toRomanNumeral(this._applied) : null;
     }

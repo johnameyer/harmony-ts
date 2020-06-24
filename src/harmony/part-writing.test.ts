@@ -35,8 +35,8 @@ describe('PartWriting', () => {
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
         expect(PartWriting.Rules.checkSingular(undefined, chord)).toBe(-1);
         expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
-        expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
-        expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
+        expect(PartWriting.Rules.checkAll(undefined, [chord, prev]).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(undefined, [chord, prev])).toBe(true);
     });
 
     test.each(pair([
@@ -48,8 +48,8 @@ describe('PartWriting', () => {
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
         expect(PartWriting.Rules.checkSingular(undefined, chord)).toBe(-1);
         expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
-        expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
-        expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
+        expect(PartWriting.Rules.checkAll(undefined, [chord, prev]).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(undefined, [chord, prev])).toBe(true);
     });
 
     //I IV viio iii vi ii V I
@@ -69,28 +69,23 @@ describe('PartWriting', () => {
         for(let i = 1; i < chords.length; i++) {
             expect(PartWriting.Rules.checkSingular(undefined, chords[i])).toBe(-1);
             expect(PartWriting.Rules.testSingular(undefined, chords[i])).toBe(true);
-            expect(PartWriting.Rules.checkAll(undefined, chords[i], chords[i-1], ...chords.slice(0, i - 1).reverse()).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(undefined, chords[i], chords[i-1], ...chords.slice(0, i - 1).reverse())).toBe(true);
+            expect(PartWriting.Rules.checkAll(undefined, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(undefined, chords.slice(0, i + 1).reverse())).toBe(true);
         }
     });
 
     test('invalid progression sequence', () => {
-        const chords = [
+        let chords: any[] = [
             ['IV', 'C5', 'F4', 'A3', 'F3'],
             ['viio', 'D5', 'F4', 'B3', 'B2'],
             ['iii', 'E5', 'G4', 'B3', 'E3'],
             ['vi', 'E5', 'A4', 'C4', 'A3'],
             ['ii', 'F5', 'A4', 'D4', 'D3'],
         ];
-        for(let i of [0,1,2]) {
-            let chord: any = chords[2 + i];
-            let middle: any = chords[1 + i];
-            let prev: any = chords[i];
-            chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes), {sequence: true});
-            middle = new HarmonizedChord(middle.slice(1).map(absoluteNote), new RomanNumeral(middle[0], Scale.Major.notes), {sequence: true});
-            prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes), {sequence: true});
-            expect(PartWriting.Rules.checkAll(undefined, chord, middle, prev).next().value).not.toBe(undefined);
-            expect(PartWriting.Rules.testAll(undefined, chord, middle, prev)).toBe(false);
+        chords = chords.map(chord => new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], Scale.Major.notes), {sequence: true}));
+        for(let i of [3,4,5]) {
+            expect(PartWriting.Rules.checkAll(undefined, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
+            expect(PartWriting.Rules.testAll(undefined, chords.slice(0, i).reverse())).toBe(false);
         }
     });
 
@@ -104,8 +99,8 @@ describe('PartWriting', () => {
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], Scale.Major.notes)),
         expect(PartWriting.Rules.checkSingular(undefined, chord)).toBe(-1);
         expect(PartWriting.Rules.testSingular(undefined, chord)).toBe(true);
-        expect(PartWriting.Rules.checkAll(undefined, chord, prev).next().value).toBe(undefined);
-        expect(PartWriting.Rules.testAll(undefined, chord, prev)).toBe(true);
+        expect(PartWriting.Rules.checkAll(undefined, [chord, prev]).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(undefined, [chord, prev])).toBe(true);
     });
 
     test.each([

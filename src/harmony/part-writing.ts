@@ -45,7 +45,6 @@ const ordering = [
     'invalidIntervals',
     'seventhResolution',
     'leadingToneResolution',
-    'crossRelations',
     'diminishedFifthResolution',
     'accented64Doubling',
     'accented64Preparation',
@@ -68,7 +67,6 @@ export const defaultPartWritingParameters: PartWritingParameters = {
     leadingToneDoubling: true,
     seventhDoubling: true,
     invalidIntervals: true,
-    crossRelations: true,
     diminishedFifthResolution: true,
     accented64Doubling: true,
     seventhResolution: {
@@ -389,14 +387,6 @@ export namespace PartWriting {
             return true;
         }
 
-        export function checkCrossRelations(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
-            if(settings === false) {
-                return true;
-            }
-            //TODO
-            return true;
-        }
-
         /** */
         export function checkDiminishedFifthResolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
             if(settings === false) {
@@ -552,18 +542,18 @@ export namespace PartWriting {
             return true;
         }
 
-        export function *checkAll(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
+        export function *checkAll(parameters: PartWritingParameters = defaultPartWritingParameters, chords: HarmonizedChord[]) {
             //TODO make combined version of previous
             //TODO add ordering
             for(const [key, func] of ordering.map(key => [key, parameters.customRules[key]] as [string, PartWritingRule])) {
-                if(!!(parameters[key]) && !func.apply(null, [parameters[key], chordToCheck, prev, ...before])) {
+                if(!!(parameters[key]) && !func.apply(null, [parameters[key], ...chords])) {
                     yield key;
                 }
             }
         }
         
-        export function testAll(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
-            return checkAll(parameters, chordToCheck, prev, ...before).next().value === undefined;
+        export function testAll(parameters: PartWritingParameters = defaultPartWritingParameters, chords: HarmonizedChord[]) {
+            return checkAll(parameters, chords).next().value === undefined;
         }
 
         export function checkSingular(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord) {
@@ -697,6 +687,26 @@ export namespace PartWriting {
             return 0;
         }
 
+        export function checkCrossRelations(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
+            if(settings === false) {
+                return true;
+            }
+            //TODO
+            // single voice best
+
+            // applied leading tone in bass
+            // where cross relation in inner voice
+            // avoid leaps in upper voices
+
+            // same register, different voice
+
+            // chromaticized voice exchange
+            // addtl make new voice exchange rule to promote exchange through passing chords?
+
+            // outer voices avoided, except where soprano moves by step
+            return true;
+        }
+
         export function checkSequence(chord: HarmonizedChord) {
             if(chord.flags?.sequence) {
                 return 1;
@@ -746,7 +756,6 @@ defaultPartWritingRules.seventhDoubling = PartWriting.Rules.checkSeventhDoubling
 defaultPartWritingRules.invalidIntervals = PartWriting.Rules.checkInvalidIntervals;
 defaultPartWritingRules.leadingToneResolution = PartWriting.Rules.checkLeadingToneResolution;
 defaultPartWritingRules.seventhResolution = PartWriting.Rules.checkSeventhResolution;
-defaultPartWritingRules.crossRelations = PartWriting.Rules.checkCrossRelations;
 defaultPartWritingRules.diminishedFifthResolution = PartWriting.Rules.checkDiminishedFifthResolution;
 defaultPartWritingRules.accented64Doubling = PartWriting.Rules.checkAccented64Doubling;
 defaultPartWritingRules.accented64Preparation = PartWriting.Rules.checkAccented64Preparation;
