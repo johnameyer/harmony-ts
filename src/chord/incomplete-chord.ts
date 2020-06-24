@@ -3,7 +3,7 @@ import { AbsoluteNote } from '../note/absolute-note';
 import { HarmonicFunction } from '../harmony/harmonic-function';
 
 export class IncompleteChord {
-    constructor({ voices, romanNumeral, harmonicFunction }: { voices?: (AbsoluteNote | undefined)[]; romanNumeral?: RomanNumeral; harmonicFunction?: HarmonicFunction }) {
+    constructor({ voices, romanNumeral, harmonicFunction, flags}: { voices?: (AbsoluteNote | undefined)[]; romanNumeral?: RomanNumeral; harmonicFunction?: HarmonicFunction, flags?: {[key: string]: boolean} }) {
         if(voices) {
             this._voices = voices;
         } else {
@@ -11,6 +11,7 @@ export class IncompleteChord {
         }
         this._romanNumeral = romanNumeral;
         this._harmonicFunction = harmonicFunction;
+        this._flags = flags || {};
     }
 
     protected _voices: (AbsoluteNote | undefined)[];
@@ -18,6 +19,8 @@ export class IncompleteChord {
     protected _romanNumeral: RomanNumeral | undefined;
     
     protected _harmonicFunction: HarmonicFunction | undefined;
+
+    protected _flags: {[key: string]: boolean};
 
     get voices() {
         return this._voices;
@@ -33,5 +36,9 @@ export class IncompleteChord {
 
     get harmonicFunction() {
         return this._harmonicFunction;
+    }
+
+    get flags(): {[key: string]: boolean} {
+        return this._flags;
     }
 }

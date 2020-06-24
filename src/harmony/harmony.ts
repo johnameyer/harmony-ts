@@ -3,11 +3,12 @@ import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { PartWriting, PartWritingParameters, voiceRange } from "./part-writing";
-import { Predicate, Producer } from "./progression";
+import { ProgressionPredicate, ProgressionProducer, Progression } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Accidental } from "../accidental";
 import { isDefined } from "../util";
+import { Expansion, ExpansionOperator } from "./expansion";
 
 /**
 * 
@@ -30,6 +31,20 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     if(!compatible(one.harmonicFunction, two.harmonicFunction)) {
         return null;
     }
+    if(one.flags) {
+        for(const key in one.flags) {
+            if(two.flags && two.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
+                return null;
+            }
+        }
+    }
+    if(two.flags) {
+        for(const key in two.flags) {
+            if(one.flags && one.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
+                return null;
+            }
+        }
+    }
     if(one.romanNumeral) {
         // TODO one should always have root in this case
         const oneNotes = one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined);
@@ -46,7 +61,8 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const romanNumeral = one.romanNumeral || two.romanNumeral;
     const harmonicFunction = one.harmonicFunction || two.harmonicFunction;
     const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
-    return new IncompleteChord({romanNumeral, voices, harmonicFunction});
+    const flags = {...(one.flags || {}), ...(two.flags || {})};
+    return new IncompleteChord({romanNumeral, voices, harmonicFunction, flags});
 }
 
 function *findSolutions(reconciledConstraint: IncompleteChord, previous?: HarmonizedChord) {
@@ -131,7 +147,12 @@ export interface HarmonyParameters {
     /**
      * The chords that are enabled if using progressions
      */
-    enabled: [Predicate, Producer][];
+    enabledProgressions?: [ProgressionPredicate, ProgressionProducer][];
+
+    /**
+     * The expansions that are enabled if using progressions
+     */
+    enabledExpansions?: ExpansionOperator[];
 
     /**
      * Whether to ignore preferences and just choose the first option that is valid
@@ -158,34 +179,52 @@ export interface HarmonyParameters {
     partWritingParameters?: PartWritingParameters;
 }
 
+export const defaultProgressions = [...Progression.Major.identity, ...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.submediant, ...Progression.Major.tonicSubstitutes, ...Progression.Major.secondaryDominant];
+export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords];
+
 export interface HarmonyResult {
     solution: HarmonizedChord[] | null;
     furthest: number;
 }
 
 export namespace Harmony {
+    function * getOptions(params: HarmonyParameters, previous: HarmonizedChord[]) {
+        if(!params.useProgressions && params.constraints[previous.length]) {
+            yield [new IncompleteChord({})];
+        }
+
+        // Get options available to us from current chord
+        const progressions = params.enabledProgressions || defaultProgressions;
+        const options = progressions.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
+        
+        // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
+        // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+
+        //use expansions
+        const expansions = params.enabledExpansions || defaultExpansions;
+        let expandedOptions = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
+        // TODO option chaining
+        // console.log('Applied options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        for(let option of expandedOptions) {
+            yield option;
+        }
+    }
     
     export function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
-        if(!params.useProgressions && params.constraints[previous.length]) {
-            let result = harmonizeOptions(params, [], previous);
-            if(result != null) {
-                yield result;
-            }
-        }
-        let options: IncompleteChord[][];
-        options = params.enabled.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
-        //TODO is this necessary if roman numeral is already provided
-        for (const option of options) {
+        for (const option of getOptions(params, previous)) {
             let result = harmonizeOptions(params, option, previous);
-            if(result != null) {
+            if(result !== null) {
                 yield result;
             }
         }
     }
-    
+
     function harmonizeOptions(params: HarmonyParameters, option: IncompleteChord[], previous: HarmonizedChord[]): HarmonizedChord[] | null {
         // console.log([...previous].reverse().map(chord => chord.romanNumeral.name), option[0].romanNumeral?.name);
         const optionChord = option[0];
+        if(params.useProgressions && !optionChord) {
+            return null;
+        }
         const constraintChord = params.constraints[previous.length];
         if(!constraintChord) {
             return [];
@@ -194,37 +233,39 @@ export namespace Harmony {
         if(!reconciledConstraint || !reconciledConstraint.romanNumeral) {
             return null;
         }
+        // console.log(new Array(i).fill(' ').join('') + 'Harmonizing options for', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '), '+', option.map(chord => chord.romanNumeral?.name).join(' '));
         //instead of previous need to use previous fit
-        let results: HarmonizedChord[][] = [];
+        let results: HarmonizedChord[] = [];
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
-            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.harmonicFunction);
-            if(!PartWriting.Rules.testAll(params.partWritingParameters, chord, previous[0], ...previous.slice(1))) {
+            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags, reconciledConstraint.harmonicFunction,);
+            const array = [chord, ...previous];
+            if(!PartWriting.Rules.testAll(params.partWritingParameters, array)) {
                 continue;
             }
-            let result;
             if(option.length > 1) {
-                result = harmonizeOptions(params, option.slice(1), [chord, ...previous]);
-                if(result != null) {
-                    if(params.greedy) {
+                if(params.greedy) {
+                    const result = harmonizeOptions(params, option.slice(1), array);
+                    if(result) {
                         return [chord, ...result];
-                    } else {
-                        results.push([chord, ...result]);
                     }
+                } else {
+                    results.push(chord);
                 }
             } else {
                 if(params.greedy) {
                     return [chord];
                 } else {
-                    results.push([chord]);
+                    results.push(chord);
                 }
             }
         }
+        
         if(!params.greedy && results.length > 0) {
             //TODO need to check or average over all in the results array
-            (results as any).sort((a: HarmonizedChord[], b: HarmonizedChord[]) => {
-                let aScore = PartWriting.Preferences.evaluateAll(a[0], previous[0]);
-                let bScore = PartWriting.Preferences.evaluateAll(b[0], previous[0]);
+            results.sort((a: HarmonizedChord, b: HarmonizedChord) => {
+                let aScore = PartWriting.Preferences.evaluateAll(a, previous[0]);
+                let bScore = PartWriting.Preferences.evaluateAll(b, previous[0]);
                 for(let i = 0; i < aScore.length; i++) {
                     if(aScore[i] > bScore[i]){
                         return -1;
@@ -236,7 +277,15 @@ export namespace Harmony {
             });
             // console.log(previous[0].romanNumeral.name);
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(previous[0], result[0])));
-            return results[0];
+            if(option.length > 1) {
+                const result = harmonizeOptions(params, option.slice(1), [results[0], ...previous]);
+                if(result == null) {
+                    return null;
+                }
+                return [results[0], ...result];
+            } else {
+                return [results[0]];
+            }
         }
         return null;
     }
