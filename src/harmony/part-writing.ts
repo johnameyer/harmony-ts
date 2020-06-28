@@ -5,6 +5,7 @@ import { IntervalQuality } from "../interval/interval-quality";
 import { ComplexInterval } from "../interval/complex-interval";
 import { Motion } from "./motion";
 import { zip } from "../util/zip";
+import { makeLazyArray } from '../util/make-lazy-array';
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -575,6 +576,7 @@ export namespace PartWriting {
         }
     }
 
+    // TODO make array of results lazy-evaluating
     export namespace Preferences {
         
         export function checkDoubling(chord: HarmonizedChord) {
@@ -730,6 +732,17 @@ export namespace PartWriting {
             return checks;
         }
 
+        export function lazyEvaluateSingle(chordToCheck: HarmonizedChord): number[] {
+            //TODO make combined version of previous
+            let checks = makeLazyArray([
+                checkSequence,
+                checkRange,
+                checkDoubling,
+                checkSharedPitch
+            ].map(func => () => func.apply(null, [chordToCheck])));
+            return checks;
+        }
+
         export function evaluateAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
@@ -744,6 +757,23 @@ export namespace PartWriting {
                 checkVoiceDisjunction,
                 checkSharedPitch
             ].map(func => func.apply(null, [chordToCheck, prev]));
+            return checks;
+        }
+
+        export function lazyEvaluateAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+            //TODO make combined version of previous
+            //TODO need V7 VI/vi prefer double 3rd?
+            let checks = makeLazyArray([
+                checkSequence,
+                checkRepetition,
+                checkRange,
+                checkDoubling,
+                checkVoiceCrossing,
+                checkVoiceOverlap,
+                checkBassOctaveJump,
+                checkVoiceDisjunction,
+                checkSharedPitch
+            ].map(func => () => func.apply(null, [chordToCheck, prev])));
             return checks;
         }
     }

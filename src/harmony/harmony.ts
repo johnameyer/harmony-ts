@@ -9,6 +9,18 @@ import { Scale } from "../scale";
 import { Accidental } from "../accidental";
 import { isDefined } from "../util";
 import { Expansion, ExpansionOperator } from "./expansion";
+import { minGenerator } from '../util/min-generator';
+
+const arrayComparator = <T>(a: T[], b: T[]) => {
+    for(let i = 0; i < a.length && i < b.length; i++) {
+        if(a[i] > b[i]){
+            return -1;
+        } else if(a[i] < b[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 /**
 * 
@@ -130,20 +142,26 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
     }
 }
 
+/**
+ * The parameters that the harmonizer uses
+ */
 export interface HarmonyParameters {
     /**
      * The roman numeral to begin on
      * Should agree with the initial constraint
      */
     start?: string;
+
     /**
      * The data to build the harmony around
      */
     constraints: IncompleteChord[];
+
     /**
      * The scale to build off of
      */
     scale: Scale;
+
     /**
      * The chords that are enabled if using progressions
      */
@@ -205,6 +223,7 @@ export namespace Harmony {
         let expandedOptions = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
         // TODO option chaining
         expandedOptions.sort((a, b) => b.length - a.length);
+        // TODO remove duplicates
         // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
         for(let option of expandedOptions) {
             if(previous.length + option.length <= params.constraints.length) {
@@ -265,29 +284,24 @@ export namespace Harmony {
         }
         
         if(!params.greedy && results.length > 0) {
-            //TODO need to check or average over all in the results array
-            results.sort((a: HarmonizedChord, b: HarmonizedChord) => {
-                let aScore = PartWriting.Preferences.evaluateAll(a, previous[0]);
-                let bScore = PartWriting.Preferences.evaluateAll(b, previous[0]);
-                for(let i = 0; i < aScore.length; i++) {
-                    if(aScore[i] > bScore[i]){
-                        return -1;
-                    } else if(aScore[i] < bScore[i]) {
-                        return 1;
-                    }
-                }
-                return 0;
-            });
-            // console.log('Harmonize options scores after', previous[0].romanNumeral.name);
+            // console.log('Harmonize options', previous[0].romanNumeral.name, option.map(chord => chord.romanNumeral?.name));
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result, previous[0])));
-            if(option.length > 1) {
-                const result = harmonizeOptions(params, option.slice(1), [results[0], ...previous]);
-                if(result == null) {
-                    return null;
+            const bestResults = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(result, previous[0]), arrayComparator);
+
+            //TODO need to check or average over all in the results array
+            for(let i of bestResults) {
+                // TODO also need to be generator?
+                const bestResult = results[i];
+                // console.log('Best was', bestResult.romanNumeral.name, PartWriting.Preferences.evaluateAll(bestResult, previous[0]));
+                if(option.length > 1) {
+                    const result = harmonizeOptions(params, option.slice(1), [bestResult, ...previous]);
+                    if(result == null) {
+                        return null;
+                    }
+                    return [bestResult, ...result];
+                } else {
+                    return [bestResult];
                 }
-                return [results[0], ...result];
-            } else {
-                return [results[0]];
             }
         }
         return null;
@@ -321,21 +335,11 @@ export namespace Harmony {
             }
         }
         if(!params.greedy && results.length > 0) {
-            (results as any).sort((a: HarmonizedChord, b: HarmonizedChord) => {
-                let aScore = PartWriting.Preferences.evaluateSingle(a);
-                let bScore = PartWriting.Preferences.evaluateSingle(b);
-                for(let i = 0; i < aScore.length; i++) {
-                    if(aScore[i] > bScore[i]){
-                        return -1;
-                    } else if(aScore[i] < bScore[i]) {
-                        return 1;
-                    }
-                }
-                return 0;
-            });
+            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateSingle(result), arrayComparator);
             // console.log('Harmonize all scores');
             // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
-            for(let chord of results) {
+            for(let i of scores) {
+                let chord = results[i];
                 const result = harmonizeRecursive(params, [chord]);
                 if(result.solution != null) {
                     return {solution: [chord, ...result.solution], furthest: result.furthest};
@@ -366,21 +370,11 @@ export namespace Harmony {
             }
         }
         if(!params.greedy && results.length > 0) {
-            (results as any).sort((a: HarmonizedChord[], b: HarmonizedChord[]) => {
-                let aScore = PartWriting.Preferences.evaluateAll(a[0], previous[0]);
-                let bScore = PartWriting.Preferences.evaluateAll(b[0], previous[0]);
-                for(let i = 0; i < aScore.length; i++) {
-                    if(aScore[i] > bScore[i]){
-                        return -1;
-                    } else if(aScore[i] < bScore[i]) {
-                        return 1;
-                    }
-                }
-                return 0;
-            });
+            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(result[0], previous[0]), arrayComparator);
             // console.log('Harmonize recursive scores after', previous[0].romanNumeral.name);
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result[0], previous[0])));
-            for(let solution of results) {
+            for(let i of scores) {
+                let solution = results[i];
                 const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
                 if(result.solution) {
                     return {solution: [...solution, ...result.solution], furthest: result.furthest};
