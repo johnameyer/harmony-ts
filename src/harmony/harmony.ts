@@ -158,7 +158,7 @@ export interface HarmonyParameters {
     constraints: IncompleteChord[];
 
     /**
-     * The scale to build off of
+     * The scale to start with
      */
     scale: Scale;
 
@@ -186,22 +186,43 @@ export interface HarmonyParameters {
     /**
      * Whether to check against the internal progressions or use as-is
      * Requires complete roman numerals
+     * Will still prefer using sequences from internal progressions
      */
     useProgressions?: boolean;
 
-    /**
+    /*
      * Choose the least terrible of the failures, if not possible
      */
     // goodEnough?: boolean;
 
+    /**
+     * The settings to run the part-writing rule checks under
+     */
     partWritingParameters?: PartWritingParameters;
 }
 
+/**
+ * The progressions that are enabled by the harmonizer by default
+ */
 export const defaultProgressions = [...Progression.Major.identity, ...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.submediant, ...Progression.Major.tonicSubstitutes, ...Progression.Major.secondaryDominant];
+
+/**
+ * The expansions that are enabled by the harmonizer by default
+ */
 export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords];
 
+/**
+ * The result of a harmonization
+ */
 export interface HarmonyResult {
+    /**
+     * The generated solution, or null if could not resolve based on the parameters
+     */
     solution: HarmonizedChord[] | null;
+
+    /**
+     * The furthest in the constraints the harmonizer made it
+     */
     furthest: number;
 }
 
@@ -232,7 +253,7 @@ export namespace Harmony {
         }
     }
     
-    export function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
+    function *harmonize(params: HarmonyParameters, previous: HarmonizedChord[]) {
         for (const option of getOptions(params, previous)) {
             let result = harmonizeOptions(params, option, previous);
             if(result !== null) {
@@ -307,6 +328,10 @@ export namespace Harmony {
         return null;
     }
     
+    /**
+     * Harmonize based on the given parameters
+     * @param params the parameters to harmonize
+     */
     export function harmonizeAll(params: HarmonyParameters): HarmonyResult {
         //TODO harmonize tonic or come up with options
         const start = new RomanNumeral(params.start || 'I',  params.scale);
@@ -351,7 +376,7 @@ export namespace Harmony {
         return {solution: null, furthest: furthest};
     }
     
-    export function harmonizeRecursive(params: HarmonyParameters, previous: HarmonizedChord[]): HarmonyResult {
+    function harmonizeRecursive(params: HarmonyParameters, previous: HarmonizedChord[]): HarmonyResult {
         if(params.constraints.length == previous.length) {
             return {solution: [], furthest: previous.length};
         }

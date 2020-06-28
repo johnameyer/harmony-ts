@@ -202,7 +202,7 @@ export namespace Expansion {
         startingWith('I6', movingTo('I6', insert('vii043')))
     ];
 
-    //TODO fix problem with vii0
+    //TODO fix problem of vii0 instead of viio
     export const otherSeventhChords = [movingTo, movingToWithinSequence].flatMap(movingTo => [
         ...[['7','7'],['7',''],['65',''],['43',''],['43','7'],['42','63'],['42','65']].flatMap(([firstInversion, secondInversion]) => [
             // descending fifths
