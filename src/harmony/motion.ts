@@ -1,11 +1,25 @@
-import { Note } from "../note/note";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Interval } from "../interval/interval";
 
+/**
+ * Describes the motion between two voices
+ */
 export enum Motion {
+    /**
+     * Two voices moving up or down together by the same diatonic distance
+     */
     PARALLEL,
+    /**
+     * Two voices moving up or down together by different distances
+     */
     SIMILAR,
+    /**
+     * One voice moving and one voice remaining the same
+     */
     OBLIQUE,
+    /**
+     * Voices moving in opposite directions
+     */
     CONTRARY,
 }
 export namespace Motion {

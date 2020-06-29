@@ -3,8 +3,40 @@ name: ci
 on: [push]
 
 jobs:
-  ci:
+  lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+    
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Check Circular Dependencies
+        run: npx madge --circular --extensions ts ./src
+
+      - name: Lint
+        run: npm run lint
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint]
     strategy:
       matrix:
         node-version: [12.x]
@@ -19,22 +51,94 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - name: Node ${{ matrix.node-version }}
+
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install Dependencies
         run: npm ci
-
-      - name: Check Circular Dependencies
-        run: npx madge --circular --extensions ts ./src
-
+      
       - name: Build
         run: npm run build
 
-      - name: Lint
-        run: npm run lint
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: dist/
 
-      - name: Unit Test
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+          path: dist/
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Unit Tests
         run: npm run test
+
+  package-tests:
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      matrix:
+        node-version: [12.x]
+        script: [time-test-success-check, time-test-success-no-check, time-test-failure-check, time-test-failure-no-check]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+          path: dist/
+
+      - name: Install Dependencies For Test Script
+        run: npm ci
+        working-directory: ./test/
+
+      - name: Build Test Script
+        run: tsc
+        working-directory: ./test/
+
+      - name: Run Script ${{ matrix.script }}.test.js
+        run: node dist/${{ matrix.script }}.test.js
+        working-directory: ./test/

@@ -5,6 +5,7 @@ import { IntervalQuality } from "../interval/interval-quality";
 import { ComplexInterval } from "../interval/complex-interval";
 import { Motion } from "./motion";
 import { zip } from "../util/zip";
+import { makeLazyArray } from '../util/make-lazy-array';
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -103,6 +104,11 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that the notes in the chord properly spells the chord
+         * @param settings
+         * @param chord the chord under consideration
+         */
         export function checkSpelling(settings: PartWritingRuleSetting, chord: HarmonizedChord) {
             if(settings === false) {
                 return true;
@@ -345,6 +351,13 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that the seventh of a chord resolves down, except in a few exceptions
+         * @param settings 
+         * @param chord the chord under consideration
+         * @param prev the chord before `chord`
+         * @param before the chord before `prev`
+         */
         export function checkSeventhResolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
             if(settings === false) {
                 return true;
@@ -387,7 +400,11 @@ export namespace PartWriting {
             return true;
         }
 
-        /** */
+        /**
+         * Checks that diminished fifths resolve inwards
+         * @todo implement
+         * @todo is this necessary
+         */
         export function checkDiminishedFifthResolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
             if(settings === false) {
                 return true;
@@ -416,6 +433,7 @@ export namespace PartWriting {
          * Checks if there is a melodic A2 or too large of intervals
          * @param chord 
          * @param prev 
+         * @todo A2 is sometimes acceptable
          */
         export function checkInvalidIntervals(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
             if(settings === false) {
@@ -453,6 +471,12 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that an accented 64 is properly prepared
+         * @param settings 
+         * @param chord 
+         * @param prev 
+         */
         export function checkAccented64Preparation(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
             if(settings === false) {
                 return true;
@@ -480,6 +504,12 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that an accented 64 resolves properly
+         * @param settings 
+         * @param chord 
+         * @param prev 
+         */
         export function checkAccented64Resolution(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
             if(settings === false) {
                 return true;
@@ -524,6 +554,12 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Checks that the voices of a sequence maintain the same voicing over evey other chord
+         * @param settings 
+         * @param chord
+         * @param prev 
+         */
         export function checkSequence(settings: PartWritingRuleSetting, chord: HarmonizedChord, _: HarmonizedChord, prev: HarmonizedChord) {
             if(settings === false) {
                 return true;
@@ -542,6 +578,11 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Creates a generator that returns the keys of failed rules
+         * @param parameters 
+         * @param chords 
+         */
         export function *checkAll(parameters: PartWritingParameters = defaultPartWritingParameters, chords: HarmonizedChord[]) {
             //TODO make combined version of previous
             //TODO add ordering
@@ -552,10 +593,20 @@ export namespace PartWriting {
             }
         }
         
+        /**
+         * Checks that no rule fails
+         * @param parameters 
+         * @param chords 
+         */
         export function testAll(parameters: PartWritingParameters = defaultPartWritingParameters, chords: HarmonizedChord[]) {
             return checkAll(parameters, chords).next().value === undefined;
         }
 
+        /**
+         * Checks a singular chord and returns the index of the failing
+         * @param parameters 
+         * @param chordToCheck 
+         */
         export function checkSingular(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord) {
             //TODO make combined version of previous
             let failed = [
@@ -570,13 +621,21 @@ export namespace PartWriting {
             return failed;
         }
 
+        /**
+         * Checks that no check is failed for a singular chord
+         * @param parameters 
+         * @param chordToCheck 
+         */
         export function testSingular(parameters: PartWritingParameters = defaultPartWritingParameters, chordToCheck: HarmonizedChord) {
             return checkSingular(parameters, chordToCheck) == -1;
         }
     }
 
     export namespace Preferences {
-        
+        /**
+         * Prefer that chords have certain doublings over others
+         * @param chord the chord under consideration
+         */
         export function checkDoubling(chord: HarmonizedChord) {
             if(chord.romanNumeral.hasSeventh) {
                 if(numVoicesWithInterval(chord, '5') == 0) {
@@ -610,7 +669,10 @@ export namespace PartWriting {
             return 0;
         }
 
-        //disprefer voice crossing in tenor and soprano
+        /**
+         * Prefer that voices do not cross
+         * @param chord the chord under consideration
+         */
         export function checkVoiceCrossing(chord: HarmonizedChord) {
             let count = 0;
             for(let i = 1; i < chord.voices.length - 2; i++) {
@@ -621,7 +683,11 @@ export namespace PartWriting {
             return count;
         }
 
-        //avoid overlapping - voice parts?
+        /**
+         * Prefer that inner voices do not overlap
+         * @param chord the chord under consideration
+         * @param prev the previous chord
+         */
         export function checkVoiceOverlap(chord: HarmonizedChord, prev: HarmonizedChord) {
             let count = 0;
             for(let i = 1; i < chord.voices.length - 2; i++) {
@@ -632,6 +698,10 @@ export namespace PartWriting {
             return count;
         }
 
+        /**
+         * Prefer that voices remain within their core range
+         * @param chord the chord under consideration
+         */
         export function checkRange(chord: HarmonizedChord) {
             let result = 0;
             for (const [range, toCheck] of [
@@ -650,7 +720,12 @@ export namespace PartWriting {
             return result;
         }
 
-        //prefer smaller motion && prefer change in direction with larger jumps
+        /**
+         * Prefer smaller movements in soprano and inner voices
+         * @param chord the chord under consideration
+         * @param prev the previous chord
+         * @todo implement restorative and soprano special rules
+         */
         export function checkVoiceDisjunction(chord: HarmonizedChord, prev: HarmonizedChord) {
             //TODO prefer restorative
             let count = 0;
@@ -660,6 +735,13 @@ export namespace PartWriting {
             return count;
         }
 
+
+        // TODO needless bass disjunction rule
+
+        /**
+         * Prefer that voices do not share the same pitch
+         * @param chord the chord under consideration
+         */
         export function checkSharedPitch(chord: HarmonizedChord) {
             let count = 0;
             for(let i = 1; i < chord.voices.length - 1; i++) {
@@ -670,6 +752,11 @@ export namespace PartWriting {
             return count;
         }
 
+        /**
+         * Prefer that the bass jumps down by an octave in cadential V progressions (e.g. V - V7)
+         * @param chord the chord under consideration
+         * @param prev the previous chord
+         */
         export function checkBassOctaveJump(chord: HarmonizedChord, prev: HarmonizedChord) {
             if(
                 (prev.romanNumeral.name.toLowerCase() === 'i64' && chord.romanNumeral.name === 'V')
@@ -687,6 +774,12 @@ export namespace PartWriting {
             return 0;
         }
 
+        /**
+         * Prefer proper succession of chromatic tones, as might result in ii - V/V
+         * @param settings the parameters to use
+         * @param chord the chord under consideration
+         * @param prev the previous chord
+         */
         export function checkCrossRelations(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
             if(settings === false) {
                 return true;
@@ -707,6 +800,10 @@ export namespace PartWriting {
             return true;
         }
 
+        /**
+         * Prefer chord progressions using sequences
+         * @param chord the chord to look at
+         */
         export function checkSequence(chord: HarmonizedChord) {
             if(chord.flags?.sequence) {
                 return 1;
@@ -714,13 +811,21 @@ export namespace PartWriting {
             return 0;
         }
         
+        /**
+         * Prefer using a chord that is different from the previous
+         */
         export function checkRepetition(chord: HarmonizedChord, previous: HarmonizedChord) {
             // TODO remove
             return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
         }
 
+        /**
+         * Evaluate the chord on all the preferences
+         * @param chordToCheck the chord to evaluate
+         */
         export function evaluateSingle(chordToCheck: HarmonizedChord): number[] {
             //TODO make combined version of previous
+            //TODO make ordering and selection parameterized
             let checks = [
                 checkSequence,
                 checkRange,
@@ -730,6 +835,27 @@ export namespace PartWriting {
             return checks;
         }
 
+        /**
+         * Create a lazy array of the results of the preference checks
+         * The checks will only be run if the index is called and the value is not already calculated
+         * @param chordToCheck the chord to run the rules
+         */
+        export function lazyEvaluateSingle(chordToCheck: HarmonizedChord): number[] {
+            //TODO make combined version of previous
+            let checks = makeLazyArray([
+                checkSequence,
+                checkRange,
+                checkDoubling,
+                checkSharedPitch
+            ].map(func => () => func.apply(null, [chordToCheck])));
+            return checks;
+        }
+
+        /**
+         * Evaluates all preferences for a given chord
+         * @param chordToCheck the chord to check
+         * @param prev the chord before the chord under consideration
+         */
         export function evaluateAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
@@ -744,6 +870,29 @@ export namespace PartWriting {
                 checkVoiceDisjunction,
                 checkSharedPitch
             ].map(func => func.apply(null, [chordToCheck, prev]));
+            return checks;
+        }
+
+        /**
+         * Create a lazy array of the results of the preference checks
+         * The checks will only be run if the index is called and the value is not already calculated
+         * @param chordToCheck the chord to run the rules on
+         * @param prev the chord before the one under consideration
+         */
+        export function lazyEvaluateAll(chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+            //TODO make combined version of previous
+            //TODO need V7 VI/vi prefer double 3rd?
+            let checks = makeLazyArray([
+                checkSequence,
+                checkRepetition,
+                checkRange,
+                checkDoubling,
+                checkVoiceCrossing,
+                checkVoiceOverlap,
+                checkBassOctaveJump,
+                checkVoiceDisjunction,
+                checkSharedPitch
+            ].map(func => () => func.apply(null, [chordToCheck, prev])));
             return checks;
         }
     }
