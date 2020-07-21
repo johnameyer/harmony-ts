@@ -12,11 +12,18 @@ import { IntervalQuality } from './interval/interval-quality';
 import { Key } from './key';
 import { PartWritingParameters, PartWriting } from './harmony/part-writing';
 import { Expansion, ExpansionOperator } from './harmony/expansion';
+import { Chord } from './chord/chord';
+import { HarmonizedChord } from './chord/harmonized-chord';
+import { Motion } from './harmony/motion';
+import { ScaleDegree } from './harmony/scale-degree';
+import { ComplexInterval } from './interval/complex-interval';
 
 export {
     AbsoluteNote,
     Accidental,
+    Chord,
     IncompleteChord,
+    HarmonizedChord,
     Scale,
     Harmony,
     HarmonyParameters,
@@ -35,5 +42,8 @@ export {
     ExpansionOperator,
     ChordQuality,
     IntervalQuality,
-    Key
+    Key,
+    Motion,
+    ScaleDegree,
+    ComplexInterval
 };
