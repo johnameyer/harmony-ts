@@ -44,6 +44,7 @@ const ordering = [
     'leadingToneDoubling',
     'seventhDoubling',
     'invalidIntervals',
+    'seventhPreparation',
     'seventhResolution',
     'leadingToneResolution',
     'diminishedFifthResolution',
@@ -70,6 +71,7 @@ export const defaultPartWritingParameters: PartWritingParameters = {
     invalidIntervals: true,
     diminishedFifthResolution: true,
     accented64Doubling: true,
+    seventhPreparation: true,
     seventhResolution: {
         scope: 2
     },
@@ -349,6 +351,45 @@ export namespace PartWriting {
                 }
             }
             return true;
+        }
+
+        /**
+         * Checks whether the seventh is prepared correctly (by step or unison)
+         * V is exempt
+         * @todo is applied V exempt?
+         * @param chord the chord to check
+         * @param prev the chord before this chord
+         */
+        export function checkSeventhPreparation(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
+            if(settings === false) {
+                return true;
+            }
+            if(!chord.romanNumeral.hasSeventh) {
+                return true;
+            }
+            if(prev.romanNumeral.root === chord.romanNumeral.root && prev.romanNumeral.hasSeventh) {
+                return true;
+            }
+            if (chord.romanNumeral.symbol == 'V') {
+                return true;
+            }
+            const index = chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+            if(index === -1) {
+                return false;
+            }
+            try {
+                const interval = new Interval(prev.voices[index], chord.voices[index]).simpleSize;
+                if(interval === 'U' || interval === '2') {
+                    return true;
+                }
+            } catch {}
+            try {
+                const interval = new Interval(chord.voices[index], prev.voices[index]).simpleSize;
+                if(interval === 'U' || interval === '2') {
+                    return true;
+                }
+            } catch {}
+            return false;
         }
 
         /**
@@ -910,6 +951,7 @@ defaultPartWritingRules.leadingToneDoubling = PartWriting.Rules.checkLeadingTone
 defaultPartWritingRules.seventhDoubling = PartWriting.Rules.checkSeventhDoubling;
 defaultPartWritingRules.invalidIntervals = PartWriting.Rules.checkInvalidIntervals;
 defaultPartWritingRules.leadingToneResolution = PartWriting.Rules.checkLeadingToneResolution;
+defaultPartWritingRules.seventhPreparation = PartWriting.Rules.checkSeventhPreparation;
 defaultPartWritingRules.seventhResolution = PartWriting.Rules.checkSeventhResolution;
 defaultPartWritingRules.diminishedFifthResolution = PartWriting.Rules.checkDiminishedFifthResolution;
 defaultPartWritingRules.accented64Doubling = PartWriting.Rules.checkAccented64Doubling;
