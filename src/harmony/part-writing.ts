@@ -31,29 +31,6 @@ export const voiceRange = [sopranoRange, altoRange, tenorRange, bassRange];
 export const defaultPartWritingRules: { [key: string]: PartWritingRule } = {
 }
 
-// TODO remove
-const ordering = [
-    'range',
-    'voiceOverlap',
-    'spacingAndCrossing',
-    'spelling',
-    'completeness',
-    'parallels',
-    'contraryFifths',
-    'hiddenFifths',
-    'leadingToneDoubling',
-    'seventhDoubling',
-    'invalidIntervals',
-    'seventhPreparation',
-    'seventhResolution',
-    'leadingToneResolution',
-    'diminishedFifthResolution',
-    'accented64Doubling',
-    'accented64Preparation',
-    'accented64Resolution',
-    'sequence'
-]
-
 export const defaultPartWritingParameters: PartWritingParameters = {
     range: {
         ranges: voiceRange
@@ -80,7 +57,8 @@ export const defaultPartWritingParameters: PartWritingParameters = {
     },
     accented64Preparation: true,
     accented64Resolution: true,
-    sequence: true
+    sequence: true,
+    cadenceType: true
 }
 
 export namespace PartWriting {
@@ -595,6 +573,38 @@ export namespace PartWriting {
             return true;
         }
 
+        export function checkCadenceType(settings: PartWritingRuleSetting, chord: HarmonizedChord, prev: HarmonizedChord) {
+            if(!settings) {
+                return true;
+            }
+            console.log(chord.flags);
+            if(chord.flags.pac) {
+                if(chord.romanNumeral.name !== 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    return false;
+                }
+                if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize !== 'U') {
+                    return false;
+                }
+            } else if(chord.flags.iac) {
+                // for our uses an IAC is V-I without 1 in the soprano
+                if(chord.romanNumeral.name !== 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    return false;
+                }
+                if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize === 'U') {
+                    return false;
+                }
+            } else if(chord.flags.hc) {
+                if(chord.romanNumeral.name !== 'V') {
+                    return false;
+                }
+            } else if(chord.flags.dc) {
+                if(chord.romanNumeral.name === 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /**
          * Checks that the voices of a sequence maintain the same voicing over evey other chord
          * @param settings 
@@ -626,8 +636,8 @@ export namespace PartWriting {
          */
         export function *checkAll(parameters: PartWritingParameters = defaultPartWritingParameters, chords: HarmonizedChord[]) {
             //TODO make combined version of previous
-            //TODO add ordering
-            for(const [key, func] of ordering.map(key => [key, parameters.customRules[key]] as [string, PartWritingRule])) {
+            //TODO add ordering?
+            for(const [key, func] of Object.entries(parameters.customRules)) {
                 if(!!(parameters[key]) && !func.apply(null, [parameters[key], ...chords])) {
                     yield key;
                 }
@@ -958,3 +968,4 @@ defaultPartWritingRules.accented64Doubling = PartWriting.Rules.checkAccented64Do
 defaultPartWritingRules.accented64Preparation = PartWriting.Rules.checkAccented64Preparation;
 defaultPartWritingRules.accented64Resolution = PartWriting.Rules.checkAccented64Resolution;
 defaultPartWritingRules.sequence = PartWriting.Rules.checkSequence;
+defaultPartWritingRules.cadenceType = PartWriting.Rules.checkCadenceType;
