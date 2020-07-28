@@ -2,7 +2,7 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
-import { PartWriting, PartWritingParameters, voiceRange } from "./part-writing";
+import { PartWriting, PartWritingParameters, voiceRange, PartWritingRules, defaultPartWritingParameters, PartWritingPreferences } from "./part-writing";
 import { ProgressionPredicate, ProgressionProducer, Progression } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
@@ -145,7 +145,7 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
 /**
  * The parameters that the harmonizer uses
  */
-export interface HarmonyParameters {
+export interface HarmonyParameters<T extends PartWritingRules = typeof defaultPartWritingParameters.rules, U extends PartWritingPreferences = typeof defaultPartWritingParameters.preferences> {
     /**
      * The roman numeral to begin on
      * Should agree with the initial constraint
@@ -198,7 +198,7 @@ export interface HarmonyParameters {
     /**
      * The settings to run the part-writing rule checks under
      */
-    partWritingParameters?: PartWritingParameters;
+    partWritingParameters?: PartWritingParameters<T, U>;
 }
 
 /**
@@ -283,7 +283,8 @@ export namespace Harmony {
             const [soprano, alto, tenor, bass] = foundSolution;
             const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags, reconciledConstraint.harmonicFunction,);
             const array = [chord, ...previous];
-            if(!PartWriting.Rules.testAll(params.partWritingParameters, array)) {
+            const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            if(!PartWriting.Rules.testAll(partWritingParams, array)) {
                 continue;
             }
             if(option.length > 1) {
@@ -307,7 +308,8 @@ export namespace Harmony {
         if(!params.greedy && results.length > 0) {
             // console.log('Harmonize options', previous[0].romanNumeral.name, option.map(chord => chord.romanNumeral?.name));
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result, previous[0])));
-            const bestResults = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(result, previous[0]), arrayComparator);
+            const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            const bestResults = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(partWritingParams, result, previous[0]), arrayComparator);
 
             //TODO need to check or average over all in the results array
             for(let i of bestResults) {
@@ -345,7 +347,8 @@ export namespace Harmony {
         // TODO enable accumulate results before recursing
         for(const beginning of findSolutions(reconciledConstraint)) {
             const chord = new HarmonizedChord(beginning, start);
-            if(!PartWriting.Rules.testSingular(params.partWritingParameters, chord)) {
+            const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            if(!PartWriting.Rules.testSingular(partWritingParams, chord)) {
                 continue;
             }
             if(params.greedy) {
@@ -360,7 +363,8 @@ export namespace Harmony {
             }
         }
         if(!params.greedy && results.length > 0) {
-            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateSingle(result), arrayComparator);
+            const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateSingle(partWritingParams, result), arrayComparator);
             // console.log('Harmonize all scores');
             // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
             for(let i of scores) {
@@ -395,7 +399,8 @@ export namespace Harmony {
             }
         }
         if(!params.greedy && results.length > 0) {
-            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(result[0], previous[0]), arrayComparator);
+            const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(partWritingParams, result[0], previous[0]), arrayComparator);
             // console.log('Harmonize recursive scores after', previous[0].romanNumeral.name);
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result[0], previous[0])));
             for(let i of scores) {
