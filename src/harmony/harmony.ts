@@ -10,6 +10,8 @@ import { Accidental } from "../accidental";
 import { isDefined } from "../util";
 import { Expansion, ExpansionOperator } from "./expansion";
 import { minGenerator } from '../util/min-generator';
+import { Interval } from "../interval/interval";
+import { Key } from "../key";
 
 const arrayComparator = <T>(a: T[], b: T[]) => {
     for(let i = 0; i < a.length && i < b.length; i++) {
@@ -40,7 +42,10 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
         return null;
     }
-    if(!compatible(one.harmonicFunction, two.harmonicFunction)) {
+    if(!compatible(one.romanNumeral?.scale[0], two.romanNumeral?.scale[0])) {
+        return null;
+    }
+    if(!compatible(one.romanNumeral?.scale[1], two.romanNumeral?.scale[1])) {
         return null;
     }
     if(one.flags) {
@@ -71,10 +76,9 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     }
     
     const romanNumeral = one.romanNumeral || two.romanNumeral;
-    const harmonicFunction = one.harmonicFunction || two.harmonicFunction;
     const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
     const flags = {...(one.flags || {}), ...(two.flags || {})};
-    return new IncompleteChord({romanNumeral, voices, harmonicFunction, flags});
+    return new IncompleteChord({romanNumeral, voices, flags});
 }
 
 function *findSolutions(reconciledConstraint: IncompleteChord, previous?: HarmonizedChord) {
@@ -178,10 +182,10 @@ export interface HarmonyParameters<T extends PartWritingRules = typeof defaultPa
     greedy?: boolean;
 
     /*
-    * If not greedy, whether to compare the total sum of all
+    * If not greedy, the depth at which to sum through for comparisons
     * TODO?
     */
-    // deep?: boolean;
+    // depth?: boolean;
 
     /**
      * Whether to check against the internal progressions or use as-is
@@ -199,6 +203,41 @@ export interface HarmonyParameters<T extends PartWritingRules = typeof defaultPa
      * The settings to run the part-writing rule checks under
      */
     partWritingParameters?: PartWritingParameters<T, U>;
+
+    /**
+     * Whether or not to modulate
+     * Defaults to falsy
+     */
+    canModulate?: boolean;
+
+    /**
+     * If enabled, the key areas that are allowed to modulate to
+     * E.g. P5 in C major would allow to go to G major and back
+     */
+    modulationsAllowed?: Interval[];
+
+    /**
+     * Whether a cadence needs to happen in a key before the next modulation
+     * Helps to reduce the search space
+     */
+    // modulateBeforeCadence: boolean;
+
+    /**
+     * Force the harmonizer to explore a certain number of children fully through at each level
+     * Results in exponential time complexity
+     */
+    // forceSelection: number;
+
+    /**
+     * Force the harmonizer to explore a certain number of top-level options
+     */
+    // initOptions: number;
+
+    /**
+     * Whether to run the checks beforehand to see if the constraints are possible to satisfy
+     * false is the 'old' behavior resulting in exponential backtracking for failure
+     */
+    // prechecks: boolean;
 }
 
 /**
@@ -234,10 +273,39 @@ export namespace Harmony {
 
         // Get options available to us from current chord
         const progressions = params.enabledProgressions || defaultProgressions;
-        const options = progressions.filter(([predicate, _]) => predicate(params.scale, previous)).flatMap(([_, producer]) => producer(params.scale, previous));
+        const scale = params.constraints[previous.length].romanNumeral?.scale || previous[0].romanNumeral.scale;
+        let options = progressions.filter(([predicate, _]) => predicate(scale, previous)).flatMap(([_, producer]) => producer(scale, previous));
         
-        // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-        // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        if(params.canModulate && !params.constraints[previous.length].romanNumeral?.scale) {
+            const oldScale = previous[0].romanNumeral.scale;
+            let modulationsAllowed = params.modulationsAllowed;
+
+            const majorAndMinor = (key: Key) => [[key, Scale.Quality.MAJOR], [key, Scale.Quality.MINOR]] as Scale[];
+            const possibleScales = modulationsAllowed ? modulationsAllowed.map(modulation => Key.fromString(modulation.transposeUp(Key.toNote(oldScale[0])).name)).flatMap(majorAndMinor) : Key.names.map(Key.fromString).flatMap(majorAndMinor);
+
+            possibleScales.splice(0, 0, oldScale);
+        
+            // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
+            // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+
+            // TODO remove options of multiple length?
+            options.push(...options.filter(option => option.length === 1)
+                .flatMap(option => possibleScales.map(scale => {
+                    if(scale === option[0].romanNumeral?.scale) {
+                        return undefined;
+                    }
+                    const romanNumeral = option[0].romanNumeral?.relativeToScale(scale);
+                    if(romanNumeral) {
+                        const flags = {...option[0].flags};
+                        flags.pivot = true;
+                        return [new IncompleteChord({...option[0], flags, romanNumeral})];
+                    }
+                    return undefined;
+                }))
+                .filter(isDefined));
+
+                // console.log('Pivoted options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        }
 
         //use expansions
         const expansions = params.enabledExpansions || defaultExpansions;
@@ -281,7 +349,7 @@ export namespace Harmony {
         let results: HarmonizedChord[] = [];
         for(const foundSolution of findSolutions(reconciledConstraint, previous[0])) {
             const [soprano, alto, tenor, bass] = foundSolution;
-            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags, reconciledConstraint.harmonicFunction,);
+            const chord = new HarmonizedChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
             const array = [chord, ...previous];
             const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
             if(!PartWriting.Rules.testAll(partWritingParams, array)) {
@@ -315,7 +383,7 @@ export namespace Harmony {
             for(let i of bestResults) {
                 // TODO also need to be generator?
                 const bestResult = results[i];
-                // console.log('Best was', bestResult.romanNumeral.name, PartWriting.Preferences.evaluateAll(bestResult, previous[0]));
+                // console.log('Best was', bestResult.romanNumeral.name, PartWriting.Preferences.evaluateAll(partWritingParams, bestResult, previous[0]));
                 if(option.length > 1) {
                     const result = harmonizeOptions(params, option.slice(1), [bestResult, ...previous]);
                     if(result == null) {
@@ -352,7 +420,7 @@ export namespace Harmony {
                 continue;
             }
             if(params.greedy) {
-                const result = harmonizeRecursive(params, [chord]);
+                const result = harmonizeRecursive(params, [chord], params.scale);
                 if(result.solution != null) {
                     return {solution: [chord, ...result.solution], furthest: result.furthest};
                 } else {
@@ -369,7 +437,7 @@ export namespace Harmony {
             // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
             for(let i of scores) {
                 let chord = results[i];
-                const result = harmonizeRecursive(params, [chord]);
+                const result = harmonizeRecursive(params, [chord], params.scale);
                 if(result.solution != null) {
                     return {solution: [chord, ...result.solution], furthest: result.furthest};
                 } else {
@@ -380,7 +448,7 @@ export namespace Harmony {
         return {solution: null, furthest: furthest};
     }
     
-    function harmonizeRecursive(params: HarmonyParameters, previous: HarmonizedChord[]): HarmonyResult {
+    function harmonizeRecursive(params: HarmonyParameters, previous: HarmonizedChord[], scale: Scale): HarmonyResult {
         if(params.constraints.length == previous.length) {
             return {solution: [], furthest: previous.length};
         }
@@ -388,7 +456,7 @@ export namespace Harmony {
         let results: HarmonizedChord[][] = [];
         for(let solution of harmonize(params, previous)){
             if(params.greedy) {
-                const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
+                const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous], solution[solution.length - 1].romanNumeral.scale);
                 if(result.solution != null) {
                     return {solution: [...solution, ...result.solution], furthest: result.furthest};
                 } else {
@@ -405,7 +473,7 @@ export namespace Harmony {
             // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result[0], previous[0])));
             for(let i of scores) {
                 let solution = results[i];
-                const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous]);
+                const result = harmonizeRecursive(params, [...[...solution].reverse(), ...previous], solution[solution.length - 1].romanNumeral.scale);
                 if(result.solution) {
                     return {solution: [...solution, ...result.solution], furthest: result.furthest};
                 } else {

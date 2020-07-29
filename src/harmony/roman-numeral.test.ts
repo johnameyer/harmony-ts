@@ -1,14 +1,18 @@
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
+import { Key } from "../key";
+
+const CMajor: Scale = [Key.C, Scale.Quality.MAJOR];
+const CMinor: Scale = [Key.C, Scale.Quality.MINOR];
 
 describe('RomanNumeral', () => {
     describe('valid', () => {
         describe('root position triad', () => {
             test.each([
-                ['I', Scale.Major.notes],
-                ['ii', Scale.Major.notes],
-                ['viio', Scale.Major.notes],
-                ['V/V', Scale.Major.notes]
+                ['I', CMajor],
+                ['ii', CMajor],
+                ['viio', CMajor],
+                ['V/V', CMajor]
             ])('%p', (value, scale) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -17,9 +21,9 @@ describe('RomanNumeral', () => {
 
         describe('inverted triad', () => {
             test.each([
-                ['I6', Scale.Major.notes],
-                ['ii6', Scale.Major.notes],
-                ['viio6', Scale.Major.notes],
+                ['I6', CMajor],
+                ['ii6', CMajor],
+                ['viio6', CMajor],
             ])('%p', (value, scale) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -28,10 +32,10 @@ describe('RomanNumeral', () => {
 
         describe('root seventh', () => {
             test.each([
-                ['ii7', Scale.Major.notes],
-                ['V7', Scale.Major.notes],
-                ['vii07', Scale.Major.notes],
-                ['viio7', Scale.NaturalMinor.notes],
+                ['ii7', CMajor],
+                ['V7', CMajor],
+                ['vii07', CMajor],
+                ['viio7', CMinor],
             ])('%p', (value, scale) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -41,10 +45,10 @@ describe('RomanNumeral', () => {
 
         describe('inverted seventh', () => {
             test.each([
-                ['ii43', Scale.Major.notes],
-                ['V42', Scale.Major.notes],
-                ['vii065', Scale.Major.notes],
-                ['viio65', Scale.HarmonicMinor.notes],
+                ['ii43', CMajor],
+                ['V42', CMajor],
+                ['vii065', CMajor],
+                ['viio65', CMinor],
             ])('%p', (value, scale) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -54,9 +58,9 @@ describe('RomanNumeral', () => {
 
         describe('applied chord', () => {
             test.each([
-                ['V42/V', Scale.Major.notes],
-                ['viio6/ii', Scale.Major.notes],
-                ['vii07/vi', Scale.Major.notes],
+                ['V42/V', CMajor],
+                ['viio6/ii', CMajor],
+                ['vii07/vi', CMajor],
             ])('%p', (value, scale) => {
                 const embellished = new RomanNumeral(value, scale);
                 const romanNumeral = new RomanNumeral(value, scale);
@@ -68,10 +72,10 @@ describe('RomanNumeral', () => {
 
         describe('root', () => {
             test.each([
-                ['I', Scale.Major.notes, 'C'],
-                ['ii', Scale.Major.notes, 'D'],
-                ['viio', Scale.Major.notes, 'B'],
-                ['V/V', Scale.NaturalMinor.notes, 'D']
+                ['I', CMajor, 'C'],
+                ['ii', CMajor, 'D'],
+                ['viio', CMajor, 'B'],
+                ['V/V', CMinor, 'D']
             ])('%p', (value, scale, root) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.root.name).toBe(root);
@@ -80,14 +84,58 @@ describe('RomanNumeral', () => {
 
         describe('root', () => {
             test.each([
-                ['i', Scale.NaturalMinor.notes, 'C'],
-                ['iio', Scale.NaturalMinor.notes, 'D'],
-                ['VII', Scale.NaturalMinor.notes, 'Bb'],
-                ['viio6', Scale.NaturalMinor.notes, 'B'], // special case
-                ['V/V', Scale.NaturalMinor.notes, 'D']
+                ['i', CMinor, 'C'],
+                ['iio', CMinor, 'D'],
+                ['VII', CMinor, 'Bb'],
+                ['viio6', CMinor, 'B'], // special case
+                ['V/V', CMinor, 'D']
             ])('%p', (value, scale, root) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 expect(romanNumeral.root.name).toBe(root);
+            });
+        });
+
+        describe('relativeToScale', () => {
+            test.each([
+                ['i', CMinor, [Key.EFlat, Scale.Quality.MAJOR] as Scale, 'vi'],
+                ['iio6', CMinor, [Key.EFlat, Scale.Quality.MAJOR] as Scale, 'viio6'],
+                ['vi', CMajor, [Key.G, Scale.Quality.MAJOR] as Scale, 'ii'],
+                ['ii', CMajor, [Key.F, Scale.Quality.MAJOR] as Scale, 'vi'],
+                ['I', CMajor, [Key.F, Scale.Quality.MAJOR] as Scale, 'V'],
+                ['i7', CMinor, [Key.BFlat, Scale.Quality.MAJOR] as Scale, 'ii7'],
+            ])('%s %p %p %s', (value, scale, newScale: Scale, expected) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                const relative = romanNumeral.relativeToScale(newScale);
+                expect(relative).not.toBe(null);
+                if(relative === null) {
+                    return;
+                }
+                expect(relative.name).toBe(expected);
+                const back = relative.relativeToScale(scale);
+                expect(back).not.toBe(null);
+                if(back === null) {
+                    return;
+                }
+                expect(back.name).toBe(value);
+            });
+        });
+    });
+    
+    describe('invalid', () => {
+        describe('relativeToScale', () => {
+            test.each([
+                ['I', CMajor, [Key.B, Scale.Quality.MAJOR] as Scale],
+                ['viio6', CMajor, [Key.GFlat, Scale.Quality.MAJOR] as Scale],
+                ['IV', CMajor, [Key.G, Scale.Quality.MAJOR] as Scale],
+                ['ii', CMajor, [Key.AFlat, Scale.Quality.MAJOR] as Scale],
+            ])('%s %p %p', (value, scale, newScale: Scale) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                const relative = romanNumeral.relativeToScale(newScale);
+                // expect(relative).toBe(null);
+                if(relative === null) {
+                    return;
+                }
+                expect(relative.name).toBe(null);
             });
         });
     });

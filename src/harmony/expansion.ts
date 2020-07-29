@@ -26,7 +26,7 @@ const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (sca
  */
 export namespace Expansion {
     export const identity = [
-        (_: Scale, chords: IncompleteChord[]) => chords.map(chord => new IncompleteChord({romanNumeral: chord.romanNumeral}))
+        (_: Scale, chords: IncompleteChord[]) => chords.map(chord => new IncompleteChord({flags: chord.flags, romanNumeral: chord.romanNumeral}))
     ]
 
     export const basic = [

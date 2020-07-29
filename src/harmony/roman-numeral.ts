@@ -4,9 +4,12 @@ import { Interval } from "../interval/interval";
 import { Note } from "../note/note";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
+import { Key } from "../key";
+import { Chord } from "..";
 
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
-    return new Interval(new Note(scale[lower]), new Note(scale[upper]));
+    const notes = Scale.getNamesOfScale(scale);
+    return new Interval(new Note(notes[lower]), new Note(notes[upper]));
 }
 
 function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, scale: Scale) {
@@ -30,7 +33,7 @@ export class RomanNumeral {
     // protected _accidental!: Accidental;
     protected _applied!: ScaleDegree | null;
 
-    protected _scale: string[];
+    protected _scale: Scale;
 
     /**
      * Intervals above the root
@@ -42,7 +45,7 @@ export class RomanNumeral {
      */
     protected _figuredBass!: string;
 
-    constructor(value: string, scale: string[]) {
+    constructor(value: string, scale: Scale) {
         this._name = value;
         this._scale = scale;
         const match = value.match(/^(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?(?:\/(VI{0,2}|I{2,3}|IV|vi{0,2}|i{2,3}|iv))?$/);
@@ -141,20 +144,21 @@ export class RomanNumeral {
     }
 
     get root(): Note {
+        const scale = Scale.getNotesOfScale(this._scale);
         if(this.symbol == 'V') {
             // dominant 5 is always built on the fifth of the tonic triad
             if(this._applied) {
-                return new Interval('P5').transposeUp(new Note(this._scale[this._applied - 1]));
+                return new Interval('P5').transposeUp(scale[this._applied - 1]);
             }
-            return new Interval('P5').transposeUp(new Note(this._scale[0]));
+            return new Interval('P5').transposeUp(scale[0]);
         } else if(this.symbol == 'viio' || this.symbol == 'vii0'){
             // leading tone is always a semitone below the note
             if(this._applied) {
-                return new Interval('m2').transposeDown(new Note(this._scale[this._applied - 1]));
+                return new Interval('m2').transposeDown(scale[this._applied - 1]);
             }
-            return new Interval('m2').transposeDown(new Note(this._scale[0]));
+            return new Interval('m2').transposeDown(scale[0]);
         }
-        return new Note(this._scale[this._scaleDegree - 1]);
+        return scale[this._scaleDegree - 1];
     }
 
     get inversion(): number {
@@ -203,5 +207,49 @@ export class RomanNumeral {
 
     get applied() {
         return this._applied ? ScaleDegree.toRomanNumeral(this._applied) : null;
+    }
+
+    get scaleDegree() {
+        return this._scaleDegree;
+    }
+
+    get scale() {
+        return this._scale;
+    }
+
+    relativeToScale(scale: Scale): RomanNumeral | null {
+        if(this._applied !== null) {
+            return null;
+        }
+        const notesOfScale = Scale.getNotesOfScale(scale);
+        const index = notesOfScale.findIndex(other => other.name === this.root.name);
+        if(index === -1) {
+            return null;
+        }
+        let newRomanNumeral = ScaleDegree.romanNumerals[index];
+        switch(this._quality) {
+            case ChordQuality.AUGMENTED:
+                newRomanNumeral += '+';
+            case ChordQuality.MAJOR:
+                newRomanNumeral = newRomanNumeral.toUpperCase();
+                break;
+            case ChordQuality.DIMINISHED:
+                newRomanNumeral = newRomanNumeral.toLowerCase();
+                if(!this.hasSeventh || this.intervals.find(Interval.ofSize('7'))?.quality === IntervalQuality.DIMINISHED) {
+                    newRomanNumeral += 'o';
+                } else {
+                    newRomanNumeral += '0';
+                }
+                break;
+            case ChordQuality.MINOR:
+                newRomanNumeral = newRomanNumeral.toLowerCase();
+        }
+        newRomanNumeral += this.inversionString;
+
+        const resultant = new RomanNumeral(newRomanNumeral, scale);
+        if(resultant.notes.every(note => this.notes.some(other => note.name === other.name))) {
+            return resultant;
+        }
+        return null;
     }
 }

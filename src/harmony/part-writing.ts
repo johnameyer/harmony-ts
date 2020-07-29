@@ -6,10 +6,11 @@ import { ComplexInterval } from "../interval/complex-interval";
 import { Motion } from "./motion";
 import { zip } from "../util/zip";
 import { makeLazyArray } from '../util/make-lazy-array';
+import { ScaleDegree } from "./scale-degree";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
-const numVoicesWithInterval = (chord: HarmonizedChord, interval: string) => chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize(interval)).length;
+const numVoicesWithInterval = (chord: HarmonizedChord, interval: string) => chord.intervals.filter(Interval.ofSize(interval)).length;
 
 export type PartWritingRule = (settings: any, ...chords: HarmonizedChord[]) => boolean;
 export type PartWritingPreference = (...chords: HarmonizedChord[]) => number;
@@ -31,10 +32,18 @@ export interface PartWritingPreferences {
     [ruleName: string]: PartWritingPreference
 };
 
+// Thanks to https://stackoverflow.com/questions/51419176/how-to-get-a-subset-of-keyof-t-whose-value-tk-are-callable-functions-in-typ
+type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
+type ParamNotOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? never : P}[keyof T]
+
 export interface PartWritingParameters<T extends PartWritingRules = typeof defaultPartWritingRules, U extends PartWritingPreferences = typeof defaultPartWritingPreferences>{
     rules: T,
     singularRules: (keyof T)[],
-    ruleParameters: Partial<{[ruleName in keyof T]: Parameters<T[ruleName]>[0] | boolean}>,
+    ruleParameters: {
+        [ruleName in ParamOfType<T, undefined>]?: false
+    } & {
+        [ruleName in ParamNotOfType<T, undefined>]: Parameters<T[ruleName]>[0] | false
+    }
     preferences: U,
     singularPreferences: (keyof U)[],
     preferencesOrdering: (keyof U)[]
@@ -101,7 +110,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              */
             export function spelling(_: undefined, chord: HarmonizedChord) {
-                if(!chord.voices.every(note => chord.romanNumeral.intervals.map(interval => interval.name).includes(new Interval(chord.romanNumeral.root, note).name))) {
+                if(!chord.intervals.every(interval => chord.romanNumeral.intervals.map(interval => interval.name).includes(interval.name))) {
                     return false;
                 }
                 return chord.voices[chord.voices.length - 1].simpleName == chord.romanNumeral.inversionInterval.transposeUp(chord.romanNumeral.root).name;
@@ -116,11 +125,11 @@ export namespace PartWriting {
                     return true;
                 }
                 if (chord.romanNumeral.name.startsWith('V')) {
-                    if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('3')).length > 1) {
+                    if (chord.intervals.filter(Interval.ofSize('3')).length > 1) {
                         return false;
                     }
                 } else if(chord.romanNumeral.name.startsWith('viio')) {
-                    if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('U')).length > 1) {
+                    if (chord.intervals.filter(Interval.ofSize('U')).length > 1) {
                         return false;
                     }
                 }
@@ -133,7 +142,7 @@ export namespace PartWriting {
              */
             export function seventhDoubling(_: undefined, chord: HarmonizedChord) {
                 if (chord.romanNumeral.hasSeventh) {
-                    if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('7')).length > 1) {
+                    if (chord.intervals.filter(Interval.ofSize('7')).length > 1) {
                         return false;
                     }
                 }
@@ -167,10 +176,10 @@ export namespace PartWriting {
                         }
                         // can leave out fifth if preceded by complete V7
                         if(prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') == 0) {
-                            return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+                            return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
                     } else {
-                        return chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('5')).length >= 1;
+                        return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                     }
                 }
                 return true;
@@ -202,7 +211,7 @@ export namespace PartWriting {
              */
             export function accented64Doubling(_: undefined, chord: HarmonizedChord) {
                 if (chord.romanNumeral.inversion === 2 && chord.romanNumeral.hasSeventh === false) {
-                    if (chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).filter(Interval.ofSize('U')).length > 1) {
+                    if (chord.intervals.filter(Interval.ofSize('U')).length > 1) {
                         return false;
                     }
                 }
@@ -302,7 +311,7 @@ export namespace PartWriting {
                 }
                 //TODO delayed resolution
                 if (prev.romanNumeral.symbol == 'V' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
-                    const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('3'));
+                    const index = prev.intervals.findIndex(Interval.ofSize('3'));
                     if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                         if(prev.voices[index].midi < chord.voices[index].midi) {
                             return false;
@@ -322,7 +331,7 @@ export namespace PartWriting {
                         }
                     }
                 } else if(prev.romanNumeral.symbol == 'viio' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
-                    const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('U'));
+                    const index = prev.intervals.findIndex(Interval.ofSize('U'));
                     if (index === -1 || new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
                         return false;
                     }
@@ -347,7 +356,7 @@ export namespace PartWriting {
                 if (chord.romanNumeral.symbol == 'V') {
                     return true;
                 }
-                const index = chord.voices.map(note => new Interval(chord.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+                const index = chord.intervals.findIndex(Interval.ofSize('7'));
                 if(index === -1) {
                     return false;
                 }
@@ -384,10 +393,10 @@ export namespace PartWriting {
                     && chord.romanNumeral.symbol.toLowerCase() == 'i'
                     && chord.romanNumeral.inversionInterval.simpleSize == '3'
                 ) {
-                    const index = prev.voices.map(note => new Interval(prev.romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
-                    if(new Interval(before[0].voices[0], before[0].voices[index]).simpleSize == '3'
-                        && new Interval(prev.voices[0], prev.voices[index]).simpleSize == '3'
-                        && new Interval(chord.voices[0], chord.voices[index]).simpleSize == '3'
+                    const index = prev.intervals.findIndex(Interval.ofSize('7'));
+                    if(before[0].intervals[index].simpleSize == '3'
+                        && prev.intervals[index].simpleSize == '3'
+                        && chord.intervals[index].simpleSize == '3'
                     ) {
                             return true;
                     }
@@ -397,7 +406,7 @@ export namespace PartWriting {
                 const seventhChecks = [chord, prev, ...before];
                 for(let i = 1; i < settings.scope; i++) {
                     if(seventhChecks[i].romanNumeral.hasSeventh) {
-                        const index = seventhChecks[i].voices.map(note => new Interval(seventhChecks[i].romanNumeral.root, note)).findIndex(Interval.ofSize('7'));
+                        const index = seventhChecks[i].intervals.findIndex(Interval.ofSize('7'));
                         for(let j = i - 1; j >= 0; j--) {
                             if(new Interval(seventhChecks[j].voices[index], seventhChecks[i].voices[index]).simpleSize === 'U') {
                                 continue;
@@ -595,9 +604,10 @@ export namespace PartWriting {
          */
         export function *checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: HarmonizedChord[]): Generator<keyof T> {
             //TODO make combined version of previous
-            //TODO add ordering?
             for(const key of Object.keys(parameters.rules) as (keyof T)[]) {
-                if(parameters.ruleParameters[key] !== false && !parameters.rules[key].apply(null, [parameters.ruleParameters[key], ...chords])) {
+                // @ts-ignore
+                const ruleParams = parameters.ruleParameters[key];
+                if(ruleParams !== false && !parameters.rules[key].apply(null, [ruleParams, ...chords])) {
                     yield key;
                 }
             }
@@ -620,7 +630,10 @@ export namespace PartWriting {
         export function *checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): Generator<keyof T> {
             //TODO make combined version of previous
             for(const key of parameters.singularRules) {
-                if(parameters.ruleParameters[key] !== false && !parameters.rules[key].apply(null, [parameters.ruleParameters[key], chordToCheck])) {
+                // Next line is needed because ts can't determine that the keys are preserved
+                // @ts-ignore
+                const ruleParams = parameters.ruleParameters[key];
+                if(ruleParams !== false && !parameters.rules[key].apply(null, [ruleParams, chordToCheck])) {
                     yield key;
                 }
             }
@@ -824,6 +837,29 @@ export namespace PartWriting {
                 // TODO remove
                 return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
             }
+
+            /**
+             * Prefers that a pivot chord has a predominant function in the new key
+             */
+            export function modulationToPredominant(chord: HarmonizedChord){
+                if(!chord.flags.pivot) {
+                    return 0;
+                }
+                if(chord.romanNumeral.scaleDegree === ScaleDegree.TONIC || chord.romanNumeral.scaleDegree === ScaleDegree.DOMINANT) {
+                    return -1;
+                }
+                return 0;
+            }
+
+            /**
+             * Prefers that there are fewer modulations
+             */
+            export function fewerModulations(chord: HarmonizedChord){
+                if(chord.flags.pivot) {
+                    return -1;
+                }
+                return 0;
+            }
         }
 
         /**
@@ -913,12 +949,16 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
     },
     preferences: defaultPartWritingPreferences,
     singularPreferences: [
+        'fewerModulations',
+        'modulationToPredominant',
         'checkSequence',
         'checkRange',
         'checkDoubling',
         'checkSharedPitch'
     ],
     preferencesOrdering: [
+        'fewerModulations',
+        'modulationToPredominant',
         'checkSequence',
         'checkRepetition',
         'checkRange',

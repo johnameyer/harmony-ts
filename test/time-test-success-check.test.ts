@@ -4,12 +4,12 @@ if(!performance) {
 
 const start = performance.now();
 
-import { Scale, IncompleteChord, RomanNumeral, Harmony } from "harmony-ts";
+import { Scale, Key, IncompleteChord, RomanNumeral, Harmony } from "harmony-ts";
 
 const postImports = performance.now();
 console.log('Importing took', postImports - start, 'milliseconds');
 
-const scale = Scale.Major.notes;
+const scale = [Key.C, Scale.Quality.MAJOR] as Scale;
 const chords = ['I', 'ii42', 'V65', 'I', 'IV', 'viio', 'iii', 'vi', 'ii', 'I64', 'V', 'I'];
 
 const constraints = chords.map(chord => new IncompleteChord({romanNumeral: new RomanNumeral(chord, scale)}));

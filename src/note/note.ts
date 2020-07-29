@@ -33,7 +33,7 @@ export class Note {
     }
 
     parseValue() {
-        const match = this.value.match(/^([a-zA-Z])(#{1,2}|b{1,2}|)?/);
+        const match = this.value.match(/^([a-gA-G])(#{1,2}|b{1,2}|)?/);
         if(match == null) {
             throw this.value + ' is invalid';
         }
