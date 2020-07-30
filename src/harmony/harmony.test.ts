@@ -9,16 +9,17 @@ import { Key } from "../key";
 const useProgressions = true;
 
 const CMajor: Scale = [Key.C, Scale.Quality.MAJOR];
+const CMinor: Scale = [Key.C, Scale.Quality.MINOR];
 const GMajor: Scale = [Key.G, Scale.Quality.MAJOR];
 
 describe('Harmony', () => {
     describe('harmonizeAll', () => {
         describe.each([true, false])('greedy %s', greedy => {
             test.each([
-                [['E4', 'D4', 'E4'], [...Progression.Major.basic]],
-                [['E4', 'D4', 'D4'], [...Progression.Major.basic, ...Progression.Major.basicPredominant]],
-                [['C5', 'C5', 'C5'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.tonicSubstitutes]],
-                [['E4', 'F4', 'G4'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths]],
+                [['E4', 'D4', 'E4'], [...Progression.Shared.basic]],
+                [['E4', 'D4', 'D4'], [...Progression.Shared.basic, ...Progression.Shared.basicPredominant]],
+                [['C5', 'C5', 'C5'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes]],
+                [['E4', 'F4', 'G4'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths]],
             ])('soprano line %s', (notes, enabled) => {
                 const soprano = notes.map(note => new AbsoluteNote(note));
                 const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
@@ -33,10 +34,10 @@ describe('Harmony', () => {
             });
             
             test.each([
-                [['C3', 'G3', 'G3'], [...Progression.Major.basic]],
-                [['C3', 'D3', 'E3'], [...Progression.Major.basic, ...Progression.Major.basicInversions]],
-                [['C3', 'D3', 'E3'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths]],
-                [['C3', 'C3', 'B2', 'C3'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths, ...Progression.Major.subdominantSevenths]],
+                [['C3', 'G3', 'G3'], [...Progression.Shared.basic]],
+                [['C3', 'D3', 'E3'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions]],
+                [['C3', 'D3', 'E3'], [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths]],
+                [['C3', 'C3', 'B2', 'C3'], [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths, ...Progression.Shared.subdominantSevenths]],
             ])('bass line %s', (notes, enabled) => {
                 // const soprano = ['G4', 'F4', 'E4', 'D4', 'C4'].map(note => new AbsoluteNote(note));
                 const bass = notes.map(note => new AbsoluteNote(note));
@@ -52,17 +53,17 @@ describe('Harmony', () => {
             });
             
             test.each([
-                [['I', 'V', 'I'], [...Progression.Major.basic]],
-                [['I', 'I6', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.basicInversions]],
-                [['I', 'ii6', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.basicPredominant]],
-                [['I', 'vi', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.submediant]],
-                [['I', 'V65', 'I'], [...Progression.Major.basic, ...Progression.Major.dominantSevenths]],
-                [['I', 'ii65', 'V', 'I'], [...Progression.Major.basic, ...Progression.Major.subdominantSevenths]],
-                [['I', 'I64', 'V7', 'I'], [...Progression.Major.basic]],
-                [['I', 'vi', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.tonicSubstitutes]],
-                [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
-                [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
-                [['I', 'V', 'V42', 'I6'], [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.tonicSubstitutes]],
+                [['I', 'V', 'I'], [...Progression.Shared.basic]],
+                [['I', 'I6', 'V', 'I'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions]],
+                [['I', 'ii6', 'V', 'I'], [...Progression.Shared.basic, ...Progression.Shared.basicPredominant]],
+                [['I', 'vi', 'V', 'I'], [...Progression.Shared.basic, ...Progression.Shared.submediant]],
+                [['I', 'V65', 'I'], [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths]],
+                [['I', 'ii65', 'V', 'I'], [...Progression.Shared.basic, ...Progression.Shared.subdominantSevenths]],
+                [['I', 'I64', 'V7', 'I'], [...Progression.Shared.basic]],
+                [['I', 'vi', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes]],
+                [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
+                [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
+                [['I', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
             ])('roman numerals %s', (numerals, enabled) => {
                 const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
                 const scale = CMajor;
@@ -83,7 +84,7 @@ describe('Harmony', () => {
                 const soprano = notes.map(note => new AbsoluteNote(note));
                 const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
                 const scale: Scale = [key, Scale.Quality.MAJOR];
-                const enabled = [...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths];
+                const enabled = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths];
                 const params: HarmonyParameters = {scale, enabledProgressions: enabled, constraints, greedy, useProgressions };
                 const result = Harmony.harmonizeAll(params);
                 expect(result.furthest).toBe(notes.length);
@@ -102,7 +103,7 @@ describe('Harmony', () => {
                     [['D4', 'B3', 'G3', 'G2'], 'V'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic]
+                [...Progression.Shared.basic]
             ],
             [
                 'I V65 I',
@@ -111,7 +112,7 @@ describe('Harmony', () => {
                     [['F4', 'D4', 'G3', 'B2'], 'V65'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic, ...Progression.Major.dominantSevenths]
+                [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths]
             ],
             [
                 'I V64 V I',
@@ -121,7 +122,7 @@ describe('Harmony', () => {
                     [['D4', 'B3', 'G3', 'G2'], 'V'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic]
+                [...Progression.Shared.basic]
             ],
             [
                 'I ii42 V65 I',
@@ -131,7 +132,7 @@ describe('Harmony', () => {
                     [['F4', 'D4', 'G3', 'B2'], 'V65'] as [string[], string],
                     [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string]
                 ],
-                [...Progression.Major.basic, ...Progression.Major.dominantSevenths, ...Progression.Major.subdominantSevenths]
+                [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths, ...Progression.Shared.subdominantSevenths]
             ],
             [
                 'I viio6 I6',
@@ -140,7 +141,7 @@ describe('Harmony', () => {
                     [['D4', 'B3', 'F3', 'D3'], 'viio6'] as [string[], string],
                     [['C4', 'C4', 'G3', 'E3'], 'I6'] as [string[], string]
                 ],
-                [...Progression.Major.basic, ...Progression.Major.basicInversions]
+                [...Progression.Shared.basic, ...Progression.Shared.basicInversions]
             ],
             // [
             //     'I V7 vi',
@@ -149,7 +150,7 @@ describe('Harmony', () => {
             //         [['D4', 'B3', 'F3', 'G2'], 'V7'] as [string[], string],
             //         [['C4', 'C4', 'E3', 'A2'], 'vi'] as [string[], string]
             //     ],
-            //     [...Progression.Major.basic, ...Progression.Major.basicInversions]
+            //     [...Progression.Shared.basic, ...Progression.Shared.basicInversions]
             // ]
         ])('specific voicing %s with soprano', (_, expected, enabled) => {
             const scale = CMajor;
@@ -183,7 +184,7 @@ describe('Harmony', () => {
                     [['B4', 'G4', 'D4', 'G3'], 'V'] as [string[], string],
                     [['B4', 'F4', 'D4', 'G2'], 'V7'] as [string[], string]
                 ],
-                [...Progression.Major.basic]
+                [...Progression.Shared.basic]
             ],
         ])('specific voicing %s with bassline', (_, expected, enabled) => {
             const scale = CMajor;
@@ -236,6 +237,62 @@ describe('Harmony', () => {
             if(result.solution != null) {
                 for(let i = 0; i < expected.length; i++) {
                     expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+                }
+            }
+        });
+
+        test.each([
+            [
+                'i V',
+                [
+                    [['Eb4', 'C4', 'G3', 'C3'], 'i', CMinor, {}] as [string[], string, Scale, {}],
+                    [['D4', 'B3', 'G3', 'G2'], 'V', CMinor, {}] as [string[], string, Scale, {}],
+                ]
+            ],
+            [
+                'i V i',
+                [
+                    [['Eb4', 'C4', 'G3', 'C3'], 'i', CMinor, {}] as [string[], string, Scale, {}],
+                    [['D4', 'B3', 'G3', 'G2'], 'V', CMinor, {}] as [string[], string, Scale, {}],
+                    [['Eb4', 'C4', 'G3', 'C3'], 'i', CMinor, {iac: true}] as [string[], string, Scale, {}],
+                ]
+            ],
+        ])('minor key %s', (_, expected) => {
+            const constraints = [];
+            let first = true;
+            for(const [voices, romanNumeral, scale, flags] of expected) {
+                if(first) {
+                    constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
+                    first = false;
+                } else {
+                    constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                }
+            }
+            const params: HarmonyParameters = {scale: CMinor, canModulate: false, constraints, greedy: false, useProgressions };
+            const result = Harmony.harmonizeAll(params);
+            expect(result.furthest).toBe(expected.length);
+            expect(result.solution).not.toBeNull();
+            if(result.solution != null) {
+                for(let i = 0; i < expected.length; i++) {
+                    expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+                }
+            }
+        });
+
+        test.each([
+            [['C5', 'B4']],
+            [['C5', 'D5', 'Eb5']],
+            [['C5', 'B4', 'B4', 'C5']],
+        ])('minor key %s', (soprano) => {
+            const constraints = soprano.map(note => new IncompleteChord({voices: [new AbsoluteNote(note), undefined, undefined, undefined] }));
+            const params: HarmonyParameters = {scale: CMinor, canModulate: true, constraints, greedy: false, useProgressions };
+            const result = Harmony.harmonizeAll(params);
+            expect(result.furthest).toBe(constraints.length);
+            expect(result.solution).not.toBeNull();
+            if(result.solution != null) {
+                for(let i = 0; i < constraints.length; i++) {
+                    expect(result.solution[i].voices[0].name).toEqual(soprano[i]);
+                    expect(result.solution[i].romanNumeral.scale).toEqual(CMinor);
                 }
             }
         });

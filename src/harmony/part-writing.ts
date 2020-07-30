@@ -7,6 +7,7 @@ import { Motion } from "./motion";
 import { zip } from "../util/zip";
 import { makeLazyArray } from '../util/make-lazy-array';
 import { ScaleDegree } from "./scale-degree";
+import { Scale } from "../scale";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -549,26 +550,38 @@ export namespace PartWriting {
 
             export function cadenceType(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
                 if(chord.flags.pac) {
-                    if(chord.romanNumeral.name !== 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                        return false;
+                    }
+                    if(chord.romanNumeral.name.toLowerCase() !== 'i' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
                         return false;
                     }
                     if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize !== 'U') {
                         return false;
                     }
                 } else if(chord.flags.iac) {
+                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                        return false;
+                    }
                     // for our uses an IAC is V-I without 1 in the soprano
-                    if(chord.romanNumeral.name !== 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if(chord.romanNumeral.name.toLowerCase() !== 'i' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
                         return false;
                     }
                     if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize === 'U') {
                         return false;
                     }
                 } else if(chord.flags.hc) {
+                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                        return false;
+                    }
                     if(chord.romanNumeral.name !== 'V') {
                         return false;
                     }
                 } else if(chord.flags.dc) {
-                    if(chord.romanNumeral.name === 'I' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                        return false;
+                    }
+                    if((chord.romanNumeral.name.toLowerCase() === 'i' || chord.romanNumeral.name.toLowerCase() === 'V' || chord.romanNumeral.name.toLowerCase() === 'vii') || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
                         return false;
                     }
                 }

@@ -59,6 +59,9 @@ export namespace Expansion {
         startingWith('I6', movingTo('I6', insert('V43', insert('V42')))),
         startingWith('I6', movingTo('I6', insert('V42', insert('V43')))),
         
+
+        startingWith('V6', replaceWith('V65')),
+
         movingTo('I', insert('V65')),
         movingTo('I6', insert('V42')),
     ];

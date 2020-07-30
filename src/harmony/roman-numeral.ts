@@ -252,4 +252,37 @@ export class RomanNumeral {
         }
         return null;
     }
+
+    diatonicized() {
+        const scaleDegree = Scale.getNamesOfScale(this._scale).indexOf(this.root.name);
+        if(scaleDegree === -1) {
+            return null;
+        }
+        let newRomanNumeral = ScaleDegree.romanNumerals[scaleDegree];
+        const thirdInterval = qualityOfScalarIntervalBuiltOn(scaleDegree, 3, this._scale).quality;
+        const fifthInterval = qualityOfScalarIntervalBuiltOn(scaleDegree, 5, this._scale).quality;
+        const seventhInterval = qualityOfScalarIntervalBuiltOn(scaleDegree, 7, this._scale).quality;
+        switch(fifthInterval) {
+            case IntervalQuality.AUGMENTED:
+                newRomanNumeral = newRomanNumeral.toUpperCase();
+                newRomanNumeral += '+';
+            case IntervalQuality.DIMINISHED:
+                newRomanNumeral = newRomanNumeral.toLowerCase();
+                if(!this.hasSeventh || seventhInterval === IntervalQuality.DIMINISHED) {
+                    newRomanNumeral += 'o';
+                } else {
+                    newRomanNumeral += '0';
+                }
+                break;
+            case IntervalQuality.PERFECT:
+                if(thirdInterval === IntervalQuality.MAJOR) {
+                    newRomanNumeral = newRomanNumeral.toUpperCase();
+                } else {
+                    newRomanNumeral = newRomanNumeral.toLowerCase();
+                }
+                break;
+        }
+        newRomanNumeral += this.inversionString;
+        return new RomanNumeral(newRomanNumeral, this._scale);
+    }
 }

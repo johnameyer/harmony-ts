@@ -119,6 +119,25 @@ describe('RomanNumeral', () => {
                 expect(back.name).toBe(value);
             });
         });
+
+        describe('diatonicized', () => {
+            test.each([
+                ['I', CMajor, 'I'],
+                ['i', CMajor, 'I'],
+                ['I', CMinor, 'i'],
+                ['ii6', CMinor, 'iio6'],
+                ['ii7', CMinor, 'ii07'],
+                ['vi', CMinor, 'VI'],
+            ])('%s %p %p %s', (value, scale, expected) => {
+                const romanNumeral = new RomanNumeral(value, scale);
+                const relative = romanNumeral.diatonicized();
+                expect(relative).not.toBe(null);
+                if(relative === null) {
+                    return;
+                }
+                expect(relative.name).toBe(expected);
+            });
+        });
     });
     
     describe('invalid', () => {

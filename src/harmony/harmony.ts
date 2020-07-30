@@ -243,7 +243,7 @@ export interface HarmonyParameters<T extends PartWritingRules = typeof defaultPa
 /**
  * The progressions that are enabled by the harmonizer by default
  */
-export const defaultProgressions = [...Progression.Major.identity, ...Progression.Major.basic, ...Progression.Major.basicInversions, ...Progression.Major.dominantSevenths, ...Progression.Major.basicPredominant, ...Progression.Major.subdominantSevenths, ...Progression.Major.submediant, ...Progression.Major.tonicSubstitutes, ...Progression.Major.secondaryDominant];
+export const defaultProgressions = [...Progression.Shared.identity, ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes];
 
 /**
  * The expansions that are enabled by the harmonizer by default
@@ -276,17 +276,15 @@ export namespace Harmony {
         const scale = params.constraints[previous.length].romanNumeral?.scale || previous[0].romanNumeral.scale;
         let options = progressions.filter(([predicate, _]) => predicate(scale, previous)).flatMap(([_, producer]) => producer(scale, previous));
         
+        // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
+        // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+
         if(params.canModulate && !params.constraints[previous.length].romanNumeral?.scale) {
             const oldScale = previous[0].romanNumeral.scale;
             let modulationsAllowed = params.modulationsAllowed;
 
             const majorAndMinor = (key: Key) => [[key, Scale.Quality.MAJOR], [key, Scale.Quality.MINOR]] as Scale[];
             const possibleScales = modulationsAllowed ? modulationsAllowed.map(modulation => Key.fromString(modulation.transposeUp(Key.toNote(oldScale[0])).name)).flatMap(majorAndMinor) : Key.names.map(Key.fromString).flatMap(majorAndMinor);
-
-            possibleScales.splice(0, 0, oldScale);
-        
-            // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-            // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
 
             // TODO remove options of multiple length?
             options.push(...options.filter(option => option.length === 1)
@@ -374,9 +372,9 @@ export namespace Harmony {
         }
         
         if(!params.greedy && results.length > 0) {
-            // console.log('Harmonize options', previous[0].romanNumeral.name, option.map(chord => chord.romanNumeral?.name));
-            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(result, previous[0])));
             const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+            // console.log('Harmonize options', previous[0].romanNumeral.name, option.map(chord => chord.romanNumeral?.name));
+            // console.log(results.map(result => PartWriting.Preferences.evaluateAll(partWritingParams,result, previous[0])));
             const bestResults = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateAll(partWritingParams, result, previous[0]), arrayComparator);
 
             //TODO need to check or average over all in the results array
@@ -404,7 +402,7 @@ export namespace Harmony {
      */
     export function harmonizeAll(params: HarmonyParameters): HarmonyResult {
         //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral(params.start || 'I',  params.scale);
+        const start = new RomanNumeral(params.start || params.constraints[0]?.romanNumeral?.name || 'I',  params.scale);
         const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             console.error('Failed to reconcile first constraint');
