@@ -8,20 +8,25 @@ import { Scale } from "../scale";
 export type ExpansionOperator = (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => IncompleteChord[];
 
 // TODO add operators that operate over all and each
-const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
-const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+
 //TODO clone map
-const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
-const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)})), ...chords.slice()];
-const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale), flags: {sequence: true}})), ...chords.slice()];
+const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice()];
+const insertAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
+const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined})), ...chords.slice()];
+const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined, flags: {sequence: true}})), ...chords.slice()];
 const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => { if(next && chords[0]?.romanNumeral?.name === romanNumeral) { chords = chords.slice(); chords[0] = new IncompleteChord({...chords[0]}); chords[0].flags.sequence = true; return next(scale, chords, prev); } return [] };
-const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
-const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== romanNumeral ? next(scale, chords, prev) : [];
+const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice(1)];
+const replaceWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
+const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
 
 /**
  * Expansions consist of elaborations beyond basic progressions
  * I.e. I - I6 could be expanded to be I - V64 - I6
- * 
+ *
  * TODO chainable? - e.g. (V6/V - (I64 - V))
  */
 export namespace Expansion {
@@ -30,40 +35,40 @@ export namespace Expansion {
     ]
 
     export const basic = [
-        startingWith('V', insert('V7')),
-        startingWith('V', replaceWith('V7')),
+        startingWithAsIs('V', insertAsIs('V7')),
+        startingWithAsIs('V', replaceWithAsIs('V7')),
     ];
 
     export const basicInversions = [
-        startingWith('I', movingTo('I', insert('viio6'))),
-        startingWith('I6', movingTo('I6', insert('viio6'))),
+        startingWith('I', movingTo('I', insertAsIs('viio6'))),
+        startingWith('I6', movingTo('I6', insertAsIs('viio6'))),
 
-        startingWith('I', movingTo('I6', insert('viio6'))),
-        startingWith('I6', movingTo('I', insert('viio6'))),
+        startingWith('I', movingTo('I6', insertAsIs('viio6'))),
+        startingWith('I6', movingTo('I', insertAsIs('viio6'))),
 
-        startingWith('I', movingTo('I', insert('V6'))),
+        startingWith('I', movingTo('I', insertAsIs('V6'))),
     ];
     export const dominantInversions = [
         // V6 - V65?
-        startingWith('I', movingTo('I', insert('V43'))),
-        startingWith('I6', movingTo('I6', insert('V43'))),
+        startingWith('I', movingTo('I', insertAsIs('V43'))),
+        startingWith('I6', movingTo('I6', insertAsIs('V43'))),
 
-        startingWith('I', movingTo('I6', insert('V43'))),
-        startingWith('I6', movingTo('I', insert('V43'))),
-        startingWith('I6', movingTo('I6', insert('V42'))),
+        startingWith('I', movingTo('I6', insertAsIs('V43'))),
+        startingWith('I6', movingTo('I', insertAsIs('V43'))),
+        startingWith('I6', movingTo('I6', insertAsIs('V42'))),
 
         /* double neighbor */
-        startingWith('I', movingTo('I', insert('V65', insert('V43')))),
-        startingWith('I', movingTo('I', insert('V43', insert('V65')))),
+        startingWith('I', movingTo('I', insertAsIs('V65', insertAsIs('V43')))),
+        startingWith('I', movingTo('I', insertAsIs('V43', insertAsIs('V65')))),
 
-        startingWith('I6', movingTo('I6', insert('V43', insert('V42')))),
-        startingWith('I6', movingTo('I6', insert('V42', insert('V43')))),
-        
+        startingWith('I6', movingTo('I6', insertAsIs('V43', insertAsIs('V42')))),
+        startingWith('I6', movingTo('I6', insertAsIs('V42', insertAsIs('V43')))),
 
-        startingWith('V6', replaceWith('V65')),
 
-        movingTo('I', insert('V65')),
-        movingTo('I6', insert('V42')),
+        startingWithAsIs('V6', replaceWithAsIs('V65')),
+
+        movingTo('I', insertAsIs('V65')),
+        movingTo('I6', insertAsIs('V42')),
     ];
 
     export const subdominant = [
@@ -72,15 +77,15 @@ export namespace Expansion {
 
         // 5-6 technique
         startingWith('IV', insert('ii6')),
-        
+
         // [startingWith('IV'), 'ii', 'V']?
     ];
 
     export const cadential64 = [
         // not preceded by V or vii
-        notStartingWith('V', notStartingWith('viio', movingTo('V', insert('I64')))),
-        notStartingWith('V', notStartingWith('viio', movingTo('V7', insert('I64')))),
-        notStartingWith('V', notStartingWith('viio', movingTo('V', replaceWith('V42', insert('I64')))))
+        notStartingWith('V', notStartingWith('viio', movingToAsIs('V', insert('I64')))),
+        notStartingWith('V', notStartingWith('viio', movingToAsIs('V7', insert('I64')))),
+        notStartingWith('V', notStartingWith('viio', movingToAsIs('V', replaceWithAsIs('V42', insert('I64')))))
     ];
 
     export const submediant = [
@@ -88,12 +93,12 @@ export namespace Expansion {
         startingWith('vi', insert('IV6')),
 
         // not in minor
-        startingWith('vi', insert('I', insert('V6'))),
-        startingWith('vi', insert('I', insert('V65'))),
+        startingWith('vi', insert('I', insertAsIs('V6'))),
+        startingWith('vi', insert('I', insertAsIs('V65'))),
 
         // // use major IV6 in minor
-        startingWith('IV6', insert('I', insert('V6'))),
-        startingWith('IV6', insert('I', insert('V65'))),
+        startingWith('IV6', insert('I', insertAsIs('V6'))),
+        startingWith('IV6', insert('I', insertAsIs('V65'))),
     ];
 
     export const supertonicSevenths = [
@@ -101,8 +106,8 @@ export namespace Expansion {
         startingWith('ii', movingTo('ii65', insert('I6'))),
         startingWith('ii7', movingTo('ii65', insert('I6'))),
 
-        startingWith('IV65', insert('I', insert('V6'))),
-        startingWith('IV65', insert('I', insert('V65')))
+        startingWith('IV65', insert('I', insertAsIs('V6'))),
+        startingWith('IV65', insert('I', insertAsIs('V65')))
     ];
 
     export const tonicSubstitutes = [
@@ -114,28 +119,33 @@ export namespace Expansion {
         startingWith('I', movingTo('I6', insert('IV6'))),
         startingWith('I', movingTo('I6', insert('vi'))),
 
-        startingWith('V', movingTo('V6', insert('IV6'))),
-        startingWith('V', movingTo('V65', insert('IV6')))
+        startingWithAsIs('V', movingToAsIs('V6', insert('IV6'))),
+        startingWithAsIs('V', movingToAsIs('V65', insert('IV6')))
     ];
 
     export const secondaryDominant = [
-        movingTo('V', insert('V/V')),
-        movingTo('V', insert('V6/V')),
-        movingTo('V', insert('V7/V')),
-        movingTo('V', insert('V65/V')),
-        movingTo('V', insert('V43/V')),
-        movingTo('V6', insert('V43/V')),
-        movingTo('V6', insert('V42/V')),
-        movingTo('V', insert('viio6/V')),
-        movingTo('V6', insert('viio6/V')),
+        movingTo('V', insertAsIs('V/V')),
+        movingTo('V', insertAsIs('V6/V')),
+        movingTo('V', insertAsIs('V7/V')),
+        movingTo('V', insertAsIs('V65/V')),
+        movingTo('V', insertAsIs('V43/V')),
+        movingTo('V6', insertAsIs('V43/V')),
+        movingTo('V6', insertAsIs('V42/V')),
+        movingTo('V', insertAsIs('viio6/V')),
+        movingTo('V6', insertAsIs('viio6/V')),
 
-        startingWith('V', movingTo('V', insert('V6/V'))),
-        startingWith('V', movingTo('V', insert('V65/V'))),
-        startingWith('V', movingTo('V', insert('V43/V'))),
-        startingWith('V6', movingTo('V6', insert('V43/V'))),
-        startingWith('V6', movingTo('V6', insert('V42/V'))),
-        startingWith('V', movingTo('V', insert('viio6/V'))),
-        startingWith('V6', movingTo('V6', insert('viio6/V'))),
+        startingWith('V', movingTo('V', insertAsIs('V6/V'))),
+        startingWith('V', movingTo('V', insertAsIs('V65/V'))),
+        startingWith('V', movingTo('V', insertAsIs('V43/V'))),
+        startingWith('V6', movingTo('V6', insertAsIs('V43/V'))),
+        startingWith('V6', movingTo('V6', insertAsIs('V42/V'))),
+        startingWith('V', movingTo('V', insertAsIs('viio6/V'))),
+        startingWith('V6', movingTo('V6', insertAsIs('viio6/V'))),
+    ];
+
+    export const mediant = [
+        startingWithAsIs('VII', movingToAsIs('V', insert('iv6'))),
+        startingWithAsIs('VII', movingToAsIs('V7', insert('iv6')))
     ];
 
     // TODO write out more compactly
@@ -144,13 +154,14 @@ export namespace Expansion {
         startingWith('I', movingTo('iii', sequenceInsert(['IV', 'viio']))),
         startingWith('I', movingTo('vi', sequenceInsert(['IV', 'viio', 'iii']))),
         startingWith('I', movingTo('ii', sequenceInsert(['IV', 'viio', 'iii', 'vi']))),
-        startingWith('I', movingTo('V', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii']))),
+        startingWith('I', movingToAsIs('V', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii']))),
+        // TODO fix V here
         startingWith('I', movingTo('I', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii', 'V']))),
-        
+
         startingWith('I', movingTo('iii', sequenceInsert(['IV6', 'viio']))),
         startingWith('I', movingTo('vi', sequenceInsert(['IV6', 'viio', 'iii6']))),
         startingWith('I', movingTo('ii6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi']))),
-        startingWith('I', movingTo('V', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6']))),
+        startingWith('I', movingToAsIs('V', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6']))),
         startingWith('I', movingTo('I6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6', 'V']))),
 
         // ascending 5-6
@@ -160,6 +171,7 @@ export namespace Expansion {
         startingWith('I', movingTo('I', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I']))),
         startingWith('I', movingTo('ii', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I', 'IV']))),
 
+        // TODO AsIs here?
         startingWith('I', movingTo('viio6', sequenceInsert(['vi6', 'ii']))),
         startingWith('I', movingTo('iii', sequenceInsert(['vi6', 'ii', 'viio6']))),
         startingWith('I', movingTo('IV6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii']))),
@@ -201,8 +213,8 @@ export namespace Expansion {
     ]);
 
     export const leadingToneSevenths = [
-        startingWith('I', movingTo('I', insert('vii07'))),
-        startingWith('I6', movingTo('I6', insert('vii043')))
+        startingWith('I', movingTo('I', insertAsIs('vii07'))),
+        startingWith('I6', movingTo('I6', insertAsIs('vii043')))
     ];
 
     //TODO fix problem of vii0 instead of viio
@@ -212,42 +224,43 @@ export namespace Expansion {
             startingWith(`I`, movingTo(`iii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`]))),
             startingWith(`I`, movingTo(`vi${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`]))),
             startingWith(`I`, movingTo(`ii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`]))),
-            startingWith(`I`, movingTo(`V${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`]))),
+            startingWith(`I`, movingToAsIs(`V${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`]))),
             startingWith(`I`, movingTo(`I${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`, `V${secondInversion}`]))),
         ]),
     ]);
 
     export const secondaryDominants = [
-        ...['ii', 'iii', 'IV', 'V', 'vi'].flatMap(root => [
-            movingTo(`${root}`, insert(`V/${root}`)),
-            movingTo(`${root}`, insert(`V6/${root}`)),
-            movingTo(`${root}`, insert(`V7/${root}`)),
-            movingTo(`${root}`, insert(`V65/${root}`)),
-            movingTo(`${root}`, insert(`V43/${root}`)),
-            movingTo(`${root}6`, insert(`V43/${root}`)),
-            movingTo(`${root}6`, insert(`V42/${root}`)),
-            movingTo(`${root}`, insert(`viio6/${root}`)),
-            movingTo(`${root}6`, insert(`viio6/${root}`)),
-            movingTo(`${root}`, insert(`viio7/${root}`)),
-            movingTo(`${root}6`, insert(`viio65/${root}`)),
-            movingTo(`${root}6`, insert(`viio43/${root}`)),
-            movingTo(`${root}64`, insert(`viio42/${root}`)),
+        ...['ii', 'iii', 'III', 'iv', 'IV', 'V', 'vi', 'VI', 'VII'].flatMap(root => [
+            movingToAsIs(`${root}`, insertAsIs(`V/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`V6/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`V7/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`V65/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`V43/${root}`)),
+            movingToAsIs(`${root}6`, insertAsIs(`V43/${root}`)),
+            movingToAsIs(`${root}6`, insertAsIs(`V42/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`viio6/${root}`)),
+            movingToAsIs(`${root}6`, insertAsIs(`viio6/${root}`)),
+            movingToAsIs(`${root}`, insertAsIs(`viio7/${root}`)),
+            movingToAsIs(`${root}6`, insertAsIs(`viio65/${root}`)),
+            movingToAsIs(`${root}6`, insertAsIs(`viio43/${root}`)),
+            movingToAsIs(`${root}64`, insertAsIs(`viio42/${root}`)),
 
-            startingWith(`${root}`, movingTo(`${root}`, insert(`V6/${root}`))),
-            startingWith(`${root}`, movingTo(`${root}`, insert(`V65/${root}`))),
-            startingWith(`${root}`, movingTo(`${root}`, insert(`V43/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`V43/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`V42/${root}`))),
-            startingWith(`${root}`, movingTo(`${root}`, insert(`viio6/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`viio6/${root}`))),
-            startingWith(`${root}`, movingTo(`${root}`, insert(`viio7/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`viio65/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`viio42/${root}`))),
-            startingWith(`${root}64`, movingTo(`${root}64`, insert(`viio6/${root}`))),
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`V6/${root}`))),
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`V65/${root}`))),
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`V43/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`V43/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`V42/${root}`))),
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`viio6/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`viio6/${root}`))),
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`viio7/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`viio65/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`viio42/${root}`))),
+            startingWithAsIs(`${root}64`, movingToAsIs(`${root}64`, insertAsIs(`viio6/${root}`))),
         ]),
-        ...['IV', 'V'].flatMap(root => [
-            startingWith(`${root}`, movingTo(`${root}`, insert(`vii07/${root}`))),
-            startingWith(`${root}6`, movingTo(`${root}6`, insert(`vii043/${root}`)))
+        // TODO move into above array and add check for diatonicized quality
+        ...['III', 'IV', 'V', 'VI', 'VII'].flatMap(root => [
+            startingWithAsIs(`${root}`, movingToAsIs(`${root}`, insertAsIs(`vii07/${root}`))),
+            startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`vii043/${root}`)))
         ]),
     ];
 }

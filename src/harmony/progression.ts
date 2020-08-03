@@ -2,7 +2,6 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
-import { HarmonicFunction } from "./harmonic-function";
 
 export type ProgressionPredicate = (scale: Scale, previousChords: HarmonizedChord[]) => boolean;
 export type ProgressionProducer = (scale: Scale, previousChords: HarmonizedChord[]) => IncompleteChord[][];
@@ -50,6 +49,8 @@ export namespace Progression {
 
             [ withChordSymbolAsIs('V'),  yieldChordAsIs('V6') ],
             [ withChordSymbolAsIs('V6'), yieldChordAsIs('V') ],
+
+            // [ withChordSymbolAsIs('viio6'), yieldChord('I') ]
         ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const dominantSevenths = [
@@ -159,6 +160,29 @@ export namespace Progression {
             [ withChordSymbolAsIs('V'), yieldChord('IV6') ],
             [ withChordSymbolAsIs('V7'), yieldChord('vi') ],
             [ withChordSymbolAsIs('V7'), yieldChord('IV6') ],
+        ] as [ProgressionPredicate, ProgressionProducer][];
+
+        export const mediant = [
+            [ withChordSymbol('I'), yieldChord('iii') ],
+            [ withChordSymbol('iii'), yieldChord('V') ],
+            [ withChordSymbol('iii'), yieldChord('V6') ],
+            [ withChordSymbol('iii'), yieldChord('V43') ],
+            [ withChordSymbol('iii'), yieldChord('V42') ],
+            [ withChordSymbol('iii'), yieldChord('vi') ],
+            [ withChordSymbol('iii'), yieldChord('IV') ],
+            [ withChordSymbol('iii'), yieldChord('IV6') ],
+            [ withChordSymbol('iii'), yieldChord('ii') ],
+            [ withChordSymbol('iii'), yieldChord('ii6') ],
+
+            [ withChordSymbol('i'), yieldChordAsIs('VII') ],
+            [ withChordSymbol('i'), yieldChordAsIs('VII6') ],
+            [ withChordSymbolAsIs('VII'), yieldChordAsIs('III') ],
+            [ withChordSymbolAsIs('VII6'), yieldChordAsIs('III') ],
+
+            [ withChordSymbolAsIs('VII'), yieldChordAsIs('V') ],
+            [ withChordSymbolAsIs('VII'), yieldChordAsIs('V7') ],
+            [ withChordSymbolAsIs('VII'), yieldChordAsIs('V6') ],
+            [ withChordSymbolAsIs('VII'), yieldChordAsIs('V65') ],
         ] as [ProgressionPredicate, ProgressionProducer][];
     }
 }

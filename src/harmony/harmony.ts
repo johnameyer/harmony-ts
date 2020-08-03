@@ -243,12 +243,12 @@ export interface HarmonyParameters<T extends PartWritingRules = typeof defaultPa
 /**
  * The progressions that are enabled by the harmonizer by default
  */
-export const defaultProgressions = [...Progression.Shared.identity, ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes];
+export const defaultProgressions = [...Progression.Shared.identity, ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant] as [ProgressionPredicate, ProgressionProducer][];
 
 /**
  * The expansions that are enabled by the harmonizer by default
  */
-export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords];
+export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
 
 /**
  * The result of a harmonization
@@ -307,7 +307,7 @@ export namespace Harmony {
 
         //use expansions
         const expansions = params.enabledExpansions || defaultExpansions;
-        let expandedOptions = options.flatMap(option => expansions.map(operator => operator(params.scale, option, previous))).filter(arr => arr.length);
+        let expandedOptions = options.flatMap(option => expansions.map(operator => operator(scale, option, previous))).filter(arr => arr.length);
         // TODO option chaining
         expandedOptions.sort((a, b) => b.length - a.length);
         // TODO remove duplicates

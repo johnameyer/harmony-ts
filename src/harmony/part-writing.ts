@@ -608,6 +608,19 @@ export namespace PartWriting {
                 }
                 return true;
             }
+
+
+            //TODO better way?
+            export function rapidKeyChange({scope}: {scope: number}, chord: HarmonizedChord, ...prev: HarmonizedChord[]) {
+                if(chord.flags.pivot) {
+                    for(let i = 0; i < prev.length && i < scope; i ++) {
+                        if(prev[i].flags.pivot) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
         }
 
         /**
@@ -817,6 +830,12 @@ export namespace PartWriting {
                             return 1;
                         }
                     } catch {}
+                } else {
+                    try {
+                        if(new ComplexInterval(chord.voices[chord.voices.length-1], prev.voices[chord.voices.length-1]).name === 'P8') {
+                            return -1;
+                        }
+                    } catch {}
                 }
                 return 0;
             }
@@ -958,6 +977,9 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         },
         leadingToneResolution: {
             frustratedLeadingTone: true
+        },
+        rapidKeyChange: {
+            scope: 3
         }
     },
     preferences: defaultPartWritingPreferences,

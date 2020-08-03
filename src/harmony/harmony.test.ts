@@ -257,6 +257,15 @@ describe('Harmony', () => {
                     [['Eb4', 'C4', 'G3', 'C3'], 'i', CMinor, {iac: true}] as [string[], string, Scale, {}],
                 ]
             ],
+            [
+                'i VII iv6 V',
+                [
+                    [['C5', 'Eb4', 'G3', 'C3'], 'i', CMinor, {}] as [string[], string, Scale, {}],
+                    [['D5', 'F4', 'Bb3', 'Bb2'], 'VII', CMinor, {}] as [string[], string, Scale, {}],
+                    [['C5', 'F4', 'C4', 'Ab2'], 'iv6', CMinor, {}] as [string[], string, Scale, {}],
+                    [['B4', 'G4', 'D4', 'G2'], 'V', CMinor, { hc: true }] as [string[], string, Scale, {}],
+                ]
+            ],
         ])('minor key %s', (_, expected) => {
             const constraints = [];
             let first = true;

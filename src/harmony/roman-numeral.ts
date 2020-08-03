@@ -91,7 +91,7 @@ export class RomanNumeral {
                     seventh = IntervalQuality.MAJOR;
                     break;
                 case ChordQuality.MAJOR:
-                    if(scaleDegreeMajor !== 'V') {
+                    if(scaleDegreeMajor !== 'V' && scaleDegreeMajor !== 'VII') {
                         seventh = IntervalQuality.MAJOR;
                     }
                     break;
