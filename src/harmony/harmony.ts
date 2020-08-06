@@ -36,7 +36,7 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
         }
     }
     
-    if(!compatible(one.root?.name, two.root?.name)) {
+    if(!compatible(one.romanNumeral?.root?.name, two.romanNumeral?.root?.name)) {
         return null;
     }
     if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
@@ -63,13 +63,14 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
         }
     }
     if(one.romanNumeral) {
-        // TODO one should always have root in this case
-        const oneNotes = one.romanNumeral?.intervals.map(interval => one.root ? interval.transposeUp(one.root).simpleName : undefined);
+        const romanNumeral = one.romanNumeral;
+        const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
         if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
             return null;
         }
     } else if(two.romanNumeral) {
-        const twoNotes = two.romanNumeral?.intervals.map(interval => two.root ? interval.transposeUp(two.root).simpleName : undefined);
+        const romanNumeral = two.romanNumeral;
+        const twoNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
         if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))){
             return null;
         }
@@ -91,8 +92,9 @@ function *findSolutions(reconciledConstraint: IncompleteChord, previous?: Harmon
     if(!reconciledConstraint.romanNumeral) {
         return;
     }
-    const needed = reconciledConstraint.romanNumeral.intervals.map(interval => reconciledConstraint.root ? interval.transposeUp(reconciledConstraint.root) : undefined).filter(isDefined);
-    let bassNote = reconciledConstraint.romanNumeral.inversionInterval.transposeUp(reconciledConstraint.romanNumeral.root);
+    const romanNumeral = reconciledConstraint.romanNumeral;
+    const needed = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root) : undefined).filter(isDefined);
+    let bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
     
     let sopranoNotes, altoNotes, tenorNotes, bassNotes;
     if(previous) {
@@ -401,12 +403,27 @@ export namespace Harmony {
      * @param params the parameters to harmonize
      */
     export function harmonizeAll(params: HarmonyParameters): HarmonyResult {
+        const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+        for(let i = 1; i < params.constraints.length; i++) {
+            const failed = PartWriting.Rules.checkAll(partWritingParams, params.constraints.slice(0, i + 1).reverse()).next().value;
+            if(failed) {
+                console.error('Failed rule ' + failed + ' on constraint ' + i);
+                return {solution: null, furthest: i};
+            }
+        }
         //TODO harmonize tonic or come up with options
         const start = new RomanNumeral(params.start || params.constraints[0]?.romanNumeral?.name || 'I',  params.scale);
         const reconciledConstraint = reconcileConstraints(params.constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             console.error('Failed to reconcile first constraint');
             return {solution: null, furthest: 0};
+        }
+        {
+            const failed = PartWriting.Rules.checkSingular(partWritingParams, reconciledConstraint).next().value;
+            if(failed) {
+                console.error('First reconciled constraint failed rule ' + failed);
+                return {solution: null, furthest: 0};
+            }
         }
         let furthest = 0;
         let results: HarmonizedChord[] = [];

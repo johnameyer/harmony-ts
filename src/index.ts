@@ -17,6 +17,7 @@ import { HarmonizedChord } from './chord/harmonized-chord';
 import { Motion } from './harmony/motion';
 import { ScaleDegree } from './harmony/scale-degree';
 import { ComplexInterval } from './interval/complex-interval';
+import { IChord } from './chord/ichord';
 
 export {
     AbsoluteNote,
@@ -24,6 +25,7 @@ export {
     Chord,
     IncompleteChord,
     HarmonizedChord,
+    IChord,
     Scale,
     Harmony,
     HarmonyParameters,

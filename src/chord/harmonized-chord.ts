@@ -2,8 +2,9 @@ import { RomanNumeral } from "../harmony/roman-numeral";
 import { AbsoluteNote } from "../note/absolute-note";
 import { HarmonicFunction } from "../harmony/harmonic-function";
 import { Interval } from "../interval/interval";
+import { IChord } from "./ichord";
 
-export class HarmonizedChord {
+export class HarmonizedChord implements IChord {
 
     protected _voices: AbsoluteNote[];
     protected _romanNumeral!: RomanNumeral;
@@ -25,7 +26,7 @@ export class HarmonizedChord {
         if(!this._intervals) {
             this._intervals = this._voices.map(note => new Interval(this._romanNumeral.root, note));
         }
-         return this._intervals;
+        return this._intervals;
     }
 
     get romanNumeral() {
