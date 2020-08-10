@@ -36,7 +36,20 @@ describe('PartWriting', () => {
     ]))('checkAll %s to %s', (prev: any, chord: any) => {
         chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], CMajor)),
         prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], CMajor)),
-        expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);;
+        expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
+        expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [chord, prev]).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [chord, prev])).toBe(true);
+    });
+
+    test.each(pair([
+        ['I', 'E4', 'C4', 'G3', 'C3'],
+        ['viio6', 'D4', 'B3', 'F3', 'D3'],
+        ['I6', 'C4', 'C4', 'G3', 'E3']
+    ]))('checkAll %s to %s', (prev: any, chord: any) => {
+        chord = new HarmonizedChord(chord.slice(1).map(absoluteNote), new RomanNumeral(chord[0], CMajor)),
+        prev = new HarmonizedChord(prev.slice(1).map(absoluteNote), new RomanNumeral(prev[0], CMajor)),
+        expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
         expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
         expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [chord, prev]).next().value).toBe(undefined);
         expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [chord, prev])).toBe(true);

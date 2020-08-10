@@ -134,7 +134,7 @@ export class Interval {
     }
     
     static ofSize(size: string) {
-        return (interval: Interval) => interval.simpleSize == size;
+        return (interval: Interval | undefined) => interval && interval.simpleSize == size;
     }
 }
 

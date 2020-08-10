@@ -8,12 +8,14 @@ import { zip } from "../util/zip";
 import { makeLazyArray } from '../util/make-lazy-array';
 import { ScaleDegree } from "./scale-degree";
 import { Scale } from "../scale";
+import { isDefined } from "../util";
+import { IChord } from "../chord/ichord";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
-const numVoicesWithInterval = (chord: HarmonizedChord, interval: string) => chord.intervals.filter(Interval.ofSize(interval)).length;
+const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
 
-export type PartWritingRule = (settings: any, ...chords: HarmonizedChord[]) => boolean;
+export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
 export type PartWritingPreference = (...chords: HarmonizedChord[]) => number;
 
 const sopranoRange = ['B3', 'C4', 'G5', 'A5'].map(absoluteNote);
@@ -93,8 +95,11 @@ export namespace PartWriting {
              * Checks that the chord maintains proper vocal ranges
              * @param chord the chord to check
              */
-            export function range(settings: {ranges: AbsoluteNote[][]}, chord: HarmonizedChord) {
-                for (const [range, toCheck] of zip(settings.ranges || voiceRange, chord.voices) as [AbsoluteNote[], AbsoluteNote][]) {
+            export function range(settings: {ranges: AbsoluteNote[][]}, { voices }: IChord) {
+                for (const [range, toCheck] of zip(settings.ranges || voiceRange, voices) as [AbsoluteNote[], AbsoluteNote | undefined][]) {
+                    if(!toCheck) {
+                        continue;
+                    }
                     if (toCheck.midi < range[0].midi) {
                         return false;
                     }
@@ -110,27 +115,37 @@ export namespace PartWriting {
              * @param settings
              * @param chord the chord under consideration
              */
-            export function spelling(_: undefined, chord: HarmonizedChord) {
-                if(!chord.intervals.every(interval => chord.romanNumeral.intervals.map(interval => interval.name).includes(interval.name))) {
+            export function spelling(_: undefined, {romanNumeral, intervals, voices}: IChord) {
+                if(!romanNumeral || !intervals) {
+                    return true;
+                }
+                if(!intervals.filter(isDefined).every(interval => romanNumeral.intervals.map(interval => interval.name).includes(interval.name))) {
                     return false;
                 }
-                return chord.voices[chord.voices.length - 1].simpleName == chord.romanNumeral.inversionInterval.transposeUp(chord.romanNumeral.root).name;
+                const bass = voices[voices.length - 1];
+                if(!bass) {
+                    return true;
+                }
+                return bass.simpleName === romanNumeral.inversionInterval.transposeUp(romanNumeral.root).name;
             }
 
             /**
              * Checks that the chord does not double the leading tone
              * @param chord the chord to check
              */
-            export function leadingToneDoubling(_: undefined, chord: HarmonizedChord) {
-                if(chord.flags?.sequence) {
+            export function leadingToneDoubling(_: undefined, {romanNumeral, intervals, flags}: IChord) {
+                if(flags?.sequence) {
                     return true;
                 }
-                if (chord.romanNumeral.name.startsWith('V')) {
-                    if (chord.intervals.filter(Interval.ofSize('3')).length > 1) {
+                if(!romanNumeral || !intervals) {
+                    return true;
+                }
+                if (romanNumeral.name.startsWith('V')) {
+                    if (intervals.filter(Interval.ofSize('3')).length > 1) {
                         return false;
                     }
-                } else if(chord.romanNumeral.name.startsWith('viio')) {
-                    if (chord.intervals.filter(Interval.ofSize('U')).length > 1) {
+                } else if(romanNumeral.name.startsWith('viio')) {
+                    if (intervals.filter(Interval.ofSize('U')).length > 1) {
                         return false;
                     }
                 }
@@ -141,9 +156,12 @@ export namespace PartWriting {
              * Checks that the chord does not double the seventh
              * @param chord the chord to check
              */
-            export function seventhDoubling(_: undefined, chord: HarmonizedChord) {
-                if (chord.romanNumeral.hasSeventh) {
-                    if (chord.intervals.filter(Interval.ofSize('7')).length > 1) {
+            export function seventhDoubling(_: undefined, {romanNumeral, intervals}: IChord) {
+                if(!intervals) {
+                    return true;
+                }
+                if (romanNumeral?.hasSeventh) {
+                    if (intervals.filter(Interval.ofSize('7')).length > 1) {
                         return false;
                     }
                 }
@@ -155,28 +173,35 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function completeness(_: undefined, chord: HarmonizedChord, prev?: HarmonizedChord) {
-                if(numVoicesWithInterval(chord, 'U') == 0) {
+            export function completeness(_: undefined, chord: IChord, prev?: IChord) {
+                if(!chord.romanNumeral || !chord.intervals) {
+                    return true;
+                }
+                if(!chord.voices.length || !chord.voices.every(isDefined)) {
+                    return true;
+                }
+                const definedIntervals = chord.intervals.filter(isDefined);
+                if(numVoicesWithInterval(definedIntervals, 'U') == 0) {
                     return false;
                 }
-                if(numVoicesWithInterval(chord, '3') == 0) {
+                if(numVoicesWithInterval(definedIntervals, '3') == 0) {
                     return false;
                 }
                 if (chord.romanNumeral.hasSeventh) {
-                    if(numVoicesWithInterval(chord, '7') == 0) {
+                    if(numVoicesWithInterval(definedIntervals, '7') == 0) {
                         return false;
                     }
                     // can leave out fifth of root position 7
                     if (chord.romanNumeral.inversionInterval.simpleSize != 'U') {
-                        return numVoicesWithInterval(chord, '5') >= 1;
+                        return numVoicesWithInterval(definedIntervals, '5') >= 1;
                     }
                 } else {
                     if (chord.romanNumeral.inversionInterval.simpleSize =='U') {
-                        if(!prev) {
+                        if(!prev || !prev.romanNumeral || !prev.intervals) {
                             return true;
                         }
                         // can leave out fifth if preceded by complete V7
-                        if(prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev, '5') == 0) {
+                        if(prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
                             return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
                     } else {
@@ -190,17 +215,27 @@ export namespace PartWriting {
              * Checks that the chord does not have too much space between the voice parts or that one voice is above another
              * @param chord the chord to check
              */
-            export function spacingAndCrossing(_: undefined, chord: HarmonizedChord) {
+            export function spacingAndCrossing(_: undefined, {voices}: IChord) {
                 let i = 0;
-                for(i = 0; i < chord.voices.length - 2; i ++) {
-                    if (chord.voices[i].midi - chord.voices[i + 1].midi > 12) {
+                for(i = 0; i < voices.length - 2; i ++) {
+                    const higherVoice = voices[i];
+                    const lowerVoice = voices[i + 1];
+                    if(!higherVoice || !lowerVoice) {
+                        continue;
+                    }
+                    if (higherVoice.midi - lowerVoice.midi > 12) {
                         return false;
                     }
-                    if (chord.voices[i].midi < chord.voices[i + 1].midi) {
+                    if (higherVoice.midi < lowerVoice.midi) {
                         return false;
                     }
                 }
-                if (chord.voices[i].midi < chord.voices[i+1].midi) {
+                const higherVoice = voices[i];
+                const lowerVoice = voices[i + 1];
+                if(!higherVoice || !lowerVoice) {
+                    return true;
+                }
+                if (higherVoice.midi < lowerVoice.midi) {
                     return false;
                 }
                 return true;
@@ -210,9 +245,12 @@ export namespace PartWriting {
              * Checks that a accented (cadential) 64 does not double the tonic
              * @param chord 
              */
-            export function accented64Doubling(_: undefined, chord: HarmonizedChord) {
-                if (chord.romanNumeral.inversion === 2 && chord.romanNumeral.hasSeventh === false) {
-                    if (chord.intervals.filter(Interval.ofSize('U')).length > 1) {
+            export function accented64Doubling(_: undefined, {romanNumeral, intervals}: IChord) {
+                if(!romanNumeral || !intervals) {
+                    return true;
+                }
+                if (romanNumeral.inversion === 2 && romanNumeral.hasSeventh === false) {
+                    if (intervals.filter(Interval.ofSize('U')).length > 1) {
                         return false;
                     }
                 }
@@ -229,7 +267,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function parallels(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function parallels(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
                 const pairings = [
                     [0, 1],
                     [0, 2],
@@ -238,8 +276,9 @@ export namespace PartWriting {
                     [1, 3],
                     [2, 3],
                 ];
-                return !pairings
-                    .map(([upper, lower]) => [prev.voices[upper], prev.voices[lower], chord.voices[upper], chord.voices[lower]])
+                return !(pairings
+                    .map(([upper, lower]) => [prevVoices[upper], prevVoices[lower], currVoices[upper], currVoices[lower]])
+                    .filter(voices => voices.every(isDefined)) as AbsoluteNote[][])
                     .filter(([prevUpper, prevLower, currUpper, currLower]) => prevLower.name != currLower.name && prevUpper.name != currUpper.name)
                     .map(([prevUpper, prevLower, currUpper, currLower]) => [
                         new Interval(prevLower, prevUpper),
@@ -256,10 +295,11 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function contraryFifths(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                const pairings = chord.voices.flatMap((_, outerIndex) => chord.voices.map((_, innerIndex) => [outerIndex, innerIndex])).filter(([one, two]) => one < two);
-                return !(pairings
-                    .map(([upper, lower]) => [prev.voices[upper], prev.voices[lower], chord.voices[upper], chord.voices[lower]])
+            export function contraryFifths(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+                const pairings = currVoices.flatMap((_, outerIndex) => currVoices.map((_, innerIndex) => [outerIndex, innerIndex])).filter(([one, two]) => one < two);
+                return !((pairings
+                    .map(([upper, lower]) => [prevVoices[upper], prevVoices[lower], currVoices[upper], currVoices[lower]])
+                    .filter(voices => voices.every(isDefined)) as AbsoluteNote[][])
                     .filter(([prevUpper, prevLower, currUpper, currLower]) => Motion.from(prevUpper, prevLower, currUpper, currLower) == Motion.CONTRARY)
                     .map(([prevUpper, prevLower, currUpper, currLower]) => [
                         new Interval(prevLower, prevUpper),
@@ -277,10 +317,20 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function hiddenFifths(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                let interval = new ComplexInterval(chord.voices[chord.voices.length - 1], chord.voices[0]);
-                if(interval.name == 'P5' && Motion.from(prev.voices[chord.voices.length - 1], chord.voices[chord.voices.length - 1], prev.voices[0], chord.voices[0]) == Motion.SIMILAR) {
-                    if(!prev.romanNumeral.name.startsWith('V') && new Interval(prev.romanNumeral.root, prev.voices[0]).simpleSize != '3' && new Interval(prev.voices[0], chord.voices[0]).name != 'm2') {
+            export function hiddenFifths(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices, romanNumeral}: IChord) {
+                const bassVoice = currVoices[currVoices.length - 1];
+                const sopranoVoice = currVoices[0];
+                const oldBassVoice = prevVoices[prevVoices.length - 1];
+                const oldSopranoVoice = prevVoices[0];
+                if(!bassVoice || !sopranoVoice || !oldBassVoice || !oldSopranoVoice) {
+                    return true;
+                }
+                let interval = new ComplexInterval(bassVoice, sopranoVoice);
+                if(interval.name == 'P5' && Motion.from(oldBassVoice, bassVoice, oldSopranoVoice, sopranoVoice) == Motion.SIMILAR) {
+                    if(!romanNumeral) {
+                        return true;
+                    }
+                    if(!romanNumeral.name.startsWith('V') && new Interval(romanNumeral.root, oldSopranoVoice).simpleSize != '3' && new Interval(oldSopranoVoice, sopranoVoice).name != 'm2') {
                         return false;
                     }
                 }
@@ -292,9 +342,16 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function voiceOverlap(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                for(let i = 0; i < chord.voices.length - 1; i++) {
-                    if(chord.voices[i].midi < prev.voices[i+1].midi || prev.voices[i].midi < chord.voices[i+1].midi) {
+            export function voiceOverlap(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+                for(let i = 0; i < currVoices.length - 1; i++) {
+                    const lower = currVoices[i+1];
+                    const upper = currVoices[i];
+                    const oldLower = prevVoices[i+1];
+                    const oldUpper = prevVoices[i];
+                    if(upper && oldLower && upper.midi < oldLower.midi) {
+                        return false;
+                    }
+                    if(oldUpper && lower && oldUpper.midi < lower.midi) {
                         return false;
                     }
                 }
@@ -306,15 +363,23 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
-                if(chord.flags?.sequence) {
+            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral, flags}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
+                if(flags?.sequence) {
                     return true;
                 }
                 //TODO delayed resolution
-                if (prev.romanNumeral.symbol == 'V' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
-                    const index = prev.intervals.findIndex(Interval.ofSize('3'));
-                    if (new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
-                        if(prev.voices[index].midi < chord.voices[index].midi) {
+                if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
+                    return true;
+                }
+                if (prevRomanNumeral.symbol == 'V' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                    const index = intervals.findIndex(Interval.ofSize('3'));
+                    const prevVoice = prevVoices[index];
+                    const currVoice = currVoices[index];
+                    if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if (new Interval(prevVoice, currVoice).simpleSize !== '2') {
+                        if(prevVoice.midi < currVoice.midi) {
                             return false;
                         }
                         if(settings.frustratedLeadingTone) {
@@ -322,7 +387,11 @@ export namespace PartWriting {
                         }
                         let resolvedInUpper = false;
                         for(let i = 0; i < index; i++) {
-                            if(new Interval(prev.voices[index], chord.voices[i]).simpleSize === '2') {
+                            const upperVoice = currVoices[i];
+                            if(!upperVoice) {
+                                return true;
+                            }
+                            if(new Interval(prevVoice, currVoice).simpleSize === '2') {
                                 resolvedInUpper = true;
                                 break;
                             }
@@ -331,9 +400,14 @@ export namespace PartWriting {
                             return false;
                         }
                     }
-                } else if(prev.romanNumeral.symbol == 'viio' && !(chord.romanNumeral.symbol == 'V' || chord.romanNumeral.symbol == 'viio')) {
-                    const index = prev.intervals.findIndex(Interval.ofSize('U'));
-                    if (index === -1 || new Interval(prev.voices[index], chord.voices[index]).simpleSize != '2') {
+                } else if(prevRomanNumeral.symbol == 'viio' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                    const index = intervals.findIndex(Interval.ofSize('U'));
+                    const prevVoice = prevVoices[index];
+                    const currVoice = currVoices[index];
+                    if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if (index === -1 || new Interval(prevVoice, currVoice).simpleSize != '2') {
                         return false;
                     }
                 }
@@ -347,28 +421,36 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function seventhPreparation(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                if(!chord.romanNumeral.hasSeventh) {
+            export function seventhPreparation(_: undefined, {intervals, romanNumeral: currRomanNumeral, voices: currVoices}: IChord, {romanNumeral: prevRomanNumeral, voices: prevVoices}: IChord) {
+                if(!prevRomanNumeral || !currRomanNumeral?.hasSeventh) {
                     return true;
                 }
-                if(prev.romanNumeral.root === chord.romanNumeral.root && prev.romanNumeral.hasSeventh) {
+                if(prevRomanNumeral.root === currRomanNumeral.root && prevRomanNumeral.hasSeventh) {
                     return true;
                 }
-                if (chord.romanNumeral.symbol == 'V') {
+                if (currRomanNumeral.symbol == 'V') {
                     return true;
                 }
-                const index = chord.intervals.findIndex(Interval.ofSize('7'));
+                if(!intervals) {
+                    return true;
+                }
+                const index = intervals.findIndex(Interval.ofSize('7'));
                 if(index === -1) {
-                    return false;
+                    return true;
+                }
+                const oldVoice = prevVoices[index];
+                const voice = currVoices[index];
+                if(!oldVoice || !voice) {
+                    return true;
                 }
                 try {
-                    const interval = new Interval(prev.voices[index], chord.voices[index]).simpleSize;
+                    const interval = new Interval(oldVoice, voice).simpleSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
                 } catch {}
                 try {
-                    const interval = new Interval(chord.voices[index], prev.voices[index]).simpleSize;
+                    const interval = new Interval(oldVoice, voice).simpleSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
@@ -383,21 +465,26 @@ export namespace PartWriting {
              * @param prev the chord before `chord`
              * @param before the chord before `prev`
              */
-            export function seventhResolution(settings: { scope: number }, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
+            export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
                 //V42 can support 3 4 5
                 if (before[0]
-                    && before[0].romanNumeral.symbol.toLowerCase() == 'i'
-                    && before[0].romanNumeral.inversionInterval.simpleSize == 'U'
-                    && prev.romanNumeral.symbol == 'V'
-                    && prev.romanNumeral.inversionInterval.simpleSize == '5'
-                    && prev.romanNumeral.hasSeventh
-                    && chord.romanNumeral.symbol.toLowerCase() == 'i'
-                    && chord.romanNumeral.inversionInterval.simpleSize == '3'
+                    && before[0].romanNumeral?.symbol.toLowerCase() == 'i'
+                    && before[0].romanNumeral?.inversionInterval.simpleSize == 'U'
+                    && prev.romanNumeral?.symbol == 'V'
+                    && prev.romanNumeral?.inversionInterval.simpleSize == '5'
+                    && prev.romanNumeral?.hasSeventh
+                    && chord.romanNumeral?.symbol.toLowerCase() == 'i'
+                    && chord.romanNumeral?.inversionInterval.simpleSize == '3'
                 ) {
-                    const index = prev.intervals.findIndex(Interval.ofSize('7'));
-                    if(before[0].intervals[index].simpleSize == '3'
-                        && prev.intervals[index].simpleSize == '3'
-                        && chord.intervals[index].simpleSize == '3'
+                    const index = prev.intervals?.findIndex(Interval.ofSize('7'));
+                    if(index
+                        && index !== -1
+                        && before[0].intervals
+                        && prev.intervals
+                        && chord.intervals
+                        && before[0].intervals[index]?.simpleSize === '3'
+                        && prev.intervals[index]?.simpleSize === '3'
+                        && chord.intervals[index]?.simpleSize === '3'
                     ) {
                             return true;
                     }
@@ -406,13 +493,26 @@ export namespace PartWriting {
                 // TODO resolution needs to be enforced at end
                 const seventhChecks = [chord, prev, ...before];
                 for(let i = 1; i < settings.scope; i++) {
-                    if(seventhChecks[i].romanNumeral.hasSeventh) {
-                        const index = seventhChecks[i].intervals.findIndex(Interval.ofSize('7'));
+                    const romanNumeral = seventhChecks[i].romanNumeral;
+                    const intervals = seventhChecks[i].intervals;
+                    if(!romanNumeral || !intervals) {
+                        continue;
+                    }
+                    if(romanNumeral.hasSeventh) {
+                        const index = intervals.findIndex(Interval.ofSize('7'));
+                        const oldVoice = seventhChecks[i].voices[index];
+                        if(!oldVoice) {
+                            continue;
+                        }
                         for(let j = i - 1; j >= 0; j--) {
-                            if(new Interval(seventhChecks[j].voices[index], seventhChecks[i].voices[index]).simpleSize === 'U') {
+                            const voice = seventhChecks[j].voices[index];
+                            if(!voice) {
                                 continue;
                             }
-                            if (new Interval(seventhChecks[j].voices[index], seventhChecks[i].voices[index]).simpleSize !== '2') {
+                            if(new Interval(voice, oldVoice).simpleSize === 'U') {
+                                continue;
+                            }
+                            if (new Interval(voice, oldVoice).simpleSize !== '2') {
                                 return false;
                             }
                             break;
@@ -427,7 +527,7 @@ export namespace PartWriting {
              * @todo implement
              * @todo is this necessary
              */
-            export function diminishedFifthResolution(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord, ...before: HarmonizedChord[]) {
+            export function diminishedFifthResolution(_: undefined, chord: IChord, prev: IChord, ...before: IChord[]) {
                 // check that a d5 or A4 involving the bass resolves normally
 
                 // TODO allow for exceptions as on page 415
@@ -454,17 +554,22 @@ export namespace PartWriting {
              * @param prev 
              * @todo A2 is sometimes acceptable
              */
-            export function invalidIntervals(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                for(const voice in [0,1,2,3]) {
-                    const interval = new Interval(prev.voices[voice], chord.voices[voice]);
+            export function invalidIntervals(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+                for(let index = 0; index < prevVoices.length; index++) {
+                    const oldVoice = prevVoices[index];
+                    const voice = currVoices[index];
+                    if(!oldVoice || !voice) {
+                        continue;
+                    }
+                    const interval = new Interval(oldVoice, voice);
                     if(interval.simpleSize == '2' && interval.quality == IntervalQuality.AUGMENTED) {
                         return false;
                     } else if(interval.simpleSize == '7' && interval.quality == IntervalQuality.DIMINISHED) {
                         return false;
                     }
 
-                    const difference = Math.abs(prev.voices[voice].midi - chord.voices[voice].midi);
-                    if(difference > 7 && !(voice === '3' && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && prev.voices[voice].midi - chord.voices[voice].midi > 0)) {
+                    const difference = Math.abs(oldVoice.midi - voice.midi);
+                    if(difference > 7 && !(index === 3 && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && oldVoice.midi - voice.midi > 0)) {
                         return false;
                     }
                 }
@@ -477,14 +582,17 @@ export namespace PartWriting {
              * @param chord 
              * @param prev 
              */
-            export function accented64Preparation(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                if (chord.romanNumeral.inversion === 2 && chord.romanNumeral.hasSeventh === false) {
-                    const fourthVoice = chord.voices.findIndex(note => new Interval(chord.romanNumeral.root, note).simpleSize === 'U');
+            export function accented64Preparation(_: undefined, {romanNumeral, voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+                if (romanNumeral && romanNumeral.inversion === 2 && romanNumeral.hasSeventh === false) {
+                    const fourthVoice = currVoices.findIndex(note => note && new Interval(romanNumeral.root, note).simpleSize === 'U');
                     if(fourthVoice === -1) {
-                        return false;
+                        return true;
                     }
-                    const fourthNote = chord.voices[fourthVoice];
-                    const fourthPrep = prev.voices[fourthVoice];
+                    const fourthNote = currVoices[fourthVoice];
+                    const fourthPrep = prevVoices[fourthVoice];
+                    if(!fourthNote || !fourthPrep) {
+                        return true;
+                    }
                     try {
                         if(new ComplexInterval(fourthNote, fourthPrep).complexSize === 'U'
                         || new ComplexInterval(fourthNote, fourthPrep).complexSize === '2') {
@@ -507,17 +615,20 @@ export namespace PartWriting {
              * @param chord 
              * @param prev 
              */
-            export function accented64Resolution(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                if (prev.romanNumeral.inversion === 2 && prev.romanNumeral.hasSeventh === false) {
-                    if(chord.romanNumeral.root.simpleName !== prev.romanNumeral.inversionInterval.transposeUp(prev.romanNumeral.root).simpleName) {
+            export function accented64Resolution(_: undefined, {romanNumeral: currRomanNumeral, voices: currVoices}: IChord, {romanNumeral: prevRomanNumeral, voices: prevVoices}: IChord) {
+                if (prevRomanNumeral && prevRomanNumeral.inversion === 2 && prevRomanNumeral.hasSeventh === false) {
+                    if(currRomanNumeral && currRomanNumeral.root.simpleName !== prevRomanNumeral.inversionInterval.transposeUp(prevRomanNumeral.root).simpleName) {
                         return true;
                     }
-                    const fourthVoice = prev.voices.findIndex(note => new Interval(prev.romanNumeral.root, note).simpleSize === 'U');
+                    const fourthVoice = prevVoices.findIndex(note => note && new Interval(prevRomanNumeral.root, note).simpleSize === 'U');
                     if(fourthVoice === -1) {
-                        return false;
+                        return true;
                     }
-                    const fourthNote = prev.voices[fourthVoice];
-                    const fourthResolution = chord.voices[fourthVoice];
+                    const fourthNote = prevVoices[fourthVoice];
+                    const fourthResolution = currVoices[fourthVoice];
+                    if(!fourthNote || !fourthResolution) {
+                        return true;
+                    }
                     try {
                         if(new ComplexInterval(fourthResolution, fourthNote).complexSize !== '2') {
                             return false;
@@ -526,13 +637,19 @@ export namespace PartWriting {
                         return false;
                     }
                     let sixthResolves = false;
-                    for (let voice = 0; voice < chord.voices.length; voice++) {
-                        const note = prev.voices[voice];
-                        if(new Interval(prev.romanNumeral.root, note).simpleSize !== '3') {
+                    for (let voice = 0; voice < currVoices.length; voice++) {
+                        const note = prevVoices[voice];
+                        if(!note) {
+                            return true;
+                        }
+                        if(new Interval(prevRomanNumeral.root, note).simpleSize !== '3') {
                             continue;
                         }
-                        const sixthNote = prev.voices[voice];
-                        const sixthResolution = chord.voices[voice];
+                        const sixthNote = prevVoices[voice];
+                        const sixthResolution = currVoices[voice];
+                        if(!sixthNote || !sixthResolution) {
+                            return true;
+                        }
                         try {
                             if(new ComplexInterval(sixthResolution, sixthNote).complexSize === '2') {
                                 sixthResolves = true;
@@ -548,40 +665,49 @@ export namespace PartWriting {
                 return true;
             }
 
-            export function cadenceType(_: undefined, chord: HarmonizedChord, prev: HarmonizedChord) {
-                if(chord.flags.pac) {
-                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+            export function cadenceType(_: undefined, {flags, romanNumeral: currRomanNumeral, voices: currVoices}: IChord, {romanNumeral: prevRomanNumeral}: IChord) {
+                if(!currRomanNumeral || !prevRomanNumeral) {
+                    return true;
+                }
+                if(flags.pac) {
+                    if(Scale.getNotesOfScale(currRomanNumeral.scale) !== Scale.getNotesOfScale(prevRomanNumeral.scale)) {
                         return false;
                     }
-                    if(chord.romanNumeral.name.toLowerCase() !== 'i' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if(currRomanNumeral.name.toLowerCase() !== 'i' || (prevRomanNumeral.name !== 'V' && prevRomanNumeral.name !== 'V7')) {
                         return false;
                     }
-                    if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize !== 'U') {
+                    if(!currVoices[0]) {
+                        return true;
+                    }
+                    if(new Interval(currRomanNumeral.root, currVoices[0]).simpleSize !== 'U') {
                         return false;
                     }
-                } else if(chord.flags.iac) {
-                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                } else if(flags.iac) {
+                    if(Scale.getNotesOfScale(currRomanNumeral.scale) !== Scale.getNotesOfScale(prevRomanNumeral.scale)) {
                         return false;
                     }
                     // for our uses an IAC is V-I without 1 in the soprano
-                    if(chord.romanNumeral.name.toLowerCase() !== 'i' || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if(currRomanNumeral.name.toLowerCase() !== 'i' || (prevRomanNumeral.name !== 'V' && prevRomanNumeral.name !== 'V7')) {
                         return false;
                     }
-                    if(new Interval(chord.romanNumeral.root, chord.voices[0]).simpleSize === 'U') {
+                    if(!currVoices[0]) {
+                        return true;
+                    }
+                    if(new Interval(currRomanNumeral.root, currVoices[0]).simpleSize === 'U') {
                         return false;
                     }
-                } else if(chord.flags.hc) {
-                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                } else if(flags.hc) {
+                    if(Scale.getNotesOfScale(currRomanNumeral.scale) !== Scale.getNotesOfScale(prevRomanNumeral.scale)) {
                         return false;
                     }
-                    if(chord.romanNumeral.name !== 'V') {
+                    if(currRomanNumeral.name !== 'V') {
                         return false;
                     }
-                } else if(chord.flags.dc) {
-                    if(Scale.getNotesOfScale(chord.romanNumeral.scale) !== Scale.getNotesOfScale(prev.romanNumeral.scale)) {
+                } else if(flags.dc) {
+                    if(Scale.getNotesOfScale(currRomanNumeral.scale) !== Scale.getNotesOfScale(prevRomanNumeral.scale)) {
                         return false;
                     }
-                    if((chord.romanNumeral.name.toLowerCase() === 'i' || chord.romanNumeral.name.toLowerCase() === 'V' || chord.romanNumeral.name.toLowerCase() === 'vii') || (prev.romanNumeral.name !== 'V' && prev.romanNumeral.name !== 'V7')) {
+                    if((currRomanNumeral.name.toLowerCase() === 'i' || currRomanNumeral.name.toLowerCase() === 'V' || currRomanNumeral.name.toLowerCase() === 'vii') || (prevRomanNumeral.name !== 'V' && prevRomanNumeral.name !== 'V7')) {
                         return false;
                     }
                 }
@@ -594,14 +720,22 @@ export namespace PartWriting {
              * @param chord
              * @param prev 
              */
-            export function sequence(_: undefined, chord: HarmonizedChord, _middle: HarmonizedChord, prev: HarmonizedChord) {
-                // console.log(chord.flags);
-                if(chord.flags?.sequence && prev?.flags?.sequence) {
-                    // console.log(new Interval(chord.romanNumeral.root, prev.romanNumeral.root).simpleSize);
-                    for(let voice = 0; voice < chord.voices.length; voice++) {
-                        // console.log(new Interval(chord.voices[voice], prev.voices[voice]).simpleSize);
-                        if(new Interval(chord.romanNumeral.root, prev.romanNumeral.root).simpleSize !== new Interval(chord.voices[voice], prev.voices[voice]).simpleSize) {
-                            // console.log(false);
+            export function sequence(_: undefined, {flags: currFlags, voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
+                if(!prev) {
+                    return true;
+                }
+                const {flags: prevFlags, romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
+                if(currFlags.sequence && prevFlags.sequence) {
+                    for(let index = 0; index < currVoices.length; index++) {
+                        if(!currRomanNumeral || !prevRomanNumeral) {
+                            continue;
+                        }
+                        const oldVoice = prevVoices[index];
+                        const voice = currVoices[index];
+                        if(!oldVoice || !voice) {
+                            return true;
+                        }
+                        if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== new Interval(voice, oldVoice).simpleSize) {
                             return false;
                         }
                     }
@@ -611,7 +745,7 @@ export namespace PartWriting {
 
 
             //TODO better way?
-            export function rapidKeyChange({scope}: {scope: number}, chord: HarmonizedChord, ...prev: HarmonizedChord[]) {
+            export function rapidKeyChange({scope}: {scope: number}, chord: IChord, ...prev: IChord[]) {
                 if(chord.flags.pivot) {
                     for(let i = 0; i < prev.length && i < scope; i ++) {
                         if(prev[i].flags.pivot) {
@@ -628,7 +762,7 @@ export namespace PartWriting {
          * @param parameters 
          * @param chords 
          */
-        export function *checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: HarmonizedChord[]): Generator<keyof T> {
+        export function *checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: IChord[]): Generator<keyof T> {
             //TODO make combined version of previous
             for(const key of Object.keys(parameters.rules) as (keyof T)[]) {
                 // @ts-ignore
@@ -644,7 +778,7 @@ export namespace PartWriting {
          * @param parameters 
          * @param chords 
          */
-        export function testAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: HarmonizedChord[]) {
+        export function testAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: IChord[]) {
             return checkAll(parameters, chords).next().value === undefined;
         }
 
@@ -653,7 +787,7 @@ export namespace PartWriting {
          * @param parameters 
          * @param chordToCheck 
          */
-        export function *checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): Generator<keyof T> {
+        export function *checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: IChord): Generator<keyof T> {
             //TODO make combined version of previous
             for(const key of parameters.singularRules) {
                 // Next line is needed because ts can't determine that the keys are preserved
@@ -670,7 +804,7 @@ export namespace PartWriting {
          * @param parameters 
          * @param chordToCheck 
          */
-        export function testSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord) {
+        export function testSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: IChord) {
             return checkSingular(parameters, chordToCheck).next().value === undefined;
         }
     }
@@ -685,30 +819,30 @@ export namespace PartWriting {
              */
             export function checkDoubling(chord: HarmonizedChord) {
                 if(chord.romanNumeral.hasSeventh) {
-                    if(numVoicesWithInterval(chord, '5') == 0) {
+                    if(numVoicesWithInterval(chord.intervals, '5') == 0) {
                         //prefer root doubled if no fifth
-                        if(numVoicesWithInterval(chord, 'U') != 2) {
+                        if(numVoicesWithInterval(chord.intervals, 'U') != 2) {
                             return -2;
                         }
                         return -1;
                     }
                 } else {
-                    if(numVoicesWithInterval(chord, '5') == 0 && chord.romanNumeral.inversionInterval.simpleSize == 'U') {
+                    if(numVoicesWithInterval(chord.intervals, '5') == 0 && chord.romanNumeral.inversionInterval.simpleSize == 'U') {
                         //prefer root tripled if no fifth
-                        if(numVoicesWithInterval(chord, 'U') != 3) {
+                        if(numVoicesWithInterval(chord.intervals, 'U') != 3) {
                             return -2;
                         }
                         return -1;
                     } else if(chord.romanNumeral.inversionInterval.simpleSize == 'U') {
                         //root position prefer double root
-                        if(numVoicesWithInterval(chord, 'U') != 2) {
+                        if(numVoicesWithInterval(chord.intervals, 'U') != 2) {
                             return -1;
                         }
                     } else if(chord.romanNumeral.inversionInterval.simpleSize == '3') {
                         //first inversion any can be doubled
                     } else {
                         //second inversion prefer doubling fifth
-                        if(numVoicesWithInterval(chord, '5') != 2) {
+                        if(numVoicesWithInterval(chord.intervals, '5') != 2) {
                             return -1;
                         }
                     }
