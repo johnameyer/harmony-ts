@@ -1,7 +1,7 @@
 import { AbsoluteNote } from './note/absolute-note';
 import { IncompleteChord } from './chord/incomplete-chord';
 import { Scale } from './scale';
-import { Harmony, HarmonyParameters, HarmonyResult, defaultProgressions, defaultExpansions } from './harmony/harmony';
+import { Harmony, HarmonyParameters } from './harmony/harmony';
 import { RomanNumeral } from './harmony/roman-numeral';
 import { Interval } from './interval/interval';
 import { Note } from './note/note';
@@ -29,9 +29,6 @@ export {
     Scale,
     Harmony,
     HarmonyParameters,
-    HarmonyResult,
-    defaultProgressions,
-    defaultExpansions,
     PartWriting,
     PartWritingParameters,
     RomanNumeral,

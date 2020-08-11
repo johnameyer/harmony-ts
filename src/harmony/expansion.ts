@@ -4,24 +4,25 @@ import { IncompleteChord } from "../chord/incomplete-chord";
 import { HarmonizedChord } from "../chord/harmonized-chord";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
+import { returnOrError } from "../util/return-or-error";
 
-export type ExpansionOperator = (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => IncompleteChord[];
+export type ExpansionOperator = (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => HarmonizedChord[];
 
 // TODO add operators that operate over all and each
-const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
-const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
 
 //TODO clone map
-const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice()];
-const insertAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
-const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined})), ...chords.slice()];
-const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined, flags: {sequence: true}})), ...chords.slice()];
-const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => { if(next && chords[0]?.romanNumeral?.name === romanNumeral) { chords = chords.slice(); chords[0] = new IncompleteChord({...chords[0]}); chords[0].flags.sequence = true; return next(scale, chords, prev); } return [] };
-const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale).diatonicized() || undefined}), ...chords.slice(1)];
-const replaceWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next ? next(scale, [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new IncompleteChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
-const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: IncompleteChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()];
+const insertAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
+const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())})), ...chords.slice()];
+const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized()), flags: {sequence: true}})), ...chords.slice()];
+const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => { if(next && chords[0]?.romanNumeral?.name === romanNumeral) { chords = chords.slice(); chords[0] = new HarmonizedChord({...chords[0]} as {romanNumeral:RomanNumeral}); chords[0].flags.sequence = true; return next(scale, chords, prev); } return [] };
+const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)];
+const replaceWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
+const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
 
 /**
  * Expansions consist of elaborations beyond basic progressions
@@ -263,4 +264,17 @@ export namespace Expansion {
             startingWithAsIs(`${root}6`, movingToAsIs(`${root}6`, insertAsIs(`vii043/${root}`)))
         ]),
     ];
+
+    export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
+    
+    export function * matchingExpansion(scale: Scale, previous: HarmonizedChord[], option: HarmonizedChord[], expansions: ExpansionOperator[] = defaultExpansions) {
+        for(const expansion of expansions) {
+            try { // TODO temp fix
+                const expanded = expansion(scale, option, previous);
+                if(expanded.length) {
+                    yield expanded;
+                }
+            } catch {}
+        }
+    }
 }

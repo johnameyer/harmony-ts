@@ -10,13 +10,74 @@ import { ScaleDegree } from "./scale-degree";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
+import { minGenerator } from "../util/min-generator";
+import { IncompleteChord } from "../chord/incomplete-chord";
+import { HarmonyParameters, Harmony } from "./harmony";
+import { Note } from "../note/note";
+import { RomanNumeral } from "./roman-numeral";
+import { Accidental } from "../accidental";
+import { CompleteChord } from "../chord/complete-chord";
+
+function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
+    const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
+    for(let voicePart in one.voices) {
+        if(!compatible(one.voices[voicePart]?.name, two.voices[voicePart]?.name)) {
+            return null;
+        }
+    }
+    
+    if(!compatible(one.romanNumeral?.root?.name, two.romanNumeral?.root?.name)) {
+        return null;
+    }
+    if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
+        return null;
+    }
+    if(!compatible(one.romanNumeral?.scale[0], two.romanNumeral?.scale[0])) {
+        return null;
+    }
+    if(!compatible(one.romanNumeral?.scale[1], two.romanNumeral?.scale[1])) {
+        return null;
+    }
+    if(one.flags) {
+        for(const key in one.flags) {
+            if(two.flags && two.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
+                return null;
+            }
+        }
+    }
+    if(two.flags) {
+        for(const key in two.flags) {
+            if(one.flags && one.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
+                return null;
+            }
+        }
+    }
+    if(one.romanNumeral) {
+        const romanNumeral = one.romanNumeral;
+        const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
+        if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
+            return null;
+        }
+    } else if(two.romanNumeral) {
+        const romanNumeral = two.romanNumeral;
+        const twoNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
+        if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))){
+            return null;
+        }
+    }
+    
+    const romanNumeral = one.romanNumeral || two.romanNumeral;
+    const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
+    const flags = {...(one.flags || {}), ...(two.flags || {})};
+    return new IncompleteChord({romanNumeral, voices, flags});
+}
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
 const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
 
 export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
-export type PartWritingPreference = (...chords: HarmonizedChord[]) => number;
+export type PartWritingPreference = (...chords: CompleteChord[]) => number;
 
 const sopranoRange = ['B3', 'C4', 'G5', 'A5'].map(absoluteNote);
 const altoRange = ['G3', 'G3', 'C5', 'D5'].map(absoluteNote);
@@ -38,6 +99,21 @@ export interface PartWritingPreferences {
 // Thanks to https://stackoverflow.com/questions/51419176/how-to-get-a-subset-of-keyof-t-whose-value-tk-are-callable-functions-in-typ
 type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
 type ParamNotOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? never : P}[keyof T]
+
+/**
+ * The result of part-writing
+ */
+export interface PartWritingResult {
+    /**
+     * The generated solution, or null if could not resolve based on the parameters
+     */
+    solution: HarmonizedChord[] | null;
+
+    /**
+     * The furthest in the constraints the harmonizer made it
+     */
+    furthest: number;
+}
 
 export interface PartWritingParameters<T extends PartWritingRules = typeof defaultPartWritingRules, U extends PartWritingPreferences = typeof defaultPartWritingPreferences>{
     rules: T,
@@ -83,6 +159,167 @@ export namespace PartWriting {
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
             preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)]
         } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
+    }
+
+    export function voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters) {
+        const partWritingParams = params || defaultPartWritingParameters;
+        for(let i = 1; i < constraints.length; i++) {
+            const failed = PartWriting.Rules.checkAll(partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
+            if(failed) {
+                console.error('Failed rule ' + failed + ' on constraint ' + i);
+                return {solution: null, furthest: i};
+            }
+        }
+        //TODO harmonize tonic or come up with options
+        const start = new RomanNumeral(harmonyParams?.start || constraints[0]?.romanNumeral?.name || 'I',  scale);
+        const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
+        if(!reconciledConstraint) {
+            console.error('Failed to reconcile first constraint');
+            return {solution: null, furthest: 0};
+        }
+        {
+            const failed = PartWriting.Rules.checkSingular(partWritingParams, reconciledConstraint).next().value;
+            if(failed) {
+                console.error('First reconciled constraint failed rule ' + failed);
+                return {solution: null, furthest: 0};
+            }
+        }
+        // let furthest = 0;
+        // let results: HarmonizedChord[] = [];
+        if(harmonyParams) {
+            const harmonization = Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale);
+
+            const result = voiceWithContext(params, constraints, harmonization, scale);
+
+            const first = result.next().value;
+            if(first) {
+                return first;
+            }
+        } else {
+            throw new Error('No harmony params provided');
+        }
+        
+        // if(!params.greedy && results.length > 0) {
+        //     const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
+        //     const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateSingle(partWritingParams, result), arrayComparator);
+        //     // console.log('Harmonize all scores');
+        //     // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
+        //     for(let i of scores) {
+        //         let chord = results[i];
+        //         if(result.solution != null) {
+        //             return {solution: [chord, ...result.solution], furthest: result.furthest};
+        //         } else {
+        //             furthest = result.furthest > furthest ? result.furthest : furthest;
+        //         }
+        //     }
+        // }
+        // return {solution: null, furthest: furthest};
+    }
+
+    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: Harmony.CompleteHarmonyGenerator, scale: Scale, previous: CompleteChord[] = []): Generator<CompleteChord[]> {
+        if(constraints.length == previous.length) {
+            return []; // , furthest: previous.length};
+        }
+        for(const [current, future] of progression){
+            const partWritingParams = params || defaultPartWritingParameters;
+            for(const voicing of chordVoicings(partWritingParams, current, previous)) {
+                // next line needs fixing because of guaranteed roman numeral
+                // @ts-ignore
+                const chords = zip(voicing, current).map(([voices, constraint]) => new CompleteChord(voices, constraint.romanNumeral, constraint.flags));
+                for(const result of voiceWithContext(params, constraints, future, scale, [...chords.reverse(), ...previous])) {
+                    yield result;
+                }
+            }
+        }
+    }
+
+    export function * chordVoicings(params: PartWritingParameters, reconciledConstraints: HarmonizedChord[], previous: CompleteChord[] = []): Generator<CompleteChord[]> {
+        if(reconciledConstraints.length === 0) {
+            yield [];
+            return;
+        }
+        for(const voicing of chordVoicing(params, reconciledConstraints[0], previous)) {
+            for(const voicings of chordVoicings(params, reconciledConstraints.slice(1), [voicing, ...previous])) {
+                yield [voicing, ...voicings];
+            }
+        }
+    }
+
+    export function * chordVoicing(params: PartWritingParameters, reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
+        const last = (previous || [])[0];
+
+        const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
+            new AbsoluteNote(note.name + [previous.octavePosition + 1]),
+            new AbsoluteNote(note.name + [previous.octavePosition]),
+            new AbsoluteNote(note.name + [previous.octavePosition - 1]),
+        ];
+        
+        if(!reconciledConstraint.romanNumeral) {
+            return;
+        }
+        const romanNumeral = reconciledConstraint.romanNumeral;
+        const needed = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root) : undefined).filter(isDefined);
+        let bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
+        
+        let sopranoNotes, altoNotes, tenorNotes, bassNotes;
+        if(previous) {
+            const get = (voicePart: number) => {
+                let voice = reconciledConstraint.voices[voicePart];
+                if(isDefined(voice)) {
+                    return [voice];
+                } else {
+                    return [...needed].flatMap(mapToNearby(last.voices[voicePart]));
+                }
+            };
+            const compare = (note: AbsoluteNote) => (one: AbsoluteNote, two: AbsoluteNote) => Math.abs(note.midi - one.midi) - Math.abs(note.midi - two.midi);
+            //try smaller intervals first
+            sopranoNotes = get(0).sort(compare(last.voices[0]));
+            altoNotes = get(1).sort(compare(last.voices[1]));
+            tenorNotes = get(2).sort(compare(last.voices[2]));
+            if(reconciledConstraint.voices[3] == undefined) {
+                bassNotes = mapToNearby(last.voices[3])(bassNote).sort(compare(last.voices[3]));
+            } else {
+                bassNotes = [reconciledConstraint.voices[3]];
+            }
+        } else {
+            const get = (needed: Note[]) => (voicePart: number) => {
+                let voice = reconciledConstraint.voices[voicePart];
+                if(isDefined(voice)) {
+                    return [voice];
+                } else {
+                    const low = voiceRange[voicePart][1].octavePosition;
+                    const high = voiceRange[voicePart][2].octavePosition + 1;
+                    const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
+                    return [...needed]
+                        .flatMap(note => [...Array(high - low).keys()]
+                        .map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))))
+                        .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
+                }
+            };
+            sopranoNotes = get(needed)(0);
+            altoNotes = get(needed)(1);
+            tenorNotes = get(needed)(2);
+            bassNotes = get([bassNote])(3);
+        }
+        //TODO make more efficient by following doubling rules outright
+        for(const bass of bassNotes) {
+            for(const soprano of sopranoNotes) {
+                for(const alto of altoNotes) {
+                    for(const tenor of tenorNotes) {
+                        const voicing = new CompleteChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
+                        if(previous) {
+                            if(PartWriting.Rules.testAll(params, [voicing, ...previous])) {
+                                yield voicing;
+                            }
+                        } else {
+                            if(PartWriting.Rules.testSingular(params, voicing)) {
+                                yield voicing;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     export namespace Rules {
@@ -817,7 +1054,7 @@ export namespace PartWriting {
              * Prefer that chords have certain doublings over others
              * @param chord the chord under consideration
              */
-            export function checkDoubling(chord: HarmonizedChord) {
+            export function checkDoubling(chord: CompleteChord) {
                 if(chord.romanNumeral.hasSeventh) {
                     if(numVoicesWithInterval(chord.intervals, '5') == 0) {
                         //prefer root doubled if no fifth
@@ -854,7 +1091,7 @@ export namespace PartWriting {
              * Prefer that voices do not cross
              * @param chord the chord under consideration
              */
-            export function checkVoiceCrossing(chord: HarmonizedChord) {
+            export function checkVoiceCrossing(chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < chord.voices[i+1].midi) {
@@ -868,7 +1105,7 @@ export namespace PartWriting {
              * Prefer that voices remain within their core range
              * @param chord the chord under consideration
              */
-            export function checkRange(chord: HarmonizedChord) {
+            export function checkRange(chord: CompleteChord) {
                 let result = 0;
                 for (const [range, toCheck] of [
                     [sopranoRange, chord.voices[0]],
@@ -890,7 +1127,7 @@ export namespace PartWriting {
              * Prefer that voices do not share the same pitch
              * @param chord the chord under consideration
              */
-            export function checkSharedPitch(chord: HarmonizedChord) {
+            export function checkSharedPitch(chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 1; i++) {
                     if(chord.voices[i].midi === chord.voices[i+1].midi) {
@@ -904,7 +1141,7 @@ export namespace PartWriting {
              * Prefer chord progressions using sequences
              * @param chord the chord to look at
              */
-            export function checkSequence(chord: HarmonizedChord) {
+            export function checkSequence(chord: CompleteChord) {
                 if(chord.flags?.sequence) {
                     return 1;
                 }
@@ -921,7 +1158,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkVoiceOverlap(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkVoiceOverlap(chord: CompleteChord, prev: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < prev.voices[i+1].midi || prev.voices[i].midi < chord.voices[i+1].midi) {
@@ -937,7 +1174,7 @@ export namespace PartWriting {
              * @param prev the previous chord
              * @todo implement restorative and soprano special rules
              */
-            export function checkVoiceDisjunction(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkVoiceDisjunction(chord: CompleteChord, prev: CompleteChord) {
                 //TODO prefer restorative
                 let count = 0;
                 for(let i = 0; i < chord.voices.length - 1; i++) {
@@ -951,7 +1188,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkBassOctaveJump(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkBassOctaveJump(chord: CompleteChord, prev: CompleteChord) {
                 if(
                     (prev.romanNumeral.name.toLowerCase() === 'i64' && chord.romanNumeral.name === 'V')
                     || 
@@ -999,7 +1236,7 @@ export namespace PartWriting {
             /**
              * Prefer using a chord that is different from the previous
              */
-            export function checkRepetition(chord: HarmonizedChord, previous: HarmonizedChord) {
+            export function checkRepetition(chord: CompleteChord, previous: CompleteChord) {
                 // TODO remove
                 return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
             }
@@ -1007,7 +1244,7 @@ export namespace PartWriting {
             /**
              * Prefers that a pivot chord has a predominant function in the new key
              */
-            export function modulationToPredominant(chord: HarmonizedChord){
+            export function modulationToPredominant(chord: CompleteChord){
                 if(!chord.flags.pivot) {
                     return 0;
                 }
@@ -1020,7 +1257,7 @@ export namespace PartWriting {
             /**
              * Prefers that there are fewer modulations
              */
-            export function fewerModulations(chord: HarmonizedChord){
+            export function fewerModulations(chord: CompleteChord){
                 if(chord.flags.pivot) {
                     return -1;
                 }
@@ -1032,7 +1269,7 @@ export namespace PartWriting {
          * Evaluate the chord on all the preferences
          * @param chordToCheck the chord to evaluate
          */
-        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): number[] {
+        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO make ordering and selection parameterized
             let checks = parameters.preferencesOrdering
@@ -1047,7 +1284,7 @@ export namespace PartWriting {
          * The checks will only be run if the index is called and the value is not already calculated
          * @param chordToCheck the chord to run the rules
          */
-        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): number[] {
+        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
             let checks = makeLazyArray(parameters.preferencesOrdering
                 .filter(preference => parameters.singularPreferences.includes(preference))
@@ -1062,7 +1299,7 @@ export namespace PartWriting {
          * @param chordToCheck the chord to check
          * @param prev the chord before the chord under consideration
          */
-        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = parameters.preferencesOrdering
@@ -1077,7 +1314,7 @@ export namespace PartWriting {
          * @param chordToCheck the chord to run the rules on
          * @param prev the chord before the one under consideration
          */
-        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = makeLazyArray(parameters.preferencesOrdering
