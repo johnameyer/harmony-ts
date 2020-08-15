@@ -10,11 +10,11 @@ import { Progression, ProgressionPredicate, ProgressionProducer } from './harmon
 import { ChordQuality } from './chord/chord-quality';
 import { IntervalQuality } from './interval/interval-quality';
 import { Key } from './key';
-import { PartWritingParameters, PartWriting } from './harmony/part-writing';
+import { PartWritingParameters, PartWriting, defaultPartWritingParameters } from './part-writing/part-writing';
 import { Expansion, ExpansionOperator } from './harmony/expansion';
 import { Chord } from './chord/chord';
 import { HarmonizedChord } from './chord/harmonized-chord';
-import { Motion } from './harmony/motion';
+import { Motion } from './interval/motion';
 import { ScaleDegree } from './harmony/scale-degree';
 import { ComplexInterval } from './interval/complex-interval';
 import { IChord } from './chord/ichord';
@@ -31,6 +31,7 @@ export {
     HarmonyParameters,
     PartWriting,
     PartWritingParameters,
+    defaultPartWritingParameters,
     RomanNumeral,
     Interval,
     Note,

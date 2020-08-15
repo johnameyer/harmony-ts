@@ -2,5 +2,7 @@
     "preset": "ts-jest",
     "testEnvironment": "node",
     "testPathIgnorePatterns": ["/node_modules/", "/dist/", "/test/"],
-    "collectCoverageFrom": ["**/*.ts", "!**/index.ts", "!**/*.d.ts"]
+    "collectCoverageFrom": ["src/**/*.ts", "!**/index.ts", "!**/*.d.ts"],
+    "coverageDirectory": "coverage/",
+    "coverageReporters": ["json", "text"]
 }

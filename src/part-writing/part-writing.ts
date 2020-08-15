@@ -3,18 +3,18 @@ import { AbsoluteNote } from "../note/absolute-note";
 import { Interval } from "../interval/interval";
 import { IntervalQuality } from "../interval/interval-quality";
 import { ComplexInterval } from "../interval/complex-interval";
-import { Motion } from "./motion";
+import { Motion } from "../interval/motion";
 import { zip } from "../util/zip";
 import { makeLazyArray } from '../util/make-lazy-array';
-import { ScaleDegree } from "./scale-degree";
+import { ScaleDegree } from "../harmony/scale-degree";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
 import { minGenerator } from "../util/min-generator";
 import { IncompleteChord } from "../chord/incomplete-chord";
-import { HarmonyParameters, Harmony } from "./harmony";
+import { HarmonyParameters, Harmony } from "../harmony/harmony";
 import { Note } from "../note/note";
-import { RomanNumeral } from "./roman-numeral";
+import { RomanNumeral } from "../harmony/roman-numeral";
 import { Accidental } from "../accidental";
 import { CompleteChord } from "../chord/complete-chord";
 
@@ -187,14 +187,11 @@ export namespace PartWriting {
         // let furthest = 0;
         // let results: HarmonizedChord[] = [];
         if(harmonyParams) {
-            const harmonization = Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale);
+            const harmonization = Harmony.convertToMultiIterator(Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale));
 
             const result = voiceWithContext(params, constraints, harmonization, scale);
 
-            const first = result.next().value;
-            if(first) {
-                return first;
-            }
+            return result;
         } else {
             throw new Error('No harmony params provided');
         }
@@ -216,18 +213,17 @@ export namespace PartWriting {
         // return {solution: null, furthest: furthest};
     }
 
-    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: Harmony.CompleteHarmonyGenerator, scale: Scale, previous: CompleteChord[] = []): Generator<CompleteChord[]> {
+    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: Harmony.NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): Generator<CompleteChord[]> {
         if(constraints.length == previous.length) {
-            return []; // , furthest: previous.length};
+            yield []; // , furthest: previous.length};
+            return;
         }
-        for(const [current, future] of progression){
+        for(const item of progression){
+            const [current, future] = item;
             const partWritingParams = params || defaultPartWritingParameters;
             for(const voicing of chordVoicings(partWritingParams, current, previous)) {
-                // next line needs fixing because of guaranteed roman numeral
-                // @ts-ignore
-                const chords = zip(voicing, current).map(([voices, constraint]) => new CompleteChord(voices, constraint.romanNumeral, constraint.flags));
-                for(const result of voiceWithContext(params, constraints, future, scale, [...chords.reverse(), ...previous])) {
-                    yield result;
+                for(const result of voiceWithContext(params, constraints, future, scale, [...voicing.slice().reverse(), ...previous])) {
+                    yield [...voicing, ...result];
                 }
             }
         }
@@ -246,38 +242,33 @@ export namespace PartWriting {
     }
 
     export function * chordVoicing(params: PartWritingParameters, reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
-        const last = (previous || [])[0];
-
         const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
             new AbsoluteNote(note.name + [previous.octavePosition + 1]),
             new AbsoluteNote(note.name + [previous.octavePosition]),
             new AbsoluteNote(note.name + [previous.octavePosition - 1]),
         ];
         
-        if(!reconciledConstraint.romanNumeral) {
-            return;
-        }
         const romanNumeral = reconciledConstraint.romanNumeral;
         const needed = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root) : undefined).filter(isDefined);
         let bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
         
         let sopranoNotes, altoNotes, tenorNotes, bassNotes;
-        if(previous) {
+        if(previous.length) {
             const get = (voicePart: number) => {
                 let voice = reconciledConstraint.voices[voicePart];
                 if(isDefined(voice)) {
                     return [voice];
                 } else {
-                    return [...needed].flatMap(mapToNearby(last.voices[voicePart]));
+                    return [...needed].flatMap(mapToNearby(previous[0].voices[voicePart]));
                 }
             };
             const compare = (note: AbsoluteNote) => (one: AbsoluteNote, two: AbsoluteNote) => Math.abs(note.midi - one.midi) - Math.abs(note.midi - two.midi);
             //try smaller intervals first
-            sopranoNotes = get(0).sort(compare(last.voices[0]));
-            altoNotes = get(1).sort(compare(last.voices[1]));
-            tenorNotes = get(2).sort(compare(last.voices[2]));
+            sopranoNotes = get(0).sort(compare(previous[0].voices[0]));
+            altoNotes = get(1).sort(compare(previous[0].voices[1]));
+            tenorNotes = get(2).sort(compare(previous[0].voices[2]));
             if(reconciledConstraint.voices[3] == undefined) {
-                bassNotes = mapToNearby(last.voices[3])(bassNote).sort(compare(last.voices[3]));
+                bassNotes = mapToNearby(previous[0].voices[3])(bassNote).sort(compare(previous[0].voices[3]));
             } else {
                 bassNotes = [reconciledConstraint.voices[3]];
             }
@@ -307,7 +298,7 @@ export namespace PartWriting {
                 for(const alto of altoNotes) {
                     for(const tenor of tenorNotes) {
                         const voicing = new CompleteChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
-                        if(previous) {
+                        if(previous.length) {
                             if(PartWriting.Rules.testAll(params, [voicing, ...previous])) {
                                 yield voicing;
                             }

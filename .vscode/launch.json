@@ -9,7 +9,7 @@
             "command": "node --inspect ${workspaceFolder}/node_modules/jest/bin/jest.js --runInBand",
             "request": "launch",
             "skipFiles": [
-                "<node_internals>/**"
+                "**/*.js",
             ],
             "type": "node-terminal"
         }

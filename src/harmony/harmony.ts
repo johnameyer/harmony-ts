@@ -7,6 +7,7 @@ import { isDefined } from "../util";
 import { Expansion, ExpansionOperator } from "./expansion";
 import { Interval } from "../interval/interval";
 import { Key } from "../key";
+import { LazyMultiIterable, makeLazyMultiIterable } from "../util/make-lazy-iterator";
 
 // const arrayComparator = <T>(a: T[], b: T[]) => {
 //     for(let i = 0; i < a.length && i < b.length; i++) {
@@ -169,6 +170,17 @@ export namespace Harmony {
         }
     }
 
+    export type NestedLazyMultiIterable<T> = LazyMultiIterable<[T, NestedLazyMultiIterable<T>]>;
+
+    export function convertToMultiIterator<T>(generator: NestedGenerator<T>): NestedLazyMultiIterable<T> {
+        function * handleNested(inner: NestedGenerator<T>): Generator<[T, NestedLazyMultiIterable<T>]> {
+            for(const [t, gen] of inner) {
+                yield [t, makeLazyMultiIterable(handleNested(gen))];
+            }
+        }
+        return makeLazyMultiIterable(handleNested(generator));
+    }
+
     /**
      * Find the next possible chord to progress to (with modulations and expansions between) without looking at the constraints
      * @param params the params to generate harmony using
@@ -179,7 +191,7 @@ export namespace Harmony {
             return;
         }
         if(!params.useProgressions) {
-            const constraint =  constraints[previous.length];
+            const constraint = constraints[previous.length];
             if(constraint.romanNumeral) {
                 // @ts-ignore
                 yield [new HarmonizedChord({...constraint})];
@@ -203,10 +215,10 @@ export namespace Harmony {
             // TODO remove options of multiple length?
             options.push(...options.filter(option => option.length === 1)
                 .flatMap(option => possibleScales.map(scale => {
-                    if(scale === option[0].romanNumeral?.scale) {
+                    if(scale === option[0].romanNumeral.scale) {
                         return undefined;
                     }
-                    const romanNumeral = option[0].romanNumeral?.relativeToScale(scale);
+                    const romanNumeral = option[0].romanNumeral.relativeToScale(scale);
                     if(romanNumeral) {
                         const flags = {...option[0].flags};
                         flags.pivot = true;
@@ -284,7 +296,7 @@ export namespace Harmony {
         if(constraints.length === 0) {
             return;
         }
-        const start = new RomanNumeral(params.start || constraints[0]?.romanNumeral?.name || 'I',  scale);
+        const start = new RomanNumeral(params.start || constraints[0].romanNumeral?.name || 'I',  scale);
 
         const chord = reconcileConstraints(new HarmonizedChord({romanNumeral: start}), constraints[0]);
         if(chord === null) {
