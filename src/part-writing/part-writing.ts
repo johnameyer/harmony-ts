@@ -100,21 +100,6 @@ export interface PartWritingPreferences {
 type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
 type ParamNotOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? never : P}[keyof T]
 
-/**
- * The result of part-writing
- */
-export interface PartWritingResult {
-    /**
-     * The generated solution, or null if could not resolve based on the parameters
-     */
-    solution: HarmonizedChord[] | null;
-
-    /**
-     * The furthest in the constraints the harmonizer made it
-     */
-    furthest: number;
-}
-
 export interface PartWritingParameters<T extends PartWritingRules = typeof defaultPartWritingRules, U extends PartWritingPreferences = typeof defaultPartWritingPreferences>{
     rules: T,
     singularRules: (keyof T)[],
@@ -161,13 +146,13 @@ export namespace PartWriting {
         } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
-    export function voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters) {
+    export function * voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters) {
         const partWritingParams = params || defaultPartWritingParameters;
         for(let i = 1; i < constraints.length; i++) {
             const failed = PartWriting.Rules.checkAll(partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
                 console.error('Failed rule ' + failed + ' on constraint ' + i);
-                return {solution: null, furthest: i};
+                return;
             }
         }
         //TODO harmonize tonic or come up with options
@@ -175,13 +160,13 @@ export namespace PartWriting {
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             console.error('Failed to reconcile first constraint');
-            return {solution: null, furthest: 0};
+            return;
         }
         {
             const failed = PartWriting.Rules.checkSingular(partWritingParams, reconciledConstraint).next().value;
             if(failed) {
                 console.error('First reconciled constraint failed rule ' + failed);
-                return {solution: null, furthest: 0};
+                return;
             }
         }
         // let furthest = 0;
@@ -191,26 +176,10 @@ export namespace PartWriting {
 
             const result = voiceWithContext(params, constraints, harmonization, scale);
 
-            return result;
+            yield* result;
         } else {
             throw new Error('No harmony params provided');
         }
-        
-        // if(!params.greedy && results.length > 0) {
-        //     const partWritingParams = params.partWritingParameters || defaultPartWritingParameters;
-        //     const scores = minGenerator(results, result => PartWriting.Preferences.lazyEvaluateSingle(partWritingParams, result), arrayComparator);
-        //     // console.log('Harmonize all scores');
-        //     // console.log(results.map(result => PartWriting.Preferences.evaluateSingle(result)));
-        //     for(let i of scores) {
-        //         let chord = results[i];
-        //         if(result.solution != null) {
-        //             return {solution: [chord, ...result.solution], furthest: result.furthest};
-        //         } else {
-        //             furthest = result.furthest > furthest ? result.furthest : furthest;
-        //         }
-        //     }
-        // }
-        // return {solution: null, furthest: furthest};
     }
 
     export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: Harmony.NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): Generator<CompleteChord[]> {

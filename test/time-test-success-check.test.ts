@@ -24,6 +24,6 @@ const result = iterator.next().value;
 const postHarmonize = performance.now();
 console.log('Harmonizing took', postHarmonize - postSetup, 'milliseconds');
 
-if(result.furthest !== constraints.length) {
+if(!result || result.length !== constraints.length) {
     throw new Error('Should have been able to complete');
 }
