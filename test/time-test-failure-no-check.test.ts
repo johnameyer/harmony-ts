@@ -4,7 +4,7 @@ if(!performance) {
 
 const start = performance.now();
 
-import { Scale, Key, IncompleteChord, RomanNumeral, defaultPartWritingParameters, PartWriting } from "harmony-ts";
+import { Scale, Key, IncompleteChord, RomanNumeral, defaultPartWritingParameters, PartWriting, flattenResults } from "harmony-ts";
 
 const postImports = performance.now();
 console.log('Importing took', postImports - start, 'milliseconds');
@@ -18,7 +18,7 @@ const postSetup = performance.now();
 console.log('Setup took', postSetup - postImports, 'milliseconds');
 
 const harmonyParams = { constraints, scale, useProgressions: false };
-const iterator = PartWriting.voiceAll(defaultPartWritingParameters, constraints, scale, harmonyParams);
+const iterator = flattenResults(PartWriting.voiceAll(defaultPartWritingParameters, constraints, scale, harmonyParams));
 const result = iterator.next().value;
 
 const postHarmonize = performance.now();
