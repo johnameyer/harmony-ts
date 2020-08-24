@@ -7,18 +7,8 @@ import { isDefined } from "../util";
 import { Expansion, ExpansionOperator } from "./expansion";
 import { Interval } from "../interval/interval";
 import { Key } from "../key";
-import { LazyMultiIterable, makeLazyMultiIterable } from "../util/make-lazy-iterator";
-
-// const arrayComparator = <T>(a: T[], b: T[]) => {
-//     for(let i = 0; i < a.length && i < b.length; i++) {
-//         if(a[i] > b[i]){
-//             return -1;
-//         } else if(a[i] < b[i]) {
-//             return 1;
-//         }
-//     }
-//     return 0;
-// }
+import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { NestedIterable } from "../util/nested-iterable";
 
 /**
 * 
@@ -153,33 +143,7 @@ export interface HarmonyParameters {
 }
 
 export namespace Harmony {
-    type NestedGenerator<T> = Generator<[T, NestedGenerator<T>]>;
-
-    export type CompleteHarmonyGenerator = NestedGenerator<HarmonizedChord[]>;
-
-    export function * flattenResults<T>(generator: NestedGenerator<T[]>): Generator<T[], void> {
-        for(const [t, gen] of generator) {
-            let hasYielded = false;
-            for(const inner of flattenResults(gen)) {
-                hasYielded = true;
-                yield [t, ...inner].flatMap(x => x);
-            }
-            if(!hasYielded) {
-                yield [t].flatMap(x => x);
-            }
-        }
-    }
-
-    export type NestedLazyMultiIterable<T> = LazyMultiIterable<[T, NestedLazyMultiIterable<T>]>;
-
-    export function convertToMultiIterator<T>(generator: NestedGenerator<T>): NestedLazyMultiIterable<T> {
-        function * handleNested(inner: NestedGenerator<T>): Generator<[T, NestedLazyMultiIterable<T>]> {
-            for(const [t, gen] of inner) {
-                yield [t, makeLazyMultiIterable(handleNested(gen))];
-            }
-        }
-        return makeLazyMultiIterable(handleNested(generator));
-    }
+    export type CompleteHarmonyGenerator = NestedIterable<HarmonizedChord[]>;
 
     /**
      * Find the next possible chord to progress to (with modulations and expansions between) without looking at the constraints
@@ -281,9 +245,9 @@ export namespace Harmony {
         }
         for(let match of matchingHarmony(params, constraints, previous)){
             // TODO consider doing something to prevent re-evaluation of first item
-            if(matchingCompleteHarmonyWithContext(params, constraints, [...[...match].reverse(), ...previous]).next().value || match.length + previous.length === constraints.length) {
-                const result = matchingCompleteHarmonyWithContext(params, constraints, [...[...match].reverse(), ...previous]);
-                yield [match, result];
+            const recurse = makePeekableIterator(matchingCompleteHarmonyWithContext(params, constraints, [...[...match].reverse(), ...previous]));
+            if(recurse.hasItems || match.length + previous.length === constraints.length) {
+                yield [match, recurse];
             }
         }
     }
@@ -302,8 +266,9 @@ export namespace Harmony {
         if(chord === null) {
             return;
         }
-        if(matchingCompleteHarmonyWithContext(params, constraints, [chord]).next().value || constraints.length === 1) {
-            yield [[chord], matchingCompleteHarmonyWithContext(params, constraints, [chord])];
+        const recurse = makePeekableIterator(matchingCompleteHarmonyWithContext(params, constraints, [chord]));
+        if(recurse.hasItems || constraints.length === 1) {
+            yield [[chord], recurse];
         }
     }
 }

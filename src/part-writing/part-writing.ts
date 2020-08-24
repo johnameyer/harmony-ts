@@ -17,6 +17,9 @@ import { Note } from "../note/note";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { Accidental } from "../accidental";
 import { CompleteChord } from "../chord/complete-chord";
+import { NestedIterable, NestedLazyMultiIterable, convertToMultiIterator } from "../util/nested-iterable";
+import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { arrayComparator } from "../util/array-comparator";
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -110,7 +113,8 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     }
     preferences: U,
     singularPreferences: (keyof U)[],
-    preferencesOrdering: (keyof U)[]
+    preferencesOrdering: (keyof U)[],
+    yieldOrdering: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], partWritingParams: PartWritingParameters) => NestedIterable<CompleteChord[]>
 };
 
 export namespace PartWriting {
@@ -128,13 +132,14 @@ export namespace PartWriting {
      * @param newSingularPreferences the new preferences that are singular
      * @param newPreferencesOrdering the ordering of all the preferences
      */
-    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering }: {
+    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering, newYieldOrdering }: {
         newRules?: T;
         newPreferences?: U;
         newSingularRules?: (keyof T)[];
         newRuleParameters?: Partial<{[ruleName in keyof RuleUnion<T>]: Parameters<RuleUnion<T>[ruleName]>[0] | boolean}>;
         newSingularPreferences?: (keyof U)[];
         newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
+        newYieldOrdering?: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], params: PartWritingParameters) => NestedIterable<CompleteChord[]>;
     } = {}) {
         return {
             rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
@@ -142,11 +147,12 @@ export namespace PartWriting {
             ruleParameters: {...defaultPartWritingParameters.ruleParameters, ...(newRuleParameters || {})},
             preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
-            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)]
+            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
+            yieldOrdering: newYieldOrdering || defaultPartWritingParameters.yieldOrdering
         } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
-    export function * voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters) {
+    export function * voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters): NestedIterable<CompleteChord[]> {
         const partWritingParams = params || defaultPartWritingParameters;
         for(let i = 1; i < constraints.length; i++) {
             const failed = PartWriting.Rules.checkAll(partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
@@ -156,7 +162,7 @@ export namespace PartWriting {
             }
         }
         //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral(harmonyParams?.start || constraints[0]?.romanNumeral?.name || 'I',  scale);
+        const start = new RomanNumeral(harmonyParams?.start || constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             console.error('Failed to reconcile first constraint');
@@ -172,9 +178,9 @@ export namespace PartWriting {
         // let furthest = 0;
         // let results: HarmonizedChord[] = [];
         if(harmonyParams) {
-            const harmonization = Harmony.convertToMultiIterator(Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale));
+            const harmonization = convertToMultiIterator(Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale));
 
-            const result = voiceWithContext(params, constraints, harmonization, scale);
+            const result = params.yieldOrdering(voiceWithContext(params, constraints, harmonization, scale), [], params);
 
             yield* result;
         } else {
@@ -182,17 +188,16 @@ export namespace PartWriting {
         }
     }
 
-    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: Harmony.NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): Generator<CompleteChord[]> {
+    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): NestedIterable<CompleteChord[]> {
         if(constraints.length == previous.length) {
-            yield []; // , furthest: previous.length};
             return;
         }
-        for(const item of progression){
-            const [current, future] = item;
-            const partWritingParams = params || defaultPartWritingParameters;
+        const partWritingParams = params || defaultPartWritingParameters;
+        for(const [current, future] of progression){
             for(const voicing of chordVoicings(partWritingParams, current, previous)) {
-                for(const result of voiceWithContext(params, constraints, future, scale, [...voicing.slice().reverse(), ...previous])) {
-                    yield [...voicing, ...result];
+                const recurse = makePeekableIterator(voiceWithContext(params, constraints, future, scale, [...voicing.slice().reverse(), ...previous]));
+                if(recurse.hasItems || voicing.length + previous.length === constraints.length) {
+                    yield [voicing, params.yieldOrdering(recurse, [...voicing.slice().reverse(), ...previous], params)];
                 }
             }
         }
@@ -1334,5 +1339,7 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'checkBassOctaveJump',
         'checkVoiceDisjunction',
         'checkSharedPitch'
-    ]
+    ],
+    // yieldOrdering: (iterator) => iterator,
+    yieldOrdering: (iterator, previous, partWritingParams) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWritingParams, result[0][0], previous[0]), arrayComparator),
 };

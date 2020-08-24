@@ -1,8 +1,9 @@
-export interface LazyMultiIterable<T> extends Array<T> {
-    [Symbol.iterator](): IterableIterator<T>;
+export interface LazyMultiIterable<T> {
+    [Symbol.iterator](): Iterator<T>;
+    [index: number]: T;
 };
 
-export function makeLazyMultiIterable<S>(generator: Generator<S>) {
+export function makeLazyMultiIterable<S>(generator: IterableIterator<S>) {
     const arr: (S | undefined)[] = new Array();
 
     const proxyHandler = {
@@ -36,7 +37,7 @@ export function makeLazyMultiIterable<S>(generator: Generator<S>) {
                 }
             }
             // @ts-ignore
-            return arr[prop] as S;
+            return Reflect.get(...arguments);
         }
     }
 

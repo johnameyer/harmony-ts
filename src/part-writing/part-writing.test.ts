@@ -8,10 +8,13 @@ import { Progression } from "../harmony/progression";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { HarmonyParameters } from "../harmony/harmony";
 import { HarmonizedChord } from "../chord/harmonized-chord";
+import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { flattenResults } from "../util/nested-iterable";
 
 const CMajor = [Key.C, Scale.Quality.MAJOR] as Scale;
 const GMajor = [Key.G, Scale.Quality.MAJOR] as Scale;
-const CMinor = [Key.G, Scale.Quality.MINOR] as Scale;
+const CMinor = [Key.C, Scale.Quality.MINOR] as Scale;
+const GMinor = [Key.G, Scale.Quality.MINOR] as Scale;
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -189,12 +192,12 @@ describe('PartWriting', () => {
             const scale = CMajor;
             const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions : true };
             const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = PartWriting.voiceAll(params, constraints, scale, harmonyParameters);
-            // @ts-ignore
-            const result = iterator.next();
-            expect(result.value).not.toBeUndefined();
-            // @ts-ignore
-            expect(result.value.map(chords => chords.voices[0].name)).toEqual(notes);
+            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            expect(iterator.hasItems).toBe(true);
+            
+            const result = flattenResults(iterator).next().value as CompleteChord[];
+            expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
 
         test.each([
@@ -209,12 +212,13 @@ describe('PartWriting', () => {
             const scale = CMajor;
             const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
             const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = PartWriting.voiceAll(params, constraints, scale, harmonyParameters);
+            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            expect(iterator.hasItems).toBe(true);
+            
+            const result = flattenResults(iterator).next().value as CompleteChord[];
             // @ts-ignore
-            const result = iterator.next();
-            expect(result.value).not.toBeUndefined();
-            // @ts-ignore
-            expect(result.value.map(chords => chords.voices[3].name)).toEqual(notes);
+            expect(result.map(chords => chords.voices[3].name)).toEqual(notes);
         });
         
         test.each([
@@ -234,12 +238,13 @@ describe('PartWriting', () => {
             const scale = CMajor;
             const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
             const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = PartWriting.voiceAll(params, constraints, scale, harmonyParameters);
+            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            expect(iterator.hasItems).toBe(true);
+            
+            const result = flattenResults(iterator).next().value as CompleteChord[];
             // @ts-ignore
-            const result = iterator.next();
-            expect(result.value).not.toBeUndefined();
-            // @ts-ignore
-            expect(result.value.map(chords => chords.romanNumeral.name)).toEqual(numerals);
+            expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
         });
         
         test.each([
@@ -251,13 +256,14 @@ describe('PartWriting', () => {
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale: Scale = [key, Scale.Quality.MAJOR];
             const enabled = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths];
-            // const params: HarmonyParameters = {scale, enabledProgressions: enabled, constraints, greedy, useProgressions };
-            // const result = Harmony.harmonizeAll(params);
-            // expect(result.furthest).toBe(notes.length);
-            // expect(result.solution).not.toBeNull();
-            // if(result.solution != null) {
-            //     expect(result.solution.map(chords => chords.voices[0].name)).toEqual(notes);
-            // }
+            const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
+            const params: PartWritingParameters = defaultPartWritingParameters;
+            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            expect(iterator.hasItems).toBe(true);
+            
+            const result = flattenResults(iterator).next().value as CompleteChord[];
+            expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
     });
     
@@ -330,15 +336,18 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, undefined], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        // const params: HarmonyParameters = {scale, enabledProgressions: enabled, constraints, greedy: false, useProgressions };
-        // const result = Harmony.harmonizeAll(params);
-        // expect(result.furthest).toBe(expected.length);
-        // expect(result.solution).not.toBeNull();
-        // if(result.solution != null) {
-        //     for(let i = 0; i < expected.length; i++) {
-        //         expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
-        //     }
-        // }
+        
+        const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
+        const params: PartWritingParameters = defaultPartWritingParameters;
+        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+        expect(iterator.hasItems).toBe(true);
+        
+        const result = flattenResults(iterator).next().value as CompleteChord[];
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
+        
     });
 
     
@@ -364,15 +373,16 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [undefined, undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        // const params: HarmonyParameters = {scale, enabledProgressions: enabled, constraints, greedy: false, useProgressions };
-        // const result = Harmony.harmonizeAll(params);
-        // expect(result.furthest).toBe(expected.length);
-        // expect(result.solution).not.toBeNull();
-        // if(result.solution != null) {
-        //     for(let i = 0; i < expected.length; i++) {
-        //         expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
-        //     }
-        // }
+        const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
+        const params: PartWritingParameters = defaultPartWritingParameters;
+        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+        expect(iterator.hasItems).toBe(true);
+
+        const result = flattenResults(iterator).next().value as CompleteChord[];
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
     });
 
     test.each([
@@ -397,14 +407,18 @@ describe('PartWriting', () => {
             }
         }
         // const params: HarmonyParameters = {scale: CMajor, canModulate: true, constraints, greedy: false, useProgressions };
-        // const result = Harmony.harmonizeAll(params);
-        // expect(result.furthest).toBe(expected.length);
-        // expect(result.solution).not.toBeNull();
-        // if(result.solution != null) {
-        //     for(let i = 0; i < expected.length; i++) {
-        //         expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
-        //     }
-        // }
+        
+        const harmonyParameters: HarmonyParameters = { canModulate: true, useProgressions: true };
+        const params: PartWritingParameters = defaultPartWritingParameters;
+        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMajor, harmonyParameters));
+
+        expect(iterator.hasItems).toBe(true);
+
+        const result = flattenResults(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
+        
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
     });
 
     test.each([
@@ -443,15 +457,17 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        // const params: HarmonyParameters = {scale: CMinor, canModulate: false, constraints, greedy: false, useProgressions };
-        // const result = Harmony.harmonizeAll(params);
-        // expect(result.furthest).toBe(expected.length);
-        // expect(result.solution).not.toBeNull();
-        // if(result.solution != null) {
-        //     for(let i = 0; i < expected.length; i++) {
-        //         expect(result.solution[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
-        //     }
-        // }
+        const harmonyParameters: HarmonyParameters = { useProgressions: true };
+        const params: PartWritingParameters = defaultPartWritingParameters;
+        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMinor, harmonyParameters));
+
+        expect(iterator.hasItems).toBe(true);
+
+        const result = flattenResults(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
+        
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
     });
 
     test.each([
@@ -460,15 +476,17 @@ describe('PartWriting', () => {
         [['C5', 'B4', 'B4', 'C5']],
     ])('minor key %s', (soprano) => {
         const constraints = soprano.map(note => new IncompleteChord({voices: [new AbsoluteNote(note), undefined, undefined, undefined] }));
-        // const params: HarmonyParameters = {scale: CMinor, canModulate: true, constraints, greedy: false, useProgressions };
-        // const result = Harmony.harmonizeAll(params);
-        // expect(result.furthest).toBe(constraints.length);
-        // expect(result.solution).not.toBeNull();
-        // if(result.solution != null) {
-        //     for(let i = 0; i < constraints.length; i++) {
-        //         expect(result.solution[i].voices[0].name).toEqual(soprano[i]);
-        //         expect(result.solution[i].romanNumeral.scale).toEqual(CMinor);
-        //     }
-        // }
+        const harmonyParameters: HarmonyParameters = { canModulate: false, useProgressions: true };
+        const params: PartWritingParameters = defaultPartWritingParameters;
+        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMinor, harmonyParameters));
+
+        expect(iterator.hasItems).toBe(true);
+
+        const result = flattenResults(iterator).next().value as CompleteChord[];
+        
+        for(let i = 0; i < constraints.length; i++) {
+            expect(result[i].voices[0].name).toEqual(soprano[i]);
+            expect(result[i].romanNumeral.scale).toEqual(CMinor);
+        }
     });
 });
