@@ -18,7 +18,7 @@ import { Motion } from './interval/motion';
 import { ScaleDegree } from './harmony/scale-degree';
 import { ComplexInterval } from './interval/complex-interval';
 import { IChord } from './chord/ichord';
-import { flattenResults, NestedIterable } from './util/nested-iterable';
+import { flattenResults, NestedIterable, resultsOfLength } from './util/nested-iterable';
 
 export {
     AbsoluteNote,
@@ -48,5 +48,6 @@ export {
     ScaleDegree,
     ComplexInterval,
     flattenResults,
-    NestedIterable
+    NestedIterable,
+    resultsOfLength
 };

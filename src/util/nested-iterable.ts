@@ -1,4 +1,5 @@
 import { makeLazyMultiIterable, LazyMultiIterable } from "./make-lazy-iterator";
+import { makePeekableIterator } from "./make-peekable-iterator";
 
 export type NestedIterable<T> = IterableIterator<[T, NestedIterable<T>]>;
 
@@ -13,6 +14,18 @@ export function * flattenResults<T>(generator: NestedIterable<T[]>): IterableIte
             yield [t].flatMap(x => x);
         }
     }
+}
+
+export function * resultsOfLength<T>(generator: NestedIterable<T[]>, length: number): NestedIterable<T[]> {
+    for(const [t, gen] of generator) {
+        const inner = makePeekableIterator(resultsOfLength(gen, length - t.length));
+        if(inner.hasItems) {
+            yield [t, inner];
+        } else if(t.length === length){
+            yield [t, inner];
+        }
+    }
+
 }
 
 export type NestedLazyMultiIterable<T> = LazyMultiIterable<[T, NestedLazyMultiIterable<T>]>;
