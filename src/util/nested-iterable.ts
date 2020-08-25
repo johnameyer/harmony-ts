@@ -3,6 +3,19 @@ import { makePeekableIterator } from "./make-peekable-iterator";
 
 export type NestedIterable<T> = IterableIterator<[T, NestedIterable<T>]>;
 
+export function * unnestNestedIterable<T>(generator: NestedIterable<T>): IterableIterator<T[]> {
+    for(const [t, gen] of generator) {
+        let hasYielded = false;
+        for(const inner of unnestNestedIterable(gen)) {
+            hasYielded = true;
+            yield [t, ...inner];
+        }
+        if(!hasYielded) {
+            yield [t];
+        }
+    }
+}
+
 export function * flattenResults<T>(generator: NestedIterable<T[]>): IterableIterator<T[]> {
     for(const [t, gen] of generator) {
         let hasYielded = false;

@@ -3,7 +3,7 @@ export interface LazyMultiIterable<T> {
     [index: number]: T;
 };
 
-export function makeLazyMultiIterable<S>(generator: IterableIterator<S>) {
+export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
     const arr: (S | undefined)[] = new Array();
 
     const proxyHandler = {
@@ -15,10 +15,12 @@ export function makeLazyMultiIterable<S>(generator: IterableIterator<S>) {
                     for(; i < arr.length; i++) {
                         yield arr[i];
                     }
-                    for(const result of generator) {
-                        arr[i] = result;
+                    let { done, value } = generator.next();
+                    while(!done) {
+                        arr[i] = value;
                         yield arr[i];
                         i++;
+                        ({ done, value } = generator.next());
                     }
                 }
             }

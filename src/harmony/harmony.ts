@@ -246,6 +246,8 @@ export namespace Harmony {
         for(let match of matchingHarmony(params, constraints, previous)){
             // TODO consider doing something to prevent re-evaluation of first item
             const recurse = makePeekableIterator(matchingCompleteHarmonyWithContext(params, constraints, [...[...match].reverse(), ...previous]));
+            
+            // TODO move to resultsOfLength approach
             if(recurse.hasItems || match.length + previous.length === constraints.length) {
                 yield [match, recurse];
             }

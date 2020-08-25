@@ -17,9 +17,11 @@ import { Note } from "../note/note";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { Accidental } from "../accidental";
 import { CompleteChord } from "../chord/complete-chord";
-import { NestedIterable, NestedLazyMultiIterable, convertToMultiIterator, resultsOfLength } from "../util/nested-iterable";
+import { NestedIterable, NestedLazyMultiIterable, convertToMultiIterator, resultsOfLength, flattenResults, unnestNestedIterable } from "../util/nested-iterable";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { arrayComparator } from "../util/array-comparator";
+import { iteratorMap } from "../util/iterator-map";
+import { nestedIterableMap } from "../util/nested-iterator-map";
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -114,7 +116,7 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     preferences: U,
     singularPreferences: (keyof U)[],
     preferencesOrdering: (keyof U)[],
-    yieldOrdering: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], partWritingParams: PartWritingParameters) => NestedIterable<CompleteChord[]>
+    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWritingParams: PartWritingParameters) => NestedIterable<CompleteChord>
 };
 
 export namespace PartWriting {
@@ -180,7 +182,7 @@ export namespace PartWriting {
         if(harmonyParams) {
             const harmonization = convertToMultiIterator(Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale));
 
-            const result = resultsOfLength(params.yieldOrdering(voiceWithContext(params, constraints, harmonization, scale), [], params), constraints.length);
+            const result = resultsOfLength(voiceWithContext(params, constraints, harmonization, scale), constraints.length);
 
             yield* result;
         } else {
@@ -197,23 +199,22 @@ export namespace PartWriting {
         }
         const partWritingParams = params || defaultPartWritingParameters;
         for(const [current, future] of progression){
-            for(const voicing of chordVoicings(partWritingParams, current, previous)) {
+            const voicings = nestedIterableMap(chordVoicings(partWritingParams, current, previous), (voicings, nestedPrevious) => params.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], params));
+            for(const voicing of unnestNestedIterable(voicings)) {
                 const newPrevious = [...voicing.slice().reverse(), ...previous];
-                const recurse = params.yieldOrdering(voiceWithContext(params, constraints, future, scale, newPrevious), newPrevious, params);
+                const recurse = voiceWithContext(params, constraints, future, scale, newPrevious);
                 yield [voicing, recurse];
             }
         }
     }
 
-    export function * chordVoicings(params: PartWritingParameters, reconciledConstraints: HarmonizedChord[], previous: CompleteChord[] = []): Generator<CompleteChord[]> {
-        if(reconciledConstraints.length === 0) {
-            yield [];
+    export function * chordVoicings(params: PartWritingParameters, constraints: HarmonizedChord[], previous: CompleteChord[] = []): NestedIterable<CompleteChord> {
+        if(constraints.length === 0) {
             return;
         }
-        for(const voicing of chordVoicing(params, reconciledConstraints[0], previous)) {
-            for(const voicings of chordVoicings(params, reconciledConstraints.slice(1), [voicing, ...previous])) {
-                yield [voicing, ...voicings];
-            }
+        
+        for(const voicing of chordVoicing(params, constraints[0], previous)) {
+            yield [voicing, chordVoicings(params, constraints.slice(1), [voicing, ...previous])];
         }
     }
 
@@ -1343,5 +1344,5 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'checkSharedPitch'
     ],
     // yieldOrdering: (iterator) => iterator,
-    yieldOrdering: (iterator, previous, partWritingParams) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWritingParams, result[0][0], previous[0]), arrayComparator),
+    yieldOrdering: (iterator, previous, partWritingParams) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWritingParams, result[0], previous[0]), arrayComparator),
 };
