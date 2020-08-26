@@ -1,7 +1,7 @@
 import { AbsoluteNote } from './note/absolute-note';
 import { IncompleteChord } from './chord/incomplete-chord';
 import { Scale } from './scale';
-import { Harmony, HarmonyParameters } from './harmony/harmony';
+import { Harmonizer, HarmonizerParameters } from './harmony/harmonizer';
 import { RomanNumeral } from './harmony/roman-numeral';
 import { Interval } from './interval/interval';
 import { Note } from './note/note';
@@ -19,6 +19,7 @@ import { ScaleDegree } from './harmony/scale-degree';
 import { ComplexInterval } from './interval/complex-interval';
 import { IChord } from './chord/ichord';
 import { flattenResults, NestedIterable, resultsOfLength } from './util/nested-iterable';
+import { PartWriter, PartWriterParameters } from './part-writing/part-writer';
 
 export {
     AbsoluteNote,
@@ -28,10 +29,12 @@ export {
     HarmonizedChord,
     IChord,
     Scale,
-    Harmony,
-    HarmonyParameters,
+    Harmonizer as Harmony,
+    HarmonizerParameters as HarmonyParameters,
     PartWriting,
     PartWritingParameters,
+    PartWriter,
+    PartWriterParameters,
     defaultPartWritingParameters,
     RomanNumeral,
     Interval,

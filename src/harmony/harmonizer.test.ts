@@ -1,6 +1,6 @@
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { AbsoluteNote } from "../note/absolute-note";
-import { Harmony, HarmonyParameters } from "./harmony";
+import { Harmonizer, HarmonyParameters } from "./harmonizer";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { Progression } from "./progression";
@@ -14,7 +14,7 @@ const CMajor: Scale = [Key.C, Scale.Quality.MAJOR];
 const CMinor: Scale = [Key.C, Scale.Quality.MINOR];
 const GMajor: Scale = [Key.G, Scale.Quality.MAJOR];
 
-const setUpHarmonizer = (params: HarmonyParameters) => new Harmony(params);
+const setUpHarmonizer = (params: HarmonyParameters) => new Harmonizer(params);
 
 describe('Harmony', () => {
     describe('matchingCompleteHarmony', () => {

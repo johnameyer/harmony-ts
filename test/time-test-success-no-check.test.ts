@@ -4,7 +4,7 @@ if(!performance) {
 
 const start = performance.now();
 
-import { Scale, Key, IncompleteChord, RomanNumeral, PartWriting, flattenResults, Harmony } from "harmony-ts";
+import { Scale, Key, IncompleteChord, RomanNumeral, PartWriter, flattenResults, Harmony } from "harmony-ts";
 
 const postImports = performance.now();
 console.log('Importing took', postImports - start, 'milliseconds');
@@ -17,7 +17,7 @@ const constraints = chords.map(chord => new IncompleteChord({romanNumeral: new R
 const postSetup = performance.now();
 
 const harmonizer = new Harmony({ useProgressions: false });
-const partWriter = new PartWriting(undefined, harmonizer);
+const partWriter = new PartWriter(undefined, undefined, harmonizer);
 
 console.log('Setup took', postSetup - postImports, 'milliseconds');
 

@@ -71,7 +71,7 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
 /**
  * The parameters that the harmonizer uses
  */
-export interface HarmonyParameters {
+export interface HarmonizerParameters {
     /**
      * The chords that are enabled if using progressions
      */
@@ -138,8 +138,11 @@ export interface HarmonyParameters {
 
 export type CompleteHarmonyGenerator = NestedIterable<HarmonizedChord[]>;
 
-export class Harmony {
-    constructor(public params: HarmonyParameters){ }
+/**
+ * Class that yields harmonies for a given set of constraints
+ */
+export class Harmonizer {
+    constructor(public params: HarmonizerParameters){ }
 
     /**
      * Find the next possible chord to progress to (with modulations and expansions between) without looking at the constraints
@@ -200,7 +203,7 @@ export class Harmony {
         for(let option of expandedOptions) {
             if(previous.length + option.length <= constraints.length) {
                 if(option.some(chord => !chord.romanNumeral)) {
-                    console.log(option);
+                    // console.log(option);
                     // TODO why is this?
                     continue;
                 }

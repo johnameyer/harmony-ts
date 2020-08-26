@@ -1,4 +1,3 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Interval } from "../interval/interval";
 import { IntervalQuality } from "../interval/interval-quality";
@@ -11,71 +10,9 @@ import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
 import { minGenerator } from "../util/min-generator";
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { HarmonyParameters, Harmony } from "../harmony/harmony";
-import { Note } from "../note/note";
-import { RomanNumeral } from "../harmony/roman-numeral";
-import { Accidental } from "../accidental";
 import { CompleteChord } from "../chord/complete-chord";
-import { NestedIterable, NestedLazyMultiIterable, convertToMultiIterator, resultsOfLength, flattenResults, unnestNestedIterable } from "../util/nested-iterable";
-import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { NestedIterable } from "../util/nested-iterable";
 import { arrayComparator } from "../util/array-comparator";
-import { iteratorMap } from "../util/iterator-map";
-import { nestedIterableMap } from "../util/nested-iterator-map";
-
-function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
-    const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
-    for(let voicePart in one.voices) {
-        if(!compatible(one.voices[voicePart]?.name, two.voices[voicePart]?.name)) {
-            return null;
-        }
-    }
-    
-    if(!compatible(one.romanNumeral?.root?.name, two.romanNumeral?.root?.name)) {
-        return null;
-    }
-    if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
-        return null;
-    }
-    if(!compatible(one.romanNumeral?.scale[0], two.romanNumeral?.scale[0])) {
-        return null;
-    }
-    if(!compatible(one.romanNumeral?.scale[1], two.romanNumeral?.scale[1])) {
-        return null;
-    }
-    if(one.flags) {
-        for(const key in one.flags) {
-            if(two.flags && two.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
-                return null;
-            }
-        }
-    }
-    if(two.flags) {
-        for(const key in two.flags) {
-            if(one.flags && one.flags[key] !== undefined && one.flags[key] !== two.flags[key]) {
-                return null;
-            }
-        }
-    }
-    if(one.romanNumeral) {
-        const romanNumeral = one.romanNumeral;
-        const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
-        if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
-            return null;
-        }
-    } else if(two.romanNumeral) {
-        const romanNumeral = two.romanNumeral;
-        const twoNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
-        if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))){
-            return null;
-        }
-    }
-    
-    const romanNumeral = one.romanNumeral || two.romanNumeral;
-    const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
-    const flags = {...(one.flags || {}), ...(two.flags || {})};
-    return new IncompleteChord({romanNumeral, voices, flags});
-}
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -105,6 +42,9 @@ export interface PartWritingPreferences {
 type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
 type ParamNotOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? never : P}[keyof T]
 
+/**
+ * Interface telling what rules should be run for the singular and multi checks and enforcing rules interface
+ */
 export interface PartWritingParameters<T extends PartWritingRules = typeof defaultPartWritingRules, U extends PartWritingPreferences = typeof defaultPartWritingPreferences>{
     rules: T,
     singularRules: (keyof T)[],
@@ -116,146 +56,12 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     preferences: U,
     singularPreferences: (keyof U)[],
     preferencesOrdering: (keyof U)[],
-    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWritingParams: PartWritingParameters) => NestedIterable<CompleteChord>
 };
 
-export class PartWriting {
-    constructor(public params: PartWritingParameters = defaultPartWritingParameters, public harmonizer: Harmony = new Harmony({})) { }
-
-    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord[]> {
-        for(let i = 1; i < constraints.length; i++) {
-            const failed = PartWriting.Rules.checkAll(this.params, constraints.slice(0, i + 1).reverse()).next().value;
-            if(failed) {
-                console.error('Failed rule ' + failed + ' on constraint ' + i);
-                return;
-            }
-        }
-        //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral(constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
-        const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
-        if(!reconciledConstraint) {
-            console.error('Failed to reconcile first constraint');
-            return;
-        }
-        {
-            const failed = PartWriting.Rules.checkSingular(this.params, reconciledConstraint).next().value;
-            if(failed) {
-                console.error('First reconciled constraint failed rule ' + failed);
-                return;
-            }
-        }
-        // let furthest = 0;
-        // let results: HarmonizedChord[] = [];
-        const harmonization = convertToMultiIterator(this.harmonizer.matchingCompleteHarmony(constraints, scale));
-
-        const result = resultsOfLength(this.voiceWithContext(constraints, harmonization, scale), constraints.length);
-
-        yield* result;
-    }
-
-    /**
-     * Makes no guarantee that all yielded results will be complete, consider wrapping with resultsOfLength if that is needed
-     */
-    * voiceWithContext(constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): NestedIterable<CompleteChord[]> {
-        if(constraints.length == previous.length) {
-            return;
-        }
-        for(const [current, future] of progression){
-            const voicings = nestedIterableMap(this.chordVoicings(current, previous), (voicings, nestedPrevious) => this.params.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this.params));
-            for(const voicing of unnestNestedIterable(voicings)) {
-                const newPrevious = [...voicing.slice().reverse(), ...previous];
-                const recurse = this.voiceWithContext(constraints, future, scale, newPrevious);
-                yield [voicing, recurse];
-            }
-        }
-    }
-
-    * chordVoicings(constraints: HarmonizedChord[], previous: CompleteChord[] = []): NestedIterable<CompleteChord> {
-        if(constraints.length === 0) {
-            return;
-        }
-        
-        for(const voicing of this.chordVoicing(constraints[0], previous)) {
-            yield [voicing, this.chordVoicings(constraints.slice(1), [voicing, ...previous])];
-        }
-    }
-
-    * chordVoicing(reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
-        const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
-            new AbsoluteNote(note.name + [previous.octavePosition + 1]),
-            new AbsoluteNote(note.name + [previous.octavePosition]),
-            new AbsoluteNote(note.name + [previous.octavePosition - 1]),
-        ];
-        
-        const romanNumeral = reconciledConstraint.romanNumeral;
-        const needed = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root) : undefined).filter(isDefined);
-        let bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
-        
-        let sopranoNotes, altoNotes, tenorNotes, bassNotes;
-        if(previous.length) {
-            const get = (voicePart: number) => {
-                let voice = reconciledConstraint.voices[voicePart];
-                if(isDefined(voice)) {
-                    return [voice];
-                } else {
-                    return [...needed].flatMap(mapToNearby(previous[0].voices[voicePart]));
-                }
-            };
-            const compare = (note: AbsoluteNote) => (one: AbsoluteNote, two: AbsoluteNote) => Math.abs(note.midi - one.midi) - Math.abs(note.midi - two.midi);
-            //try smaller intervals first
-            sopranoNotes = get(0).sort(compare(previous[0].voices[0]));
-            altoNotes = get(1).sort(compare(previous[0].voices[1]));
-            tenorNotes = get(2).sort(compare(previous[0].voices[2]));
-            if(reconciledConstraint.voices[3] == undefined) {
-                bassNotes = mapToNearby(previous[0].voices[3])(bassNote).sort(compare(previous[0].voices[3]));
-            } else {
-                bassNotes = [reconciledConstraint.voices[3]];
-            }
-        } else {
-            const get = (needed: Note[]) => (voicePart: number) => {
-                let voice = reconciledConstraint.voices[voicePart];
-                if(isDefined(voice)) {
-                    return [voice];
-                } else {
-                    const low = voiceRange[voicePart][1].octavePosition;
-                    const high = voiceRange[voicePart][2].octavePosition + 1;
-                    const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
-                    return [...needed]
-                        .flatMap(note => [...Array(high - low).keys()]
-                        .map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))))
-                        .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
-                }
-            };
-            sopranoNotes = get(needed)(0);
-            altoNotes = get(needed)(1);
-            tenorNotes = get(needed)(2);
-            bassNotes = get([bassNote])(3);
-        }
-        //TODO make more efficient by following doubling rules outright
-        for(const bass of bassNotes) {
-            for(const soprano of sopranoNotes) {
-                for(const alto of altoNotes) {
-                    for(const tenor of tenorNotes) {
-                        const voicing = new CompleteChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
-                        if(previous.length) {
-                            if(PartWriting.Rules.testAll(this.params, [voicing, ...previous])) {
-                                yield voicing;
-                            }
-                        } else {
-                            if(PartWriting.Rules.testSingular(this.params, voicing)) {
-                                yield voicing;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-}
-
+/**
+ * Contains methods that allow for the vertical checking of chords (to verify good part-writing) across a series of rules
+ */
 export namespace PartWriting {
-
     //TODO replace with full-blown factory
     type RuleUnion<T> = T & typeof defaultPartWritingParameters.rules;
     type PreferencesUnion<T> = T & typeof defaultPartWritingParameters.preferences;
@@ -269,14 +75,13 @@ export namespace PartWriting {
      * @param newSingularPreferences the new preferences that are singular
      * @param newPreferencesOrdering the ordering of all the preferences
      */
-    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering, newYieldOrdering }: {
+    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering }: {
         newRules?: T;
         newPreferences?: U;
         newSingularRules?: (keyof T)[];
         newRuleParameters?: Partial<{[ruleName in keyof RuleUnion<T>]: Parameters<RuleUnion<T>[ruleName]>[0] | boolean}>;
         newSingularPreferences?: (keyof U)[];
         newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
-        newYieldOrdering?: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], params: PartWritingParameters) => NestedIterable<CompleteChord[]>;
     } = {}) {
         return {
             rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
@@ -285,7 +90,6 @@ export namespace PartWriting {
             preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
             preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
-            yieldOrdering: newYieldOrdering || defaultPartWritingParameters.yieldOrdering
         } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
@@ -731,7 +535,7 @@ export namespace PartWriting {
              * @todo implement
              * @todo is this necessary
              */
-            export function diminishedFifthResolution(_: undefined, chord: IChord, prev: IChord, ...before: IChord[]) {
+            export function diminishedFifthResolution(_: undefined) {
                 // check that a d5 or A4 involving the bass resolves normally
 
                 // TODO allow for exceptions as on page 415
@@ -1342,6 +1146,4 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'checkVoiceDisjunction',
         'checkSharedPitch'
     ],
-    // yieldOrdering: (iterator) => iterator,
-    yieldOrdering: (iterator, previous, partWritingParams) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWritingParams, result[0], previous[0]), arrayComparator),
 };
