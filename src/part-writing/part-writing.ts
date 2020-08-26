@@ -119,59 +119,26 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWritingParams: PartWritingParameters) => NestedIterable<CompleteChord>
 };
 
-export namespace PartWriting {
+export class PartWriting {
+    constructor(public params: PartWritingParameters = defaultPartWritingParameters, public harmonizer: Harmony = new Harmony({})) { }
 
-    //TODO replace with full-blown factory
-    type RuleUnion<T> = T & typeof defaultPartWritingParameters.rules;
-    type PreferencesUnion<T> = T & typeof defaultPartWritingParameters.preferences;
-    
-    /**
-     * Extend the default parameters with new rules, preferences
-     * @param newRules the new rules
-     * @param newPreferences the new preferences
-     * @param newSingularRules the new rules that are singular
-     * @param newRuleParameters the new parameters (can disable old rules by setting false)
-     * @param newSingularPreferences the new preferences that are singular
-     * @param newPreferencesOrdering the ordering of all the preferences
-     */
-    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering, newYieldOrdering }: {
-        newRules?: T;
-        newPreferences?: U;
-        newSingularRules?: (keyof T)[];
-        newRuleParameters?: Partial<{[ruleName in keyof RuleUnion<T>]: Parameters<RuleUnion<T>[ruleName]>[0] | boolean}>;
-        newSingularPreferences?: (keyof U)[];
-        newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
-        newYieldOrdering?: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], params: PartWritingParameters) => NestedIterable<CompleteChord[]>;
-    } = {}) {
-        return {
-            rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
-            singularRules: [...defaultPartWritingParameters.singularRules, ...(newSingularRules || [])],
-            ruleParameters: {...defaultPartWritingParameters.ruleParameters, ...(newRuleParameters || {})},
-            preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
-            singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
-            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
-            yieldOrdering: newYieldOrdering || defaultPartWritingParameters.yieldOrdering
-        } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
-    }
-
-    export function * voiceAll(params: PartWritingParameters, constraints: IncompleteChord[], scale: Scale, harmonyParams?: HarmonyParameters): NestedIterable<CompleteChord[]> {
-        const partWritingParams = params || defaultPartWritingParameters;
+    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord[]> {
         for(let i = 1; i < constraints.length; i++) {
-            const failed = PartWriting.Rules.checkAll(partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
+            const failed = PartWriting.Rules.checkAll(this.params, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
                 console.error('Failed rule ' + failed + ' on constraint ' + i);
                 return;
             }
         }
         //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral(harmonyParams?.start || constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
+        const start = new RomanNumeral(constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             console.error('Failed to reconcile first constraint');
             return;
         }
         {
-            const failed = PartWriting.Rules.checkSingular(partWritingParams, reconciledConstraint).next().value;
+            const failed = PartWriting.Rules.checkSingular(this.params, reconciledConstraint).next().value;
             if(failed) {
                 console.error('First reconciled constraint failed rule ' + failed);
                 return;
@@ -179,46 +146,41 @@ export namespace PartWriting {
         }
         // let furthest = 0;
         // let results: HarmonizedChord[] = [];
-        if(harmonyParams) {
-            const harmonization = convertToMultiIterator(Harmony.matchingCompleteHarmony(harmonyParams, constraints, scale));
+        const harmonization = convertToMultiIterator(this.harmonizer.matchingCompleteHarmony(constraints, scale));
 
-            const result = resultsOfLength(voiceWithContext(params, constraints, harmonization, scale), constraints.length);
+        const result = resultsOfLength(this.voiceWithContext(constraints, harmonization, scale), constraints.length);
 
-            yield* result;
-        } else {
-            throw new Error('No harmony params provided');
-        }
+        yield* result;
     }
 
     /**
      * Makes no guarantee that all yielded results will be complete, consider wrapping with resultsOfLength if that is needed
      */
-    export function * voiceWithContext(params: PartWritingParameters, constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): NestedIterable<CompleteChord[]> {
+    * voiceWithContext(constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): NestedIterable<CompleteChord[]> {
         if(constraints.length == previous.length) {
             return;
         }
-        const partWritingParams = params || defaultPartWritingParameters;
         for(const [current, future] of progression){
-            const voicings = nestedIterableMap(chordVoicings(partWritingParams, current, previous), (voicings, nestedPrevious) => params.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], params));
+            const voicings = nestedIterableMap(this.chordVoicings(current, previous), (voicings, nestedPrevious) => this.params.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this.params));
             for(const voicing of unnestNestedIterable(voicings)) {
                 const newPrevious = [...voicing.slice().reverse(), ...previous];
-                const recurse = voiceWithContext(params, constraints, future, scale, newPrevious);
+                const recurse = this.voiceWithContext(constraints, future, scale, newPrevious);
                 yield [voicing, recurse];
             }
         }
     }
 
-    export function * chordVoicings(params: PartWritingParameters, constraints: HarmonizedChord[], previous: CompleteChord[] = []): NestedIterable<CompleteChord> {
+    * chordVoicings(constraints: HarmonizedChord[], previous: CompleteChord[] = []): NestedIterable<CompleteChord> {
         if(constraints.length === 0) {
             return;
         }
         
-        for(const voicing of chordVoicing(params, constraints[0], previous)) {
-            yield [voicing, chordVoicings(params, constraints.slice(1), [voicing, ...previous])];
+        for(const voicing of this.chordVoicing(constraints[0], previous)) {
+            yield [voicing, this.chordVoicings(constraints.slice(1), [voicing, ...previous])];
         }
     }
 
-    export function * chordVoicing(params: PartWritingParameters, reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
+    * chordVoicing(reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
         const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
             new AbsoluteNote(note.name + [previous.octavePosition + 1]),
             new AbsoluteNote(note.name + [previous.octavePosition]),
@@ -276,11 +238,11 @@ export namespace PartWriting {
                     for(const tenor of tenorNotes) {
                         const voicing = new CompleteChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
                         if(previous.length) {
-                            if(PartWriting.Rules.testAll(params, [voicing, ...previous])) {
+                            if(PartWriting.Rules.testAll(this.params, [voicing, ...previous])) {
                                 yield voicing;
                             }
                         } else {
-                            if(PartWriting.Rules.testSingular(params, voicing)) {
+                            if(PartWriting.Rules.testSingular(this.params, voicing)) {
                                 yield voicing;
                             }
                         }
@@ -288,6 +250,43 @@ export namespace PartWriting {
                 }
             }
         }
+    }
+
+}
+
+export namespace PartWriting {
+
+    //TODO replace with full-blown factory
+    type RuleUnion<T> = T & typeof defaultPartWritingParameters.rules;
+    type PreferencesUnion<T> = T & typeof defaultPartWritingParameters.preferences;
+    
+    /**
+     * Extend the default parameters with new rules, preferences
+     * @param newRules the new rules
+     * @param newPreferences the new preferences
+     * @param newSingularRules the new rules that are singular
+     * @param newRuleParameters the new parameters (can disable old rules by setting false)
+     * @param newSingularPreferences the new preferences that are singular
+     * @param newPreferencesOrdering the ordering of all the preferences
+     */
+    export function extendDefaultParameters<T extends PartWritingRules, U extends PartWritingPreferences>({ newRules, newPreferences, newSingularRules, newRuleParameters, newSingularPreferences, newPreferencesOrdering, newYieldOrdering }: {
+        newRules?: T;
+        newPreferences?: U;
+        newSingularRules?: (keyof T)[];
+        newRuleParameters?: Partial<{[ruleName in keyof RuleUnion<T>]: Parameters<RuleUnion<T>[ruleName]>[0] | boolean}>;
+        newSingularPreferences?: (keyof U)[];
+        newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
+        newYieldOrdering?: (iterator: NestedIterable<CompleteChord[]>, previous: CompleteChord[], params: PartWritingParameters) => NestedIterable<CompleteChord[]>;
+    } = {}) {
+        return {
+            rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
+            singularRules: [...defaultPartWritingParameters.singularRules, ...(newSingularRules || [])],
+            ruleParameters: {...defaultPartWritingParameters.ruleParameters, ...(newRuleParameters || {})},
+            preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
+            singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
+            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
+            yieldOrdering: newYieldOrdering || defaultPartWritingParameters.yieldOrdering
+        } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
     export namespace Rules {

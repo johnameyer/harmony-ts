@@ -6,7 +6,7 @@ import { Scale } from "../scale";
 import { Key } from "../key";
 import { Progression } from "../harmony/progression";
 import { IncompleteChord } from "../chord/incomplete-chord";
-import { HarmonyParameters } from "../harmony/harmony";
+import { HarmonyParameters, Harmony } from "../harmony/harmony";
 import { HarmonizedChord } from "../chord/harmonized-chord";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { flattenResults } from "../util/nested-iterable";
@@ -17,6 +17,8 @@ const CMinor = [Key.C, Scale.Quality.MINOR] as Scale;
 const GMinor = [Key.G, Scale.Quality.MINOR] as Scale;
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
+
+const defaultPartWriter = new PartWriting();
 
 const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index], arr[index + 1]] as [T, T])
 
@@ -161,7 +163,9 @@ describe('PartWriting', () => {
             ['viio6']
         ])('%s without previous', (chord) => {
             const constraint = new HarmonizedChord({romanNumeral: new RomanNumeral(chord, CMajor)});
-            const iterator = PartWriting.chordVoicing(defaultPartWritingParameters, constraint);
+
+            const iterator = defaultPartWriter.chordVoicing(constraint);
+
             const first = iterator.next();
             expect(first.value).not.toBeUndefined();
         });
@@ -174,7 +178,9 @@ describe('PartWriting', () => {
         ])('%s with previous', (chord) => {
             const previous = new CompleteChord(['E4', 'C4', 'G3', 'C3'].map(absoluteNote), new RomanNumeral('I', CMajor));
             const constraint = new HarmonizedChord({romanNumeral: new RomanNumeral(chord, CMajor)});
-            const iterator = PartWriting.chordVoicing(defaultPartWritingParameters, constraint, [previous]);
+
+            const iterator = defaultPartWriter.chordVoicing(constraint, [previous]);
+
             const first = iterator.next();
             expect(first.value).not.toBeUndefined();
         });
@@ -190,9 +196,10 @@ describe('PartWriting', () => {
             const soprano = notes.map(note => new AbsoluteNote(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale = CMajor;
-            const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions : true };
-            const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions : true });
+            const partWriter = new PartWriting(undefined, harmonizer);
+            const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);
             
@@ -210,9 +217,10 @@ describe('PartWriting', () => {
             const bass = notes.map(note => new AbsoluteNote(note));
             const constraints = bass.map(bass => new IncompleteChord({voices: [undefined, undefined, undefined, bass]}));
             const scale = CMajor;
-            const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
-            const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions : true });
+            const partWriter = new PartWriting(undefined, harmonizer);
+            const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);
             
@@ -236,9 +244,10 @@ describe('PartWriting', () => {
         ])('roman numerals %s', (numerals, enabled) => {
             const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
             const scale = CMajor;
-            const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
-            const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions : true });
+            const partWriter = new PartWriting(undefined, harmonizer);
+            const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);
             
@@ -256,9 +265,10 @@ describe('PartWriting', () => {
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale: Scale = [key, Scale.Quality.MAJOR];
             const enabled = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths];
-            const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
-            const params: PartWritingParameters = defaultPartWritingParameters;
-            const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+
+            const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions : true });
+            const partWriter = new PartWriting(undefined, harmonizer);
+            const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);
             
@@ -337,9 +347,10 @@ describe('PartWriting', () => {
             }
         }
         
-        const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
+        const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions: true });
         const params: PartWritingParameters = defaultPartWritingParameters;
-        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+        const partWriter = new PartWriting(params, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
         expect(iterator.hasItems).toBe(true);
         
@@ -373,9 +384,11 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [undefined, undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        const harmonyParameters: HarmonyParameters = { enabledProgressions: enabled, useProgressions: true };
+
+        const harmonizer = new Harmony({ enabledProgressions: enabled, useProgressions: true });
         const params: PartWritingParameters = defaultPartWritingParameters;
-        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, scale, harmonyParameters));
+        const partWriter = new PartWriting(params, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
         expect(iterator.hasItems).toBe(true);
 
@@ -406,11 +419,10 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        // const params: HarmonyParameters = {scale: CMajor, canModulate: true, constraints, greedy: false, useProgressions };
-        
-        const harmonyParameters: HarmonyParameters = { canModulate: true, useProgressions: true };
-        const params: PartWritingParameters = defaultPartWritingParameters;
-        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMajor, harmonyParameters));
+
+        const harmonizer = new Harmony({ canModulate: true, useProgressions: true });
+        const partWriter = new PartWriting(undefined, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, CMajor));
 
         expect(iterator.hasItems).toBe(true);
 
@@ -457,9 +469,10 @@ describe('PartWriting', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        const harmonyParameters: HarmonyParameters = { useProgressions: true };
-        const params: PartWritingParameters = defaultPartWritingParameters;
-        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMinor, harmonyParameters));
+
+        const harmonizer = new Harmony({ useProgressions: true });
+        const partWriter = new PartWriting(undefined, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, CMinor));
 
         expect(iterator.hasItems).toBe(true);
 
@@ -476,9 +489,10 @@ describe('PartWriting', () => {
         [['C5', 'B4', 'B4', 'C5']],
     ])('minor key %s', (soprano) => {
         const constraints = soprano.map(note => new IncompleteChord({voices: [new AbsoluteNote(note), undefined, undefined, undefined] }));
-        const harmonyParameters: HarmonyParameters = { canModulate: false, useProgressions: true };
-        const params: PartWritingParameters = defaultPartWritingParameters;
-        const iterator = makePeekableIterator(PartWriting.voiceAll(params, constraints, CMinor, harmonyParameters));
+        
+        const harmonizer = new Harmony({ canModulate: false, useProgressions: true });
+        const partWriter = new PartWriting(undefined, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, CMinor));
 
         expect(iterator.hasItems).toBe(true);
 

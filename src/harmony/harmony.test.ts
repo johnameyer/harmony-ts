@@ -14,6 +14,8 @@ const CMajor: Scale = [Key.C, Scale.Quality.MAJOR];
 const CMinor: Scale = [Key.C, Scale.Quality.MINOR];
 const GMajor: Scale = [Key.G, Scale.Quality.MAJOR];
 
+const setUpHarmonizer = (params: HarmonyParameters) => new Harmony(params);
+
 describe('Harmony', () => {
     describe('matchingCompleteHarmony', () => {
         test.each([
@@ -25,8 +27,8 @@ describe('Harmony', () => {
             const soprano = notes.map(note => new AbsoluteNote(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale = CMajor;
-            const params: HarmonyParameters = { enabledProgressions: enabled, useProgressions };
-            const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, scale));
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
             const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
             expect(result.value).toBeTruthy();
             expect(result.value.length).toBe(notes.length);
@@ -40,8 +42,8 @@ describe('Harmony', () => {
             const soprano = notes.map(note => new AbsoluteNote(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale = CMajor;
-            const params: HarmonyParameters = { enabledProgressions: enabled, useProgressions };
-            const iterator = Harmony.matchingCompleteHarmony(params, constraints, scale);
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = harmonizer.matchingCompleteHarmony(constraints, scale);
             const result = iterator.next();
             expect(result.value).toBe(undefined);
         });
@@ -55,8 +57,8 @@ describe('Harmony', () => {
             const bass = notes.map(note => new AbsoluteNote(note));
             const constraints = bass.map(bass => new IncompleteChord({voices: [undefined, undefined, undefined, bass]}));
             const scale = CMajor;
-            const params: HarmonyParameters = { enabledProgressions: enabled, useProgressions };
-            const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, scale));
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
             const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
             expect(result.value).toBeTruthy();
             expect(result.value.length).toBe(notes.length);
@@ -78,8 +80,8 @@ describe('Harmony', () => {
         ])('roman numerals %s', (numerals, enabled) => {
             const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
             const scale = CMajor;
-            const params: HarmonyParameters = { enabledProgressions: enabled, useProgressions };
-            const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, scale));
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
             const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
             expect(result.value).toBeTruthy();
             expect(result.value.length).toBe(numerals.length);
@@ -95,8 +97,8 @@ describe('Harmony', () => {
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale: Scale = [key, Scale.Quality.MAJOR];
             const enabled = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths];
-            const params: HarmonyParameters = { enabledProgressions: enabled, useProgressions };
-            const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, scale));
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
             const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
             expect(result.value).toBeTruthy();
             expect(result.value.length).toBe(notes.length);
@@ -125,8 +127,8 @@ describe('Harmony', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        const params: HarmonyParameters = { canModulate: true, useProgressions };
-        const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, CMajor));
+        const harmonizer = setUpHarmonizer({ canModulate: true, useProgressions });
+        const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, CMajor));
         const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
         expect(result.value).toBeTruthy();
         expect(result.value.length).toBe(expected.length);
@@ -172,8 +174,8 @@ describe('Harmony', () => {
                 constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
-        const params: HarmonyParameters = { canModulate: false, useProgressions };
-        const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, CMinor));
+        const harmonizer = setUpHarmonizer({ canModulate: false, useProgressions });
+        const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, CMinor));
         const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
         expect(result.value).toBeTruthy();
         expect(result.value.length).toBe(expected.length);
@@ -189,8 +191,8 @@ describe('Harmony', () => {
         [['C5', 'B4', 'B4', 'C5']],
     ])('minor key %s', (soprano) => {
         const constraints = soprano.map(note => new IncompleteChord({voices: [new AbsoluteNote(note), undefined, undefined, undefined] }));
-        const params: HarmonyParameters = { canModulate: true, useProgressions };
-        const iterator = flattenResults(Harmony.matchingCompleteHarmony(params, constraints, CMinor));
+        const harmonizer = setUpHarmonizer({ canModulate: true, useProgressions });
+        const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, CMinor));
         const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
         expect(result.value).toBeTruthy();
         expect(result.value.length).toBe(constraints.length);
