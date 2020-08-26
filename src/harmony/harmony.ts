@@ -167,7 +167,7 @@ export namespace Harmony {
         const scale = constraints[previous.length].romanNumeral?.scale || previous[0].romanNumeral.scale;
         let options = [...Progression.matchingProgressions(scale, previous, progressions)];
         // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-        // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
 
         if(params.canModulate && !constraints[previous.length].romanNumeral?.scale) {
             const oldScale = previous[0].romanNumeral.scale;
@@ -191,7 +191,7 @@ export namespace Harmony {
                     return undefined;
                 }))
                 .filter(isDefined));
-                // console.log('Pivoted options are', options.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+                console.log('Pivoted options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
         }
 
         //use expansions
@@ -200,9 +200,14 @@ export namespace Harmony {
         // TODO option chaining
         expandedOptions.sort((a, b) => b.length - a.length);
         // TODO remove duplicates
-        // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
         for(let option of expandedOptions) {
             if(previous.length + option.length <= constraints.length) {
+                if(option.some(chord => !chord.romanNumeral)) {
+                    console.log(option);
+                    // TODO why is this?
+                    continue;
+                }
                 yield option;
             }
         }
@@ -262,7 +267,7 @@ export namespace Harmony {
         if(constraints.length === 0) {
             return;
         }
-        const start = new RomanNumeral(params.start || constraints[0].romanNumeral?.name || 'I',  scale);
+        const start = new RomanNumeral(params.start || constraints[0].romanNumeral?.name || (scale[1] === Scale.Quality.MAJOR ? 'I' : 'i'), scale);
 
         const chord = reconcileConstraints(new HarmonizedChord({romanNumeral: start}), constraints[0]);
         if(chord === null) {

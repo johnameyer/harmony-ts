@@ -10,9 +10,9 @@ export type ExpansionOperator = (scale: Scale, chords: HarmonizedChord[], prev: 
 
 // TODO add operators that operate over all and each
 const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
-const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0]?.romanNumeral?.name === romanNumeral ? next(scale, chords, prev) : [];
+const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
+const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
 
 //TODO clone map
 const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()];
@@ -207,9 +207,9 @@ export namespace Expansion {
         startingWith('I', movingTo('I', sequenceInsert(['V', 'vi', 'iii', 'IV']))),
         startingWith('I', movingTo('ii', sequenceInsert(['V', 'vi', 'iii', 'IV', 'I']))),
 
-        startingWith('I', movingTo('iii', sequenceInsert(['V6', 'vi']))),
+        startingWith('I', movingTo('iii6', sequenceInsert(['V6', 'vi']))),
         startingWith('I', movingTo('IV', sequenceInsert(['V6', 'vi', 'iii6']))),
-        startingWith('I', movingTo('I', sequenceInsert(['V6', 'vi', 'iii6', 'IV']))),
+        startingWith('I', movingTo('I6', sequenceInsert(['V6', 'vi', 'iii6', 'IV']))),
         startingWith('I', movingTo('ii', sequenceInsert(['V6', 'vi', 'iii6', 'IV', 'I6']))),
     ]);
 

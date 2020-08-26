@@ -51,7 +51,9 @@ export namespace Progression {
             [ withChordSymbolAsIs('V'),  yieldChordAsIs('V6') ],
             [ withChordSymbolAsIs('V6'), yieldChordAsIs('V') ],
 
-            // [ withChordSymbolAsIs('viio6'), yieldChord('I') ]
+            // TODO consider
+            [ withChordSymbolAsIs('viio6'), yieldChord('I') ],
+            [ withChordSymbolAsIs('viio6'), yieldChord('I6') ]
         ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const dominantSevenths = [
@@ -165,10 +167,10 @@ export namespace Progression {
 
         export const mediant = [
             [ withChordSymbol('I'), yieldChord('iii') ],
-            [ withChordSymbol('iii'), yieldChord('V') ],
-            [ withChordSymbol('iii'), yieldChord('V6') ],
-            [ withChordSymbol('iii'), yieldChord('V43') ],
-            [ withChordSymbol('iii'), yieldChord('V42') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V6') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V43') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V42') ],
             [ withChordSymbol('iii'), yieldChord('vi') ],
             [ withChordSymbol('iii'), yieldChord('IV') ],
             [ withChordSymbol('iii'), yieldChord('IV6') ],
