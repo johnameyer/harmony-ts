@@ -254,7 +254,7 @@ export class RomanNumeral {
     }
 
     diatonicized() {
-        const scaleDegree = Scale.getNamesOfScale(this._scale).indexOf(this.root.name);
+        const scaleDegree = Scale.getNamesOfScale(this._scale).findIndex(scaleNote => scaleNote.startsWith(this.root.name[0]));
         if(scaleDegree === -1) {
             return null;
         }

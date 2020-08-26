@@ -1,22 +1,25 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Interval } from "../interval/interval";
 import { IntervalQuality } from "../interval/interval-quality";
 import { ComplexInterval } from "../interval/complex-interval";
-import { Motion } from "./motion";
+import { Motion } from "../interval/motion";
 import { zip } from "../util/zip";
 import { makeLazyArray } from '../util/make-lazy-array';
-import { ScaleDegree } from "./scale-degree";
+import { ScaleDegree } from "../harmony/scale-degree";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
+import { minGenerator } from "../util/min-generator";
+import { CompleteChord } from "../chord/complete-chord";
+import { NestedIterable } from "../util/nested-iterable";
+import { arrayComparator } from "../util/array-comparator";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
 const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
 
 export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
-export type PartWritingPreference = (...chords: HarmonizedChord[]) => number;
+export type PartWritingPreference = (...chords: CompleteChord[]) => number;
 
 const sopranoRange = ['B3', 'C4', 'G5', 'A5'].map(absoluteNote);
 const altoRange = ['G3', 'G3', 'C5', 'D5'].map(absoluteNote);
@@ -39,6 +42,9 @@ export interface PartWritingPreferences {
 type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
 type ParamNotOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? never : P}[keyof T]
 
+/**
+ * Interface telling what rules should be run for the singular and multi checks and enforcing rules interface
+ */
 export interface PartWritingParameters<T extends PartWritingRules = typeof defaultPartWritingRules, U extends PartWritingPreferences = typeof defaultPartWritingPreferences>{
     rules: T,
     singularRules: (keyof T)[],
@@ -49,11 +55,13 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     }
     preferences: U,
     singularPreferences: (keyof U)[],
-    preferencesOrdering: (keyof U)[]
+    preferencesOrdering: (keyof U)[],
 };
 
+/**
+ * Contains methods that allow for the vertical checking of chords (to verify good part-writing) across a series of rules
+ */
 export namespace PartWriting {
-
     //TODO replace with full-blown factory
     type RuleUnion<T> = T & typeof defaultPartWritingParameters.rules;
     type PreferencesUnion<T> = T & typeof defaultPartWritingParameters.preferences;
@@ -81,7 +89,7 @@ export namespace PartWriting {
             ruleParameters: {...defaultPartWritingParameters.ruleParameters, ...(newRuleParameters || {})},
             preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
-            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)]
+            preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
         } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
@@ -527,7 +535,7 @@ export namespace PartWriting {
              * @todo implement
              * @todo is this necessary
              */
-            export function diminishedFifthResolution(_: undefined, chord: IChord, prev: IChord, ...before: IChord[]) {
+            export function diminishedFifthResolution(_: undefined) {
                 // check that a d5 or A4 involving the bass resolves normally
 
                 // TODO allow for exceptions as on page 415
@@ -817,7 +825,7 @@ export namespace PartWriting {
              * Prefer that chords have certain doublings over others
              * @param chord the chord under consideration
              */
-            export function checkDoubling(chord: HarmonizedChord) {
+            export function checkDoubling(chord: CompleteChord) {
                 if(chord.romanNumeral.hasSeventh) {
                     if(numVoicesWithInterval(chord.intervals, '5') == 0) {
                         //prefer root doubled if no fifth
@@ -854,7 +862,7 @@ export namespace PartWriting {
              * Prefer that voices do not cross
              * @param chord the chord under consideration
              */
-            export function checkVoiceCrossing(chord: HarmonizedChord) {
+            export function checkVoiceCrossing(chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < chord.voices[i+1].midi) {
@@ -868,7 +876,7 @@ export namespace PartWriting {
              * Prefer that voices remain within their core range
              * @param chord the chord under consideration
              */
-            export function checkRange(chord: HarmonizedChord) {
+            export function checkRange(chord: CompleteChord) {
                 let result = 0;
                 for (const [range, toCheck] of [
                     [sopranoRange, chord.voices[0]],
@@ -890,7 +898,7 @@ export namespace PartWriting {
              * Prefer that voices do not share the same pitch
              * @param chord the chord under consideration
              */
-            export function checkSharedPitch(chord: HarmonizedChord) {
+            export function checkSharedPitch(chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 1; i++) {
                     if(chord.voices[i].midi === chord.voices[i+1].midi) {
@@ -904,7 +912,7 @@ export namespace PartWriting {
              * Prefer chord progressions using sequences
              * @param chord the chord to look at
              */
-            export function checkSequence(chord: HarmonizedChord) {
+            export function checkSequence(chord: CompleteChord) {
                 if(chord.flags?.sequence) {
                     return 1;
                 }
@@ -921,7 +929,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkVoiceOverlap(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkVoiceOverlap(chord: CompleteChord, prev: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < prev.voices[i+1].midi || prev.voices[i].midi < chord.voices[i+1].midi) {
@@ -937,7 +945,7 @@ export namespace PartWriting {
              * @param prev the previous chord
              * @todo implement restorative and soprano special rules
              */
-            export function checkVoiceDisjunction(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkVoiceDisjunction(chord: CompleteChord, prev: CompleteChord) {
                 //TODO prefer restorative
                 let count = 0;
                 for(let i = 0; i < chord.voices.length - 1; i++) {
@@ -951,7 +959,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkBassOctaveJump(chord: HarmonizedChord, prev: HarmonizedChord) {
+            export function checkBassOctaveJump(chord: CompleteChord, prev: CompleteChord) {
                 if(
                     (prev.romanNumeral.name.toLowerCase() === 'i64' && chord.romanNumeral.name === 'V')
                     || 
@@ -999,7 +1007,7 @@ export namespace PartWriting {
             /**
              * Prefer using a chord that is different from the previous
              */
-            export function checkRepetition(chord: HarmonizedChord, previous: HarmonizedChord) {
+            export function checkRepetition(chord: CompleteChord, previous: CompleteChord) {
                 // TODO remove
                 return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
             }
@@ -1007,7 +1015,7 @@ export namespace PartWriting {
             /**
              * Prefers that a pivot chord has a predominant function in the new key
              */
-            export function modulationToPredominant(chord: HarmonizedChord){
+            export function modulationToPredominant(chord: CompleteChord){
                 if(!chord.flags.pivot) {
                     return 0;
                 }
@@ -1020,7 +1028,7 @@ export namespace PartWriting {
             /**
              * Prefers that there are fewer modulations
              */
-            export function fewerModulations(chord: HarmonizedChord){
+            export function fewerModulations(chord: CompleteChord){
                 if(chord.flags.pivot) {
                     return -1;
                 }
@@ -1032,7 +1040,7 @@ export namespace PartWriting {
          * Evaluate the chord on all the preferences
          * @param chordToCheck the chord to evaluate
          */
-        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): number[] {
+        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO make ordering and selection parameterized
             let checks = parameters.preferencesOrdering
@@ -1047,7 +1055,7 @@ export namespace PartWriting {
          * The checks will only be run if the index is called and the value is not already calculated
          * @param chordToCheck the chord to run the rules
          */
-        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord): number[] {
+        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
             let checks = makeLazyArray(parameters.preferencesOrdering
                 .filter(preference => parameters.singularPreferences.includes(preference))
@@ -1062,7 +1070,7 @@ export namespace PartWriting {
          * @param chordToCheck the chord to check
          * @param prev the chord before the chord under consideration
          */
-        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = parameters.preferencesOrdering
@@ -1077,7 +1085,7 @@ export namespace PartWriting {
          * @param chordToCheck the chord to run the rules on
          * @param prev the chord before the one under consideration
          */
-        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: HarmonizedChord, prev: HarmonizedChord): number[] {
+        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
             let checks = makeLazyArray(parameters.preferencesOrdering
@@ -1137,5 +1145,5 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'checkBassOctaveJump',
         'checkVoiceDisjunction',
         'checkSharedPitch'
-    ]
+    ],
 };

@@ -2,9 +2,10 @@ import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
+import { returnOrError } from "../util/return-or-error";
 
 export type ProgressionPredicate = (scale: Scale, previousChords: HarmonizedChord[]) => boolean;
-export type ProgressionProducer = (scale: Scale, previousChords: HarmonizedChord[]) => IncompleteChord[][];
+export type ProgressionProducer = (scale: Scale, previousChords: HarmonizedChord[]) => HarmonizedChord[];
 
 const withChordSymbol = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => new RomanNumeral(chordSymbol, scale).diatonicized()?.name === previousChords[0].romanNumeral.name;
 const withChordSymbolAsIs = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => new RomanNumeral(chordSymbol, scale).name === previousChords[0].romanNumeral.name;
@@ -12,15 +13,15 @@ const withChordSymbolAsIs = (chordSymbol: string) => (scale: Scale, previousChor
 //TODO play around with this
 const withInversionsOf = (chordSymbol: string, ...inversions: number[]) => (scale: Scale, previousChords: HarmonizedChord[]) => chordSymbol.toLowerCase() === previousChords[0].romanNumeral.symbol.toLowerCase() && inversions.some(inversion => inversion === previousChords[0].romanNumeral.inversion);
 
-const yieldChord = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => [[new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale).diatonicized() || undefined })]];
-const yieldChordAsIs = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => [[new IncompleteChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) })]];
+const yieldChord = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({ romanNumeral: returnOrError(new RomanNumeral(chordSymbol, scale).diatonicized()) })];
+const yieldChordAsIs = (chordSymbol: string) => (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({ romanNumeral: new RomanNumeral(chordSymbol, scale) })];
 
 // TODO move away from IncompleteChord model?
 
 export namespace Progression {
     export namespace Shared {
         export const identity = [
-            [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [[new IncompleteChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]]
+            [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]
         ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const basic = [
@@ -50,7 +51,9 @@ export namespace Progression {
             [ withChordSymbolAsIs('V'),  yieldChordAsIs('V6') ],
             [ withChordSymbolAsIs('V6'), yieldChordAsIs('V') ],
 
-            // [ withChordSymbolAsIs('viio6'), yieldChord('I') ]
+            // TODO consider
+            [ withChordSymbolAsIs('viio6'), yieldChord('I') ],
+            [ withChordSymbolAsIs('viio6'), yieldChord('I6') ]
         ] as [ProgressionPredicate, ProgressionProducer][];
 
         export const dominantSevenths = [
@@ -164,10 +167,10 @@ export namespace Progression {
 
         export const mediant = [
             [ withChordSymbol('I'), yieldChord('iii') ],
-            [ withChordSymbol('iii'), yieldChord('V') ],
-            [ withChordSymbol('iii'), yieldChord('V6') ],
-            [ withChordSymbol('iii'), yieldChord('V43') ],
-            [ withChordSymbol('iii'), yieldChord('V42') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V6') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V43') ],
+            [ withChordSymbol('iii'), yieldChordAsIs('V42') ],
             [ withChordSymbol('iii'), yieldChord('vi') ],
             [ withChordSymbol('iii'), yieldChord('IV') ],
             [ withChordSymbol('iii'), yieldChord('IV6') ],
@@ -184,5 +187,15 @@ export namespace Progression {
             [ withChordSymbolAsIs('VII'), yieldChordAsIs('V6') ],
             [ withChordSymbolAsIs('VII'), yieldChordAsIs('V65') ],
         ] as [ProgressionPredicate, ProgressionProducer][];
+    }
+
+    export const defaultProgressions = [...Progression.Shared.identity, ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant] as [ProgressionPredicate, ProgressionProducer][];
+    
+    export function * matchingProgressions(scale: Scale, previous: HarmonizedChord[], progressions: [ProgressionPredicate, ProgressionProducer][] = defaultProgressions): Generator<HarmonizedChord[]> {
+        for(const [predicate, producer] of progressions) {
+            if(predicate(scale, previous)) {
+                yield producer(scale, previous);
+            }
+        }
     }
 }

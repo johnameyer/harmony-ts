@@ -18,7 +18,7 @@ export function makeLazyArray<S>(producers: (() => S)[]) {
                 }
             }
             // @ts-ignore
-            return arr[prop] as S;
+            return Reflect.get(...arguments);
         }
     }
 

@@ -4,22 +4,17 @@ import { HarmonicFunction } from "../harmony/harmonic-function";
 import { Interval } from "../interval/interval";
 import { IChord } from "./ichord";
 
-export class HarmonizedChord implements IChord {
+export class CompleteChord implements IChord {
 
-    protected _voices: (AbsoluteNote | undefined)[];
+    protected _voices: AbsoluteNote[];
     protected _romanNumeral!: RomanNumeral;
     protected _flags: {[key: string]: boolean};
-    protected _intervals!: (Interval | undefined)[];
+    protected _intervals!: Interval[];
 
-    constructor({ voices, romanNumeral, flags}: { voices?: (AbsoluteNote | undefined)[]; romanNumeral: RomanNumeral; flags?: {[key: string]: boolean} }) {
-        if(voices) {
-            this._voices = voices;
-        } else {
-            // TODO how to enforce certain number of voices being present?
-            this._voices = [];
-        }
+    constructor(voices: AbsoluteNote[], romanNumeral: RomanNumeral, flags: {[key: string]: boolean} = {}, harmonicFunction?: HarmonicFunction) {
+        this._voices = voices;
         this._romanNumeral = romanNumeral;
-        this._flags = flags || {};
+        this._flags = flags;
     }
 
     get voices() {
@@ -28,7 +23,7 @@ export class HarmonizedChord implements IChord {
 
     get intervals() {
         if(!this._intervals) {
-            this._intervals = this._voices.map(note => note ? new Interval(this._romanNumeral.root, note) : undefined);
+            this._intervals = this._voices.map(note => new Interval(this._romanNumeral.root, note));
         }
         return this._intervals;
     }

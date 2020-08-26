@@ -27,12 +27,19 @@ const sopranoNotes = ['E5', 'E5', 'D5', 'D5', 'C5', 'C5', 'B4', 'C5'];
 const constraints = sopranoNotes.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
 ```
 
-Then select the scale to harmonize within and pass the constraints to the harmonizer.
+Then initialize the part-writer with your choice of parameters (see documentation for options)
+```
+const partWriter = new PartWriter();
+```
+
+Then select the scale to harmonize within and pass the constraints to the part-writer.
 ```
 const scale = Scale.Major.notes;
-const params: HarmonyParameters = { scale, constraints };
-const result = Harmony.harmonizeAll(params);
+const results = flattenResults(partWriter.voiceAll(constraints, scale));
+const bestResult = results.next().value;
 ```
+
+It is also possible to just generate the chords that could go with a melody or bass-line, or perform voice-leading checks on a provided set of chords.
 
 ### Code Examples
 

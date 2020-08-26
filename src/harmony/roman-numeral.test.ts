@@ -128,6 +128,7 @@ describe('RomanNumeral', () => {
                 ['ii6', CMinor, 'iio6'],
                 ['ii7', CMinor, 'ii07'],
                 ['vi', CMinor, 'VI'],
+                ['viio', CMinor, 'VII']
             ])('%s %p %p %s', (value, scale, expected) => {
                 const romanNumeral = new RomanNumeral(value, scale);
                 const relative = romanNumeral.diatonicized();
