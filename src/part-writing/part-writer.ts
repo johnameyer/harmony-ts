@@ -14,6 +14,8 @@ import { Accidental } from "../accidental";
 import { minGenerator } from "../util/min-generator";
 import { arrayComparator } from "../util/array-comparator";
 import { LazyMultiIterable } from "../util/make-lazy-iterator";
+import { iteratorMap } from "../util/iterator-map";
+import { iteratorFlatMap } from "../util/iterator-flat-map";
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -163,14 +165,25 @@ export class PartWriter {
         if(constraints.length == previous.length) {
             return;
         }
-        for(const [current, future] of progression){
-            // TODO join all iterables of the outer for loop / the progression
-            const voicings = nestedIterableMap(this.chordVoicings(current, previous), (voicings, nestedPrevious) => this.partWriterParams.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this));
-            for(const voicing of unnestNestedIterable(voicings)) {
-                const newPrevious = [...voicing.slice().reverse(), ...previous];
-                const recurse = this.voiceWithContext(constraints, future, scale, newPrevious);
-                yield [voicing, recurse];
+        
+        const lookup = new Map<CompleteChord, NestedLazyMultiIterable<HarmonizedChord[]>>();
+
+        // TODO clean this up
+        const voicings = iteratorFlatMap(progression, ([current, future]) => (function * (this: PartWriter) {
+            for(let [voicing, nested] of this.chordVoicings(current, previous)) {
+                lookup.set(voicing, future);
+                yield [voicing, nested] as [CompleteChord, NestedIterable<CompleteChord>];
             }
+        }).apply(this));
+        
+        for(const voicing of unnestNestedIterable(nestedIterableMap(voicings, (voicings, nestedPrevious) => this.partWriterParams.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this)))) {
+            const future = lookup.get(voicing[0]);
+            if(future === undefined) {
+                continue;
+            }
+            const newPrevious = [...voicing.slice().reverse(), ...previous];
+            const recurse = this.voiceWithContext(constraints, future, scale, newPrevious);
+            yield [voicing, recurse];
         }
     }
 
