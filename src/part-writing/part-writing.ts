@@ -729,7 +729,6 @@ export namespace PartWriting {
              * @param prev 
              */
             export function sequence(_: undefined, {flags: currFlags, voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
-                console.log(currRomanNumeral?.name);
                 if(!prev) {
                     return true;
                 }
@@ -741,7 +740,6 @@ export namespace PartWriting {
                         }
                         const oldVoice = prevVoices[index];
                         const voice = currVoices[index];
-                        console.log(oldVoice?.name, voice?.name);
                         if(!oldVoice || !voice) {
                             return true;
                         }
@@ -749,8 +747,8 @@ export namespace PartWriting {
                         if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== voiceChange.simpleSize) {
                             return false;
                         }
-                        console.log(voiceChange.semitones, oldVoice.name, voice.name);
                         if(Math.abs(voice.midi - oldVoice.midi) > 7) {
+                            // the inversion would be smaller
                             return false;
                         }
                     }
