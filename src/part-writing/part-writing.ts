@@ -562,7 +562,7 @@ export namespace PartWriting {
              * @param prev 
              * @todo A2 is sometimes acceptable
              */
-            export function invalidIntervals(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+            export function invalidIntervals(_: undefined, {voices: currVoices, romanNumeral}: IChord, {voices: prevVoices}: IChord) {
                 for(let index = 0; index < prevVoices.length; index++) {
                     const oldVoice = prevVoices[index];
                     const voice = currVoices[index];
@@ -577,7 +577,7 @@ export namespace PartWriting {
                     }
 
                     const difference = Math.abs(oldVoice.midi - voice.midi);
-                    if(difference > 7 && !(index === 3 && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && oldVoice.midi - voice.midi > 0)) {
+                    if(difference > 7 && !(index === 3 && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && oldVoice.midi - voice.midi > 0 && (!romanNumeral || romanNumeral.inversion === 0))) {
                         return false;
                     }
                 }
