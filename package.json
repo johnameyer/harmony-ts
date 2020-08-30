@@ -24,7 +24,7 @@
         "test": "jest --config jest.config.json",
         "lint": "eslint --fix src/**.ts",
         "madge": "npx madge --circular --extensions ts ./src",
-        "prepublishOnly": "npm madge && npm run lint && npm run build && npm test"
+        "prepublishOnly": "npm run madge && npm run lint && npm run build && npm test"
     },
     "author": "Jack Meyer",
     "license": "",
