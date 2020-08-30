@@ -743,7 +743,12 @@ export namespace PartWriting {
                         if(!oldVoice || !voice) {
                             return true;
                         }
-                        if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== new Interval(voice, oldVoice).simpleSize) {
+                        const voiceChange = new Interval(voice, oldVoice);
+                        if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== voiceChange.simpleSize) {
+                            return false;
+                        }
+                        if(Math.abs(voice.midi - oldVoice.midi) > 7) {
+                            // the inversion would be smaller
                             return false;
                         }
                     }
