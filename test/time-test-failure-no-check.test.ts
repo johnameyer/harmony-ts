@@ -1,12 +1,10 @@
-/*
-
 if(!performance) {
     var { performance } = require('perf_hooks');
 }
 
 const start = performance.now();
 
-import { Scale, Key, IncompleteChord, RomanNumeral, PartWriter, flattenResults, Harmony } from "harmony-ts";
+import { Scale, Key, IncompleteChord, RomanNumeral, PartWriter, flattenResults, Harmonizer } from "harmony-ts";
 
 const postImports = performance.now();
 console.log('Importing took', postImports - start, 'milliseconds');
@@ -18,7 +16,7 @@ const constraints = chords.map(chord => new IncompleteChord({romanNumeral: new R
 
 const postSetup = performance.now();
 
-const harmonizer = new Harmony({ useProgressions: false });
+const harmonizer = new Harmonizer({ useProgressions: false });
 const partWriter = new PartWriter(undefined, undefined, harmonizer);
 
 console.log('Setup took', postSetup - postImports, 'milliseconds');
@@ -32,7 +30,3 @@ console.log('Harmonizing took', postHarmonize - postSetup, 'milliseconds');
 if(result && result.length === constraints.length) {
     throw new Error('Should have not been able to complete');
 }
-
-*/
-
-console.error('Test skipped until resolution of GH-18');

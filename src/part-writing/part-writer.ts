@@ -16,6 +16,8 @@ import { arrayComparator } from "../util/array-comparator";
 import { LazyMultiIterable } from "../util/make-lazy-iterator";
 import { iteratorMap } from "../util/iterator-map";
 import { iteratorFlatMap } from "../util/iterator-flat-map";
+import { nestedIterableFilter } from "../util/nested-iterator-filter";
+import { makePeekableIterator } from "../util/make-peekable-iterator";
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -149,9 +151,14 @@ export class PartWriter {
             }
         }
 
-        const harmonization = convertToMultiIterator(this.harmonizer.matchingCompleteHarmony(constraints, scale));
+        const harmonization = this.harmonizer.matchingCompleteHarmony(constraints, scale);
 
-        const result = resultsOfLength(this.voiceWithContext(constraints, harmonization, scale), constraints.length);
+        const filtered = nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this));
+        // TODO even do resultsOfLength on this
+
+        const multiHarmonization = convertToMultiIterator(filtered);
+
+        const result = resultsOfLength(this.voiceWithContext(constraints, multiHarmonization, scale), constraints.length);
 
         yield* result;
     }
@@ -277,5 +284,22 @@ export class PartWriter {
                 }
             }
         }
+    }
+
+    expansionIsVoiceable(current: HarmonizedChord[], previousExpansions: HarmonizedChord[][]): boolean {
+        const expansions = previousExpansions.flatMap(expansion => expansion.slice().reverse()); // TODO look at this
+        for(let i = 0; i < current.length; i++) {
+            if(!this.harmonyIsVoicable(current[i], expansions)) {
+                return false;
+            }
+            expansions.unshift(current[i]);
+        }
+        return true;
+    }
+
+    harmonyIsVoicable(current: HarmonizedChord, previous: HarmonizedChord[]): boolean {
+        const chords = previous[0] ? [previous[0], current] : [current];
+        const voicingsFor = makePeekableIterator(this.chordVoicings(chords));
+        return voicingsFor.hasItems;
     }
 }

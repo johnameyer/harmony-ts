@@ -158,6 +158,7 @@ export class Harmonizer {
             if(constraint.romanNumeral) {
                 // @ts-ignore
                 yield [new HarmonizedChord({...constraint})];
+                // TODO remove duplicates caused by this
             }
         }
 
