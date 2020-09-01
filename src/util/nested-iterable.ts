@@ -29,16 +29,26 @@ export function * flattenResults<T>(generator: NestedIterable<T[]>): IterableIte
     }
 }
 
-export function * resultsOfLength<T>(generator: NestedIterable<T[]>, length: number): NestedIterable<T[]> {
+export function * resultsOfLength<T>(generator: NestedIterable<T>, length: number): NestedIterable<T> {
     for(const [t, gen] of generator) {
-        const inner = makePeekableIterator(resultsOfLength(gen, length - t.length));
+        const inner = makePeekableIterator(resultsOfLength(gen, length - 1));
+        if(inner.hasItems) {
+            yield [t, inner];
+        } else if(length === 1){
+            yield [t, inner];
+        }
+    }
+}
+
+export function * resultsOfTotalLength<T>(generator: NestedIterable<T[]>, length: number): NestedIterable<T[]> {
+    for(const [t, gen] of generator) {
+        const inner = makePeekableIterator(resultsOfTotalLength(gen, length - t.length));
         if(inner.hasItems) {
             yield [t, inner];
         } else if(t.length === length){
             yield [t, inner];
         }
     }
-
 }
 
 export type NestedLazyMultiIterable<T> = LazyMultiIterable<[T, NestedLazyMultiIterable<T>]>;

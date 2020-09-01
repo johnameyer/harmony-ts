@@ -2,7 +2,7 @@ import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWr
 import { Harmonizer } from "../harmony/harmonizer";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { Scale } from "../scale";
-import { NestedIterable, convertToMultiIterator, resultsOfLength, NestedLazyMultiIterable, unnestNestedIterable } from "../util/nested-iterable";
+import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, unnestNestedIterable, flattenResults, resultsOfLength } from "../util/nested-iterable";
 import { CompleteChord } from "../chord/complete-chord";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { HarmonizedChord } from "../chord/harmonized-chord";
@@ -153,12 +153,11 @@ export class PartWriter {
 
         const harmonization = this.harmonizer.matchingCompleteHarmony(constraints, scale);
 
-        const filtered = resultsOfLength(nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this)), constraints.length);
-        // TODO even do resultsOfLength on this
+        const filtered = resultsOfTotalLength(nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this)), constraints.length);
 
         const multiHarmonization = convertToMultiIterator(filtered);
 
-        const result = resultsOfLength(this.voiceWithContext(constraints, multiHarmonization, scale), constraints.length);
+        const result = resultsOfTotalLength(this.voiceWithContext(constraints, multiHarmonization, scale), constraints.length);
 
         yield* result;
     }
@@ -287,19 +286,19 @@ export class PartWriter {
     }
 
     expansionIsVoiceable(current: HarmonizedChord[], previousExpansions: HarmonizedChord[][]): boolean {
-        const expansions = previousExpansions.flatMap(expansion => expansion.slice().reverse()); // TODO look at this
+        const previous = previousExpansions.flatMap(expansion => expansion.slice()).reverse();
         for(let i = 0; i < current.length; i++) {
-            if(!this.harmonyIsVoicable(current[i], expansions)) {
+            if(!this.harmonyIsVoicable(current[i], previous)) {
                 return false;
             }
-            expansions.unshift(current[i]);
+            previous.unshift(current[i]);
         }
         return true;
     }
 
     harmonyIsVoicable(current: HarmonizedChord, previous: HarmonizedChord[]): boolean {
         const chords = previous[0] ? [previous[0], current] : [current];
-        const voicingsFor = makePeekableIterator(this.chordVoicings(chords));
+        const voicingsFor = makePeekableIterator(resultsOfLength(this.chordVoicings(chords), chords.length));
         return voicingsFor.hasItems;
     }
 }
