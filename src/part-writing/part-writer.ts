@@ -2,22 +2,23 @@ import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWr
 import { Harmonizer } from "../harmony/harmonizer";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { Scale } from "../scale";
-import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, unnestNestedIterable, flattenResults, resultsOfLength } from "../util/nested-iterable";
+import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, unnestNestedIterable, resultsOfLength, convertToDeepNested } from "../util/nested-iterable";
 import { CompleteChord } from "../chord/complete-chord";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { HarmonizedChord } from "../chord/harmonized-chord";
-import { nestedIterableMap } from "../util/nested-iterator-map";
+import { preorderNestedIterableMap, postorderNestedIterableMap } from "../util/nested-iterator-map";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { isDefined } from "../util";
 import { Accidental } from "../accidental";
 import { minGenerator } from "../util/min-generator";
 import { arrayComparator } from "../util/array-comparator";
-import { LazyMultiIterable } from "../util/make-lazy-iterator";
-import { iteratorMap } from "../util/iterator-map";
+import { makeLazyMultiIterable, makeNestedMultiIterable } from "../util/make-lazy-iterator";
 import { iteratorFlatMap } from "../util/iterator-flat-map";
 import { nestedIterableFilter } from "../util/nested-iterator-filter";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { lazyArrayMerge } from "../util/lazy-array-merge";
+import { minValueGenerator } from "../util/min-value-generator";
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -87,7 +88,7 @@ export interface PartWriterParameters {
      * Gives the ability to modify the order in which results are yielded
      * Allows for a variety of functionality like: greedy, local best, deep best
      */
-    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWriter: PartWriter) => NestedIterable<CompleteChord>
+    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWriter: PartWriter) => NestedIterable<CompleteChord>,
 }
 
 /**
@@ -108,6 +109,7 @@ export namespace PartWriterParameters {
      */
     export const defaultOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), arrayComparator);
 
+    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => lazyArrayMerge((previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, nested[0], result[0]), arrayComparator).next().value || [], (a: number,b: number) => a + b), arrayComparator);
 }
 
 /**
@@ -128,7 +130,7 @@ export class PartWriter {
      * @param constraints the constraints to voice for
      * @param scale the scale to begin in
      */
-    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord[]> {
+    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord> {
         for(let i = 1; i < constraints.length; i++) {
             const failed = PartWriting.Rules.checkAll(this.partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
@@ -159,7 +161,15 @@ export class PartWriter {
 
         const result = resultsOfTotalLength(this.voiceWithContext(constraints, multiHarmonization, scale), constraints.length);
 
-        yield* result;
+        const deepResult = convertToDeepNested(result);
+
+        const multi = makeNestedMultiIterable(deepResult);
+
+        // @ts-ignore
+        const orderedResult = preorderNestedIterableMap(multi, (voicings, previous) => this.partWriterParams.yieldOrdering(voicings, [...previous.slice().reverse()], this));
+
+        // @ts-ignore
+        yield* orderedResult;
     }
 
     /**
@@ -182,7 +192,7 @@ export class PartWriter {
             }
         }).apply(this));
         
-        for(const voicing of unnestNestedIterable(nestedIterableMap(voicings, (voicings, nestedPrevious) => this.partWriterParams.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this)))) {
+        for(const voicing of unnestNestedIterable(voicings)) {
             const future = lookup.get(voicing[0]);
             if(future === undefined) {
                 continue;

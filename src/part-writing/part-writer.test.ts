@@ -7,9 +7,10 @@ import { IncompleteChord } from "../chord/incomplete-chord";
 import { Harmonizer } from "../harmony/harmonizer";
 import { PartWriter } from './part-writer';
 import { makePeekableIterator } from "../util/make-peekable-iterator";
-import { flattenResults } from "../util/nested-iterable";
+import { flattenResult } from "../util/nested-iterable";
 import { Key } from "../key";
 import { Scale } from "../scale";
+import { PartWriterParameters } from "..";
 
 const absoluteNote = (note: string) => new AbsoluteNote(note);
 
@@ -53,7 +54,7 @@ describe('PartWriter', () => {
     });
     
     describe('voiceAll', () => {
-        test.each([
+        test.only.each([
             [['E4', 'D4', 'E4'], [...Progression.Shared.basic]],
             [['E4', 'D4', 'D4'], [...Progression.Shared.basic, ...Progression.Shared.basicPredominant]],
             [['C5', 'C5', 'C5'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes]],
@@ -64,12 +65,12 @@ describe('PartWriter', () => {
             const scale = CMajor;
 
             const harmonizer = new Harmonizer({ enabledProgressions: enabled, useProgressions : true });
-            const partWriter = new PartWriter(undefined, undefined, harmonizer);
+            const partWriter = new PartWriter({yieldOrdering: PartWriterParameters.depthOrdering}, undefined, harmonizer);
             const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResults(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator).next().value as CompleteChord[];
             expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
 
@@ -90,7 +91,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResults(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator).next().value as CompleteChord[];
             // @ts-ignore
             expect(result.map(chords => chords.voices[3].name)).toEqual(notes);
         });
@@ -117,7 +118,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResults(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator).next().value as CompleteChord[];
             // @ts-ignore
             expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
         });
@@ -138,7 +139,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResults(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator).next().value as CompleteChord[];
             expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
     });
@@ -219,7 +220,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
         
-        const result = flattenResults(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator).next().value as CompleteChord[];
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
         }
@@ -256,7 +257,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResults(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator).next().value as CompleteChord[];
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
         }
@@ -290,7 +291,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResults(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
+        const result = flattenResult(iterator).next().value as CompleteChord[];
         
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
@@ -340,7 +341,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResults(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
+        const result = flattenResult(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
         
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
@@ -360,7 +361,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResults(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator).next().value as CompleteChord[];
         
         for(let i = 0; i < constraints.length; i++) {
             expect(result[i].voices[0].name).toEqual(soprano[i]);

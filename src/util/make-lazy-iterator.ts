@@ -1,10 +1,12 @@
-export interface LazyMultiIterable<T> {
-    [Symbol.iterator](): Iterator<T>;
-    [index: number]: T;
-};
+import { NestedIterable } from "..";
+
+export interface LazyMultiIterable<T> extends IterableIterator<T> {
+    reset(): void;
+}
 
 export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
     const arr: (S | undefined)[] = new Array();
+    let i = 0;
 
     const proxyHandler = {
 
@@ -27,15 +29,34 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
             if(prop == 'length') {
                 return arr.length;
             }
+            if(prop == 'reset') {
+                i = 0;
+            }
+            if(prop == 'next') {
+                return () => {
+                    i++;
+                    if(arr[i] === undefined) {
+                        // @ts-ignore
+                        for(let j = i; j < prop; j++) {
+                            const next = generator.next();
+                            if(next.done) {
+                                break;
+                            }
+                            arr[j] = next.value;
+                            return {value: arr[j]};
+                        }
+                    }
+                };
+            }
             // @ts-ignore
             if(arr[prop] === undefined) {
                 // @ts-ignore
-                for(let i = 0; i < prop; i++) {
+                for(let j = i; j < prop; j++) {
                     const next = generator.next();
                     if(next.done) {
                         break;
                     }
-                    arr[i] = next.value;
+                    arr[j] = next.value;
                 }
             }
             // @ts-ignore
@@ -43,5 +64,79 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
         }
     }
 
+    // @ts-ignore
+    return new Proxy(arr, proxyHandler) as LazyMultiIterable<S>;
+}
+
+
+export function makeNestedMultiIterable<S>(generator: NestedIterable<S>) {
+    const arr: (S | undefined)[] = new Array();
+    let i = 0;
+
+    const proxyHandler = {
+
+        get: (_: S[], prop: symbol | string) => {
+            if(prop == Symbol.iterator) {
+                return function * () {
+                    let i = 0;
+                    for(; i < arr.length; i++) {
+                        yield arr[i];
+                    }
+                    let { done, value } = generator.next();
+                    while(!done) {
+                        arr[i] = value;
+                        // @ts-ignore
+                        arr[i][1] = makeNestedMultiIterable(arr[i][1]);
+                        yield arr[i];
+                        i++;
+                        ({ done, value } = generator.next());
+                    }
+                }
+            }
+            if(prop == 'length') {
+                return arr.length;
+            }
+            if(prop == 'reset') {
+                i = 0;
+            }
+            if(prop == 'next') {
+                return () => {
+                    i++;
+                    if(arr[i] === undefined) {
+                        // @ts-ignore
+                        for(let j = i; j < prop; j++) {
+                            const next = generator.next();
+                            if(next.done) {
+                                break;
+                            }
+                            // @ts-ignore
+                            arr[j] = next.value;
+                            // @ts-ignore
+                            arr[j][1] = makeNestedMultiIterable(arr[j][1]);
+                            return {value: arr[j]};
+                        }
+                    }
+                };
+            }
+            // @ts-ignore
+            if(arr[prop] === undefined) {
+                // @ts-ignore
+                for(let j = i; j < prop; j++) {
+                    const next = generator.next();
+                    if(next.done) {
+                        break;
+                    }
+                    // @ts-ignore
+                    arr[j] = next.value;
+                    // @ts-ignore
+                    arr[j][1] = makeNestedMultiIterable(arr[j][1]);
+                }
+            }
+            // @ts-ignore
+            return Reflect.get(...arguments);
+        }
+    }
+
+    // @ts-ignore
     return new Proxy(arr, proxyHandler) as LazyMultiIterable<S>;
 }

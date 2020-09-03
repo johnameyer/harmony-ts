@@ -16,6 +16,19 @@ export function * unnestNestedIterable<T>(generator: NestedIterable<T>): Iterabl
     }
 }
 
+export function * flattenResult<T>(generator: NestedIterable<T>): IterableIterator<T[]> {
+    for(const [t, gen] of generator) {
+        let hasYielded = false;
+        for(const inner of flattenResult(gen)) {
+            hasYielded = true;
+            yield [t, ...inner];
+        }
+        if(!hasYielded) {
+            yield [t];
+        }
+    }
+}
+
 export function * flattenResults<T>(generator: NestedIterable<T[]>): IterableIterator<T[]> {
     for(const [t, gen] of generator) {
         let hasYielded = false;
@@ -60,4 +73,18 @@ export function convertToMultiIterator<T>(generator: NestedIterable<T>): NestedL
         }
     }
     return makeLazyMultiIterable(handleNested(generator));
+}
+
+export function * convertToDeepNested<T>(generator: NestedIterable<T[]>): NestedIterable<T> {
+    function * handleNested(tArr: T[], nested: NestedIterable<T[]>): NestedIterable<T> {
+        if(tArr.length) {
+            yield [tArr[0], handleNested(tArr.slice(1), nested)];
+        } else {
+            yield * convertToDeepNested(nested);
+        }
+    }
+
+    for(let [t, nested] of generator) {
+        yield * handleNested(t, nested);
+    }
 }
