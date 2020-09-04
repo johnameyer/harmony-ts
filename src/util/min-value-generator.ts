@@ -27,6 +27,7 @@ export function * minValueGenerator<S, T>(iterable: Iterable<S>, mapper: (value:
             }
         }
         swap(arr, start, min);
+        swap(mapped, start, min);
         yield mapped[start];
         start++;
     }

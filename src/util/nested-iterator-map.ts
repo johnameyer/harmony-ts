@@ -1,5 +1,4 @@
 import { NestedIterable } from "./nested-iterable";
-import { makeLazyMultiIterable } from "./make-lazy-iterator";
 
 export function * preorderNestedIterableMap<T, U = T>(iterator: NestedIterable<T>, mapping: (t: NestedIterable<T>, previous: U[]) => IterableIterator<[U, NestedIterable<T>]>, previous: U[] = []): NestedIterable<U> {
     for(const [u, nested] of mapping(iterator, previous)) {

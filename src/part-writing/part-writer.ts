@@ -38,7 +38,11 @@ export function * nestedMinGenerator<T>(iterable: Iterable<T>, mapper: (value: T
                 innerBestMin = innerMapper(arr[min]);
                 innerBest[min] = innerBestMin;
             }
-            if(arrayComparator(lazyArrayMerge(mapped[min], innerBestMin, summer), mapped[i]) < 0) {
+            const merged = lazyArrayMerge(mapped[min], innerBestMin, summer);
+            // No need to save outside of loop since summing is low cost and the rest of the array is already memoized
+            if(arrayComparator(merged, mapped[i]) > 0) {                
+                min = i;
+                // TODO does this shortcut always hold? Does some condition need to be placed on the results of PartWriting to make this hold?
                 continue;
             }
             let innerBestI = innerBest[i];
@@ -46,11 +50,14 @@ export function * nestedMinGenerator<T>(iterable: Iterable<T>, mapper: (value: T
                 innerBestI = innerMapper(arr[i]);
                 innerBest[i] = innerBestI;
             }
-            if(arrayComparator(lazyArrayMerge(mapped[min], innerBestMin, summer), lazyArrayMerge(mapped[i], innerBestI, summer)) > 0) {
+            
+            if(arrayComparator(merged, lazyArrayMerge(mapped[i], innerBestI, summer)) > 0) {
                 min = i;
             }
         }
         swap(arr, start, min);
+        swap(innerBest, start, min);
+        swap(mapped, start, min);
         yield arr[start];
         start++;
     }
