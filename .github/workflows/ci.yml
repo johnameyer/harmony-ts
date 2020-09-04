@@ -108,19 +108,22 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-        progression: 
+        progression:
+          - I iii IV7 V
+          - I iii vi ii V
           - I ii65 V V42 I6 V43 I ii42 V65
           - I ii42 V65 I IV viio iii vi ii I64 V
-        suffix:
-          - I
-          - ii
+        script:
+          - success
+          - failure
         ordering:
           - greedy
           - depth
           - default
         key:
           - C
-          - A
+          - Gb
+          - F#
         check:
           - true
           - false
@@ -155,5 +158,5 @@ jobs:
         working-directory: ./test/
 
       - name: Run Test
-        run: node dist/test.js -k ${{ matrix.key }} -c ${{ matrix.check }} $( if [ "${{matrix.suffix}}" != "I" ]; then echo "-f"; fi; ) ${{ matrix.progression }} ${{ matrix.suffix }}
+        run: node dist/${{ matrix.script }}.test.js -k ${{ matrix.key }} -c ${{ matrix.check }} ${{ matrix.progression }}
         working-directory: ./test/
