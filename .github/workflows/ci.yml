@@ -108,7 +108,22 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-        script: [time-test-success-check, time-test-success-no-check, time-test-failure-check, time-test-failure-no-check]
+        progression: 
+          - I ii65 V V42 I6 V43 I ii42 V65
+          - I ii42 V65 I IV viio iii vi ii I64 V
+        suffix:
+          - I
+          - ii
+        ordering:
+          - greedy
+          - depth
+          - default
+        key:
+          - C
+          - A
+        check:
+          - true
+          - false
 
     steps:
       - uses: actions/checkout@v1
@@ -139,6 +154,6 @@ jobs:
         run: tsc
         working-directory: ./test/
 
-      - name: Run Script ${{ matrix.script }}.test.js
-        run: node dist/${{ matrix.script }}.test.js
+      - name: Run Test
+        run: node dist/test.js -k ${{ matrix.key }} -c ${{ matrix.check }} $( if [ "${{matrix.suffix}}" != "I" ]; then echo "-f"; fi; ) ${{ matrix.progression }} ${{ matrix.suffix }}
         working-directory: ./test/

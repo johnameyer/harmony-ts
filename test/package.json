@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "harmony-ts": "file:.."
+    "harmony-ts": "file:..",
+    "yargs": "^15.4.1"
   },
   "devDependencies": {
     "@types/node": "^14.0.14"
