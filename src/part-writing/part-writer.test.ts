@@ -54,7 +54,7 @@ describe('PartWriter', () => {
     });
     
     describe('voiceAll', () => {
-        test.only.each([
+        test.each([
             [['E4', 'D4', 'E4'], [...Progression.Shared.basic]],
             [['E4', 'D4', 'D4'], [...Progression.Shared.basic, ...Progression.Shared.basicPredominant]],
             [['C5', 'C5', 'C5'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes]],
