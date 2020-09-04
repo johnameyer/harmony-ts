@@ -65,7 +65,7 @@ describe('PartWriter', () => {
             const scale = CMajor;
 
             const harmonizer = new Harmonizer({ enabledProgressions: enabled, useProgressions : true });
-            const partWriter = new PartWriter({yieldOrdering: PartWriterParameters.depthOrdering}, undefined, harmonizer);
+            const partWriter = new PartWriter(undefined, undefined, harmonizer);
             const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
             expect(iterator.hasItems).toBe(true);

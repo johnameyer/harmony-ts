@@ -13,12 +13,48 @@ import { isDefined } from "../util";
 import { Accidental } from "../accidental";
 import { minGenerator } from "../util/min-generator";
 import { arrayComparator } from "../util/array-comparator";
-import { makeLazyMultiIterable, makeNestedMultiIterable } from "../util/make-lazy-iterator";
 import { iteratorFlatMap } from "../util/iterator-flat-map";
 import { nestedIterableFilter } from "../util/nested-iterator-filter";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { lazyArrayMerge } from "../util/lazy-array-merge";
 import { minValueGenerator } from "../util/min-value-generator";
+
+function swap<T>(arr: T[], first: number, second: number) {
+    [arr[first], arr[second]] = [arr[second], arr[first]];
+}
+
+const summer = (a: number, b: number) => a + b;
+
+export function * nestedMinGenerator<T>(iterable: Iterable<T>, mapper: (value: T) => number[], innerMapper: (value: T) => number[]) {
+    let start = 0;
+    const arr = Array.from(iterable);
+    const innerBest: (number[] | undefined)[] = new Array(arr.length);
+    const mapped = arr.map(mapper);
+    while(arr.length > start) {
+        let min = start;
+        for(let i = start + 1; i < arr.length; i++) {
+            let innerBestMin = innerBest[min];
+            if(!innerBestMin) {
+                innerBestMin = innerMapper(arr[min]);
+                innerBest[min] = innerBestMin;
+            }
+            if(arrayComparator(lazyArrayMerge(mapped[min], innerBestMin, summer), mapped[i]) < 0) {
+                continue;
+            }
+            let innerBestI = innerBest[i];
+            if(!innerBestI) {
+                innerBestI = innerMapper(arr[i]);
+                innerBest[i] = innerBestI;
+            }
+            if(arrayComparator(lazyArrayMerge(mapped[min], innerBestMin, summer), lazyArrayMerge(mapped[i], innerBestI, summer)) > 0) {
+                min = i;
+            }
+        }
+        swap(arr, start, min);
+        yield arr[start];
+        start++;
+    }
+}
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -109,7 +145,7 @@ export namespace PartWriterParameters {
      */
     export const defaultOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), arrayComparator);
 
-    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => lazyArrayMerge((previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, nested[0], result[0]), arrayComparator).next().value || [], (a: number,b: number) => a + b), arrayComparator);
+    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => nestedMinGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), result => minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, nested[0], result[0]), arrayComparator).next().value || []);
 }
 
 /**
@@ -163,7 +199,7 @@ export class PartWriter {
 
         const deepResult = convertToDeepNested(result);
 
-        const multi = makeNestedMultiIterable(deepResult);
+        const multi = convertToMultiIterator(deepResult);
 
         // @ts-ignore
         const orderedResult = preorderNestedIterableMap(multi, (voicings, previous) => this.partWriterParams.yieldOrdering(voicings, [...previous.slice().reverse()], this));
