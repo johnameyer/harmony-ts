@@ -202,17 +202,17 @@ export class PartWriter {
 
         const multiHarmonization = convertToMultiIterator(filtered);
 
-        const result = resultsOfTotalLength(this.voiceWithContext(constraints, multiHarmonization, scale), constraints.length);
+        const voicings = this.voiceWithContext(constraints, multiHarmonization, scale);
 
-        const deepResult = convertToDeepNested(result);
+        const deepVoicings = convertToDeepNested(voicings);
 
-        const multi = convertToMultiIterator(deepResult);
+        const multi = convertToMultiIterator(deepVoicings);
 
         // @ts-ignore
         const orderedResult = preorderNestedIterableMap(multi, (voicings, previous) => this.partWriterParams.yieldOrdering(voicings, [...previous.slice().reverse()], this));
 
         // @ts-ignore
-        yield* orderedResult;
+        yield* resultsOfLength(orderedResult, constraints.length);
     }
 
     /**
