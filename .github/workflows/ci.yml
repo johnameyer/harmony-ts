@@ -109,10 +109,7 @@ jobs:
       matrix:
         node-version: [12.x]
         progression:
-          - I iii ii6 V
-          - I iii vi ii V
-          - I ii65 V V42 I6 V43 I ii42 V65
-          - I ii42 V65 I IV viio iii vi ii I64 V
+          - I IV viio iii vi ii V I IV6 viio iii6 vi ii6 V
           - I6 viio6 I vi IV6 V43/V V viio7/V V vi IV6 V43/V V
         script:
           - success
@@ -123,9 +120,6 @@ jobs:
         key:
           - Gb
           - F#
-        check:
-          - true
-          - false
 
     steps:
       - uses: actions/checkout@v1
@@ -157,6 +151,6 @@ jobs:
         working-directory: ./test/
 
       - name: Run Test
-        run: node dist/${{ matrix.script }}.test.js -k ${{ matrix.key }} -c ${{ matrix.check }} ${{ matrix.progression }}
+        run: node dist/${{ matrix.script }}.test.js -k ${{ matrix.key }} ${{ matrix.progression }}
         working-directory: ./test/
         timeout-minutes: 10

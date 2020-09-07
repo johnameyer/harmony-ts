@@ -10,6 +10,48 @@ import { Key } from "../key";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { NestedIterable } from "../util/nested-iterable";
 
+
+function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
+    for(let voicePart in one.voices) {
+        if(one.voices[voicePart]?.name !== two.voices[voicePart]?.name) {
+            return false;
+        }
+    }
+    
+    if(one.romanNumeral?.root?.name !== two.romanNumeral?.root?.name) {
+        return false;
+    }
+    if(one.romanNumeral?.name !== two.romanNumeral?.name) {
+        return false;
+    }
+    if(one.romanNumeral?.scale[0] !== two.romanNumeral?.scale[0]) {
+        return false;
+    }
+    if(one.romanNumeral?.scale[1] !== two.romanNumeral?.scale[1]) {
+        return false;
+    }
+    if(one.flags) {
+        if(!two.flags) {
+            return false;
+        }
+        for(const key in one.flags) {
+            if(two.flags && one.flags[key] !== two.flags[key]) {
+                return false;
+            }
+        }
+    }
+    if(two.flags) {
+        if(!one.flags) {
+            return false;
+        }
+    }
+    if(one.romanNumeral.name !== two.romanNumeral.name) {
+        return false;
+    }
+
+    return true;
+}
+
 /**
 * 
 * TODO does not need to be symmetric
@@ -153,23 +195,18 @@ export class Harmonizer {
         if(previous.length >= constraints.length) {
             return;
         }
-        if(!this.params.useProgressions) {
-            const constraint = constraints[previous.length];
-            if(constraint.romanNumeral) {
-                // @ts-ignore
-                yield [new HarmonizedChord({...constraint})];
-                // TODO remove duplicates caused by this
-            }
-        }
+        const constraint = constraints[previous.length];
+        // @ts-ignore
+        let shouldYieldAsIs = !this.params.useProgressions;
 
         // Get options available to us from current chord
         const progressions = this.params.enabledProgressions || Progression.defaultProgressions;
-        const scale = constraints[previous.length].romanNumeral?.scale || previous[0].romanNumeral.scale;
+        const scale = constraint.romanNumeral?.scale || previous[0].romanNumeral.scale;
         let options = [...Progression.matchingProgressions(scale, previous, progressions)];
         // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
         // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
 
-        if(this.params.canModulate && !constraints[previous.length].romanNumeral?.scale) {
+        if(this.params.canModulate && !constraint.romanNumeral?.scale) {
             const oldScale = previous[0].romanNumeral.scale;
             let modulationsAllowed = this.params.modulationsAllowed;
 
@@ -208,8 +245,25 @@ export class Harmonizer {
                     // TODO why is this?
                     continue;
                 }
+                if(shouldYieldAsIs) {
+                    shouldYieldAsIs = false;
+                    for(let i = 0; i < option.length; i++) {
+                        // TODO might be able to use this to fold any duplicate options together
+
+                        const { romanNumeral, voices, flags } = constraints[i + previous.length];
+                        if(!romanNumeral || !constraintsEqual(option[i], new HarmonizedChord({ romanNumeral, voices, flags }))) {
+                            shouldYieldAsIs = true;
+                            break;
+                        }
+                    }
+                }
                 yield option;
             }
+        }
+
+        if(constraint.romanNumeral && shouldYieldAsIs) {
+            const { romanNumeral, voices, flags } = constraint;
+            yield [new HarmonizedChord({ romanNumeral, voices, flags })];
         }
     }
 
