@@ -151,6 +151,6 @@ jobs:
         working-directory: ./test/
 
       - name: Run Test
-        run: node dist/${{ matrix.script }}.test.js -k ${{ matrix.key }} ${{ matrix.progression }}
+        run: node dist/${{ matrix.script }}.test.js -o ${{ matrix.ordering }} -k ${{ matrix.key }} ${{ matrix.progression }}
         working-directory: ./test/
-        timeout-minutes: 20
+        timeout-minutes: 10
