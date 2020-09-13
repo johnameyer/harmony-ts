@@ -108,7 +108,18 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-        script: [time-test-success-check, time-test-success-no-check, time-test-failure-check, time-test-failure-no-check]
+        progression:
+          - I IV viio iii vi ii V I IV6 viio iii6 vi ii6 V
+          - I6 viio6 I vi IV6 V43/V V viio7/V V vi IV6 V43/V V
+        script:
+          - success
+          - failure
+        ordering:
+          - depth
+          - default
+        key:
+          - Db
+          - B
 
     steps:
       - uses: actions/checkout@v1
@@ -139,6 +150,7 @@ jobs:
         run: tsc
         working-directory: ./test/
 
-      - name: Run Script ${{ matrix.script }}.test.js
-        run: node dist/${{ matrix.script }}.test.js
+      - name: Run Test
+        run: node dist/${{ matrix.script }}.test.js -o ${{ matrix.ordering }} -k ${{ matrix.key }} ${{ matrix.progression }}
         working-directory: ./test/
+        timeout-minutes: 10

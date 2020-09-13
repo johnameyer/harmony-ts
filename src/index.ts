@@ -18,7 +18,7 @@ import { Motion } from './interval/motion';
 import { ScaleDegree } from './harmony/scale-degree';
 import { ComplexInterval } from './interval/complex-interval';
 import { IChord } from './chord/ichord';
-import { flattenResults, NestedIterable, resultsOfLength } from './util/nested-iterable';
+import { flattenResults, NestedIterable, resultsOfTotalLength, resultsOfLength, flattenResult } from './util/nested-iterable';
 import { PartWriter, PartWriterParameters } from './part-writing/part-writer';
 
 export {
@@ -50,7 +50,9 @@ export {
     Motion,
     ScaleDegree,
     ComplexInterval,
+    flattenResult,
     flattenResults,
     NestedIterable,
+    resultsOfTotalLength,
     resultsOfLength
 };

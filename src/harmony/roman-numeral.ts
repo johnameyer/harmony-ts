@@ -4,8 +4,6 @@ import { Interval } from "../interval/interval";
 import { Note } from "../note/note";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
-import { Key } from "../key";
-import { Chord } from "..";
 
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
     const notes = Scale.getNamesOfScale(scale);

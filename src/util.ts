@@ -1,9 +1,9 @@
 export function isString(value: any): value is string {
-    return String(value) === value;
+    return typeof value === 'string';
 }
 
 export function isNumber(value: any): value is number {
-    return Number(value) === value;
+    return Number.isFinite(value);
 }
 
 export function isDefined <T> (value: T | undefined): value is T {

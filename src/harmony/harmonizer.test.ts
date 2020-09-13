@@ -64,6 +64,21 @@ describe('Harmony', () => {
             expect(result.value.length).toBe(notes.length);
             expect(result.value.map(chords => chords.voices[3]?.name)).toEqual(notes);
         });
+
+        
+        test.each([
+            [['I', 'V', 'I']],
+            [['I', 'ii42', 'V65', 'I']],
+        ])('roman numerals without check %s', (numerals) => {
+            const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
+            const scale = CMajor;
+            const harmonizer = setUpHarmonizer({ useProgressions: false });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
+            const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
+            expect(result.value).toBeTruthy();
+            expect(result.value.length).toBe(numerals.length);
+            expect(result.value.map(chords => chords.romanNumeral.name)).toEqual(numerals);
+        });
         
         test.each([
             [['I', 'V', 'I'], [...Progression.Shared.basic]],

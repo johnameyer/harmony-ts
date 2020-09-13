@@ -2,20 +2,66 @@ import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWr
 import { Harmonizer } from "../harmony/harmonizer";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { Scale } from "../scale";
-import { NestedIterable, convertToMultiIterator, resultsOfLength, NestedLazyMultiIterable, unnestNestedIterable } from "../util/nested-iterable";
+import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, unnestNestedIterable, resultsOfLength, convertToDeepNested } from "../util/nested-iterable";
 import { CompleteChord } from "../chord/complete-chord";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { HarmonizedChord } from "../chord/harmonized-chord";
-import { nestedIterableMap } from "../util/nested-iterator-map";
+import { preorderNestedIterableMap, postorderNestedIterableMap } from "../util/nested-iterator-map";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { isDefined } from "../util";
 import { Accidental } from "../accidental";
 import { minGenerator } from "../util/min-generator";
 import { arrayComparator } from "../util/array-comparator";
-import { LazyMultiIterable } from "../util/make-lazy-iterator";
-import { iteratorMap } from "../util/iterator-map";
 import { iteratorFlatMap } from "../util/iterator-flat-map";
+import { nestedIterableFilter } from "../util/nested-iterator-filter";
+import { makePeekableIterator } from "../util/make-peekable-iterator";
+import { lazyArrayMerge } from "../util/lazy-array-merge";
+import { minValueGenerator } from "../util/min-value-generator";
+
+function swap<T>(arr: T[], first: number, second: number) {
+    [arr[first], arr[second]] = [arr[second], arr[first]];
+}
+
+const summer = (a: number, b: number) => a + b;
+
+export function * nestedMinGenerator<T>(iterable: Iterable<T>, mapper: (value: T) => number[], innerMapper: (value: T) => number[]) {
+    let start = 0;
+    const arr = Array.from(iterable);
+    const innerBest: (number[] | undefined)[] = new Array(arr.length);
+    const mapped = arr.map(mapper);
+    while(arr.length > start) {
+        let min = start;
+        for(let i = start + 1; i < arr.length; i++) {
+            let innerBestMin = innerBest[min];
+            if(!innerBestMin) {
+                innerBestMin = innerMapper(arr[min]);
+                innerBest[min] = innerBestMin;
+            }
+            const merged = lazyArrayMerge(mapped[min], innerBestMin, summer);
+            // No need to save outside of loop since summing is low cost and the rest of the array is already memoized
+            if(arrayComparator(merged, mapped[i]) > 0) {                
+                min = i;
+                // TODO does this shortcut always hold? Does some condition need to be placed on the results of PartWriting to make this hold?
+                continue;
+            }
+            let innerBestI = innerBest[i];
+            if(!innerBestI) {
+                innerBestI = innerMapper(arr[i]);
+                innerBest[i] = innerBestI;
+            }
+            
+            if(arrayComparator(merged, lazyArrayMerge(mapped[i], innerBestI, summer)) > 0) {
+                min = i;
+            }
+        }
+        swap(arr, start, min);
+        swap(innerBest, start, min);
+        swap(mapped, start, min);
+        yield arr[start];
+        start++;
+    }
+}
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
@@ -85,7 +131,7 @@ export interface PartWriterParameters {
      * Gives the ability to modify the order in which results are yielded
      * Allows for a variety of functionality like: greedy, local best, deep best
      */
-    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWriter: PartWriter) => NestedIterable<CompleteChord>
+    yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWriter: PartWriter) => NestedIterable<CompleteChord>,
 }
 
 /**
@@ -106,6 +152,7 @@ export namespace PartWriterParameters {
      */
     export const defaultOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), arrayComparator);
 
+    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => nestedMinGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), result => minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, nested[0], result[0]), arrayComparator).next().value || []);
 }
 
 /**
@@ -126,7 +173,7 @@ export class PartWriter {
      * @param constraints the constraints to voice for
      * @param scale the scale to begin in
      */
-    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord[]> {
+    * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord> {
         for(let i = 1; i < constraints.length; i++) {
             const failed = PartWriting.Rules.checkAll(this.partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
@@ -149,11 +196,28 @@ export class PartWriter {
             }
         }
 
-        const harmonization = convertToMultiIterator(this.harmonizer.matchingCompleteHarmony(constraints, scale));
+        const harmonization = this.harmonizer.matchingCompleteHarmony(constraints, scale);
 
-        const result = resultsOfLength(this.voiceWithContext(constraints, harmonization, scale), constraints.length);
+        const filtered = makePeekableIterator(resultsOfTotalLength(nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this)), constraints.length));
 
-        yield* result;
+        if(!filtered.hasItems) {
+            // return early if there are not valid matching harmonies
+            return;
+        }
+
+        const multiHarmonization = convertToMultiIterator(filtered);
+
+        const voicings = this.voiceWithContext(constraints, multiHarmonization, scale);
+
+        const deepVoicings = convertToDeepNested(voicings);
+
+        const multi = convertToMultiIterator(deepVoicings);
+
+        // @ts-ignore
+        const orderedResult = preorderNestedIterableMap(multi, (voicings, previous) => this.partWriterParams.yieldOrdering(voicings, [...previous.slice().reverse()], this));
+
+        // @ts-ignore
+        yield* resultsOfLength(orderedResult, constraints.length);
     }
 
     /**
@@ -176,7 +240,7 @@ export class PartWriter {
             }
         }).apply(this));
         
-        for(const voicing of unnestNestedIterable(nestedIterableMap(voicings, (voicings, nestedPrevious) => this.partWriterParams.yieldOrdering(voicings, [...nestedPrevious.slice().reverse(), ...previous], this)))) {
+        for(const voicing of unnestNestedIterable(voicings)) {
             const future = lookup.get(voicing[0]);
             if(future === undefined) {
                 continue;
@@ -277,5 +341,22 @@ export class PartWriter {
                 }
             }
         }
+    }
+
+    expansionIsVoiceable(current: HarmonizedChord[], previousExpansions: HarmonizedChord[][]): boolean {
+        const previous = previousExpansions.flatMap(expansion => expansion.slice()).reverse();
+        for(let i = 0; i < current.length; i++) {
+            if(!this.harmonyIsVoicable(current[i], previous)) {
+                return false;
+            }
+            previous.unshift(current[i]);
+        }
+        return true;
+    }
+
+    harmonyIsVoicable(current: HarmonizedChord, previous: HarmonizedChord[]): boolean {
+        const chords = previous[0] ? [previous[0], current] : [current];
+        const voicingsFor = makePeekableIterator(resultsOfLength(this.chordVoicings(chords), chords.length));
+        return voicingsFor.hasItems;
     }
 }

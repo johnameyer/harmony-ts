@@ -205,11 +205,12 @@ export namespace PartWriting {
                     }
                 } else {
                     if (chord.romanNumeral.inversionInterval.simpleSize =='U') {
-                        if(!prev || !prev.romanNumeral || !prev.intervals) {
+                        // can leave out fifth if preceded by complete V7
+                        if(prev && !prev.romanNumeral) {
                             return true;
                         }
-                        // can leave out fifth if preceded by complete V7
-                        if(prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
+                        // @ts-ignore
+                        if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
                             return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
                     } else {
@@ -835,9 +836,8 @@ export namespace PartWriting {
                     if(numVoicesWithInterval(chord.intervals, '5') == 0) {
                         //prefer root doubled if no fifth
                         if(numVoicesWithInterval(chord.intervals, 'U') != 2) {
-                            return -2;
+                            return -1;
                         }
-                        return -1;
                     }
                 } else {
                     if(numVoicesWithInterval(chord.intervals, '5') == 0 && chord.romanNumeral.inversionInterval.simpleSize == 'U') {
@@ -1047,10 +1047,8 @@ export namespace PartWriting {
          */
         export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
-            //TODO make ordering and selection parameterized
             let checks = parameters.preferencesOrdering
-                .filter(preference => parameters.singularPreferences.includes(preference))
-                .map(preference => parameters.preferences[preference])
+                .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
                 .map(func => func.apply(null, [chordToCheck]));
             return checks;
         }
@@ -1063,8 +1061,7 @@ export namespace PartWriting {
         export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
             let checks = makeLazyArray(parameters.preferencesOrdering
-                .filter(preference => parameters.singularPreferences.includes(preference))
-                .map(preference => parameters.preferences[preference])
+                .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
                 .map(func => () => func.apply(null, [chordToCheck]))
             );
             return checks;
