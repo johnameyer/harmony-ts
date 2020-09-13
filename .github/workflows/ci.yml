@@ -118,8 +118,8 @@ jobs:
           - depth
           - default
         key:
-          - Gb
-          - F#
+          - Db
+          - B
 
     steps:
       - uses: actions/checkout@v1
