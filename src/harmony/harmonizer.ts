@@ -18,16 +18,16 @@ function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
         }
     }
     
-    if(one.romanNumeral?.root?.name !== two.romanNumeral?.root?.name) {
+    if(one.romanNumeral.root.name !== two.romanNumeral.root.name) {
         return false;
     }
-    if(one.romanNumeral?.name !== two.romanNumeral?.name) {
+    if(one.romanNumeral.name !== two.romanNumeral.name) {
         return false;
     }
-    if(one.romanNumeral?.scale[0] !== two.romanNumeral?.scale[0]) {
+    if(one.romanNumeral.scale[0] !== two.romanNumeral.scale[0]) {
         return false;
     }
-    if(one.romanNumeral?.scale[1] !== two.romanNumeral?.scale[1]) {
+    if(one.romanNumeral.scale[1] !== two.romanNumeral.scale[1]) {
         return false;
     }
     if(one.flags) {
@@ -64,16 +64,16 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
         }
     }
     
-    if(!compatible(one.romanNumeral?.root?.name, two.romanNumeral?.root?.name)) {
+    if(!compatible(one.romanNumeral.root.name, two.romanNumeral?.root?.name)) {
         return null;
     }
-    if(!compatible(one.romanNumeral?.name, two.romanNumeral?.name)) {
+    if(!compatible(one.romanNumeral.name, two.romanNumeral?.name)) {
         return null;
     }
-    if(!compatible(one.romanNumeral?.scale[0], two.romanNumeral?.scale[0])) {
+    if(!compatible(one.romanNumeral.scale[0], two.romanNumeral?.scale[0])) {
         return null;
     }
-    if(!compatible(one.romanNumeral?.scale[1], two.romanNumeral?.scale[1])) {
+    if(!compatible(one.romanNumeral.scale[1], two.romanNumeral?.scale[1])) {
         return null;
     }
     if(one.flags) {
@@ -92,7 +92,7 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
     }
     if(one.romanNumeral) {
         const romanNumeral = one.romanNumeral;
-        const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
+        const oneNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
         if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
             return null;
         }

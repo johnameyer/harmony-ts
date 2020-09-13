@@ -198,7 +198,12 @@ export class PartWriter {
 
         const harmonization = this.harmonizer.matchingCompleteHarmony(constraints, scale);
 
-        const filtered = resultsOfTotalLength(nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this)), constraints.length);
+        const filtered = makePeekableIterator(resultsOfTotalLength(nestedIterableFilter(harmonization, this.expansionIsVoiceable.bind(this)), constraints.length));
+
+        if(!filtered.hasItems) {
+            // return early if there are not valid matching harmonies
+            return;
+        }
 
         const multiHarmonization = convertToMultiIterator(filtered);
 
