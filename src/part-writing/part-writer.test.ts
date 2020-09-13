@@ -122,6 +122,31 @@ describe('PartWriter', () => {
             // @ts-ignore
             expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
         });
+
+        
+        describe.each([
+            ['greedy', PartWriterParameters.greedyOrdering],
+            ['default', PartWriterParameters.defaultOrdering],
+            ['depth', PartWriterParameters.depthOrdering]
+        ])('ordering %s', (_, ordering) => {
+            test.each([
+                [['I', 'V', 'I']],
+                [['I', 'ii42', 'V65', 'I']],
+            ])('roman numerals %s', (numerals) => {
+                const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
+                const scale = CMajor;
+
+                const harmonizer = new Harmonizer({ useProgressions: true });
+                const partWriter = new PartWriter({yieldOrdering: ordering}, undefined, harmonizer);
+                const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
+
+                expect(iterator.hasItems).toBe(true);
+                
+                const result = flattenResult(iterator).next().value as CompleteChord[];
+                // @ts-ignore
+                expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
+            });
+        });
         
         test.each([
             [Key.B,     ['F#4', 'E4', 'D#4']],

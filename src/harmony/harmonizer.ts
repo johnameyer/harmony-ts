@@ -92,7 +92,7 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
     }
     if(one.romanNumeral) {
         const romanNumeral = one.romanNumeral;
-        const oneNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
+        const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
         if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
             return null;
         }
