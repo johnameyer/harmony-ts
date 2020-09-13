@@ -1,6 +1,5 @@
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { AbsoluteNote } from "../note/absolute-note";
-import { HarmonicFunction } from "../harmony/harmonic-function";
 import { Interval } from "../interval/interval";
 import { IChord } from "./ichord";
 
@@ -11,7 +10,7 @@ export class CompleteChord implements IChord {
     protected _flags: {[key: string]: boolean};
     protected _intervals!: Interval[];
 
-    constructor(voices: AbsoluteNote[], romanNumeral: RomanNumeral, flags: {[key: string]: boolean} = {}, harmonicFunction?: HarmonicFunction) {
+    constructor(voices: AbsoluteNote[], romanNumeral: RomanNumeral, flags: {[key: string]: boolean} = {}) {
         this._voices = voices;
         this._romanNumeral = romanNumeral;
         this._flags = flags;

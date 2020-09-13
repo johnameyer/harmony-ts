@@ -1,6 +1,5 @@
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { AbsoluteNote } from "../note/absolute-note";
-import { HarmonicFunction } from "../harmony/harmonic-function";
 import { Interval } from "../interval/interval";
 import { IChord } from "./ichord";
 
