@@ -44,7 +44,9 @@ It is also possible to just generate the chords that could go with a melody or b
 ### Code Examples
 
 [Library Demo](https://johnameyer.github.io/harmony-ts-demo)
+
 [Unit Tests](https://github.com/search?q=repo%3Ajohnameyer%2Fharmony-ts+path%3Asrc+filename%3Atest.ts+language%3ATypeScript&type=Code&ref=advsearch&l=TypeScript)
+
 [Package Import Tests](https://github.com/johnameyer/harmony-ts/tree/master/test)
 
 ### Documentation
