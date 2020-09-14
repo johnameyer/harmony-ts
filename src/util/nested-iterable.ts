@@ -1,7 +1,5 @@
-import { defaultChainedIterator } from "./default-chained-iterator";
 import { makeLazyMultiIterable, LazyMultiIterable } from "./make-lazy-iterator";
 import { makePeekableIterator } from "./make-peekable-iterator";
-import { preorderNestedIterableMap } from "./nested-iterator-map";
 
 export type NestedIterable<T> = IterableIterator<[T, NestedIterable<T>]>;
 
