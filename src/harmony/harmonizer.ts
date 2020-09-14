@@ -308,7 +308,7 @@ export class Harmonizer {
             
             // TODO move to resultsOfLength approach
             if(recurse.hasItems || match.length + previous.length === constraints.length) {
-                yield [match, recurse];
+                yield [match, recurse[Symbol.iterator]()];
             }
         }
     }
@@ -329,7 +329,7 @@ export class Harmonizer {
         }
         const recurse = makePeekableIterator(this.matchingCompleteHarmonyWithContext(constraints, [chord]));
         if(recurse.hasItems || constraints.length === 1) {
-            yield [[chord], recurse];
+            yield [[chord], recurse[Symbol.iterator]()];
         }
     }
 }

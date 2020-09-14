@@ -1,5 +1,7 @@
+import { defaultChainedIterator } from "./default-chained-iterator";
 import { makeLazyMultiIterable, LazyMultiIterable } from "./make-lazy-iterator";
 import { makePeekableIterator } from "./make-peekable-iterator";
+import { preorderNestedIterableMap } from "./nested-iterator-map";
 
 export type NestedIterable<T> = IterableIterator<[T, NestedIterable<T>]>;
 
@@ -46,9 +48,9 @@ export function * resultsOfLength<T>(generator: NestedIterable<T>, length: numbe
     for(const [t, gen] of generator) {
         const inner = makePeekableIterator(resultsOfLength(gen, length - 1));
         if(inner.hasItems) {
-            yield [t, inner];
+            yield [t, inner[Symbol.iterator]()];
         } else if(length === 1){
-            yield [t, inner];
+            yield [t, inner[Symbol.iterator]()];
         }
     }
 }
@@ -57,9 +59,9 @@ export function * resultsOfTotalLength<T>(generator: NestedIterable<T[]>, length
     for(const [t, gen] of generator) {
         const inner = makePeekableIterator(resultsOfTotalLength(gen, length - t.length));
         if(inner.hasItems) {
-            yield [t, inner];
+            yield [t, inner[Symbol.iterator]()];
         } else if(t.length === length){
-            yield [t, inner];
+            yield [t, inner[Symbol.iterator]()];
         }
     }
 }

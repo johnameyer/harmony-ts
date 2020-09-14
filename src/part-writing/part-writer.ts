@@ -2,22 +2,22 @@ import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWr
 import { Harmonizer } from "../harmony/harmonizer";
 import { IncompleteChord } from "../chord/incomplete-chord";
 import { Scale } from "../scale";
-import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, unnestNestedIterable, resultsOfLength, convertToDeepNested } from "../util/nested-iterable";
+import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, resultsOfLength } from "../util/nested-iterable";
 import { CompleteChord } from "../chord/complete-chord";
 import { RomanNumeral } from "../harmony/roman-numeral";
 import { HarmonizedChord } from "../chord/harmonized-chord";
-import { preorderNestedIterableMap, postorderNestedIterableMap } from "../util/nested-iterator-map";
+import { postorderNestedIterableMap, preorderNestedIterableMap } from "../util/nested-iterator-map";
 import { AbsoluteNote } from "../note/absolute-note";
 import { Note } from "../note/note";
 import { isDefined } from "../util";
 import { Accidental } from "../accidental";
 import { minGenerator } from "../util/min-generator";
 import { arrayComparator } from "../util/array-comparator";
-import { iteratorFlatMap } from "../util/iterator-flat-map";
 import { nestedIterableFilter } from "../util/nested-iterator-filter";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { lazyArrayMerge } from "../util/lazy-array-merge";
 import { minValueGenerator } from "../util/min-value-generator";
+import { defaultChainedIterator } from "../util/default-chained-iterator";
 
 function swap<T>(arr: T[], first: number, second: number) {
     [arr[first], arr[second]] = [arr[second], arr[first]];
@@ -205,49 +205,31 @@ export class PartWriter {
             return;
         }
 
-        const multiHarmonization = convertToMultiIterator(filtered);
+        const multiHarmonization = convertToMultiIterator(filtered[Symbol.iterator]());
 
-        const voicings = this.voiceWithContext(constraints, multiHarmonization, scale);
+        const voicings = this.voiceWithContext(constraints, multiHarmonization);
 
-        const deepVoicings = convertToDeepNested(voicings);
+        const multi = convertToMultiIterator(voicings);
 
-        const multi = convertToMultiIterator(deepVoicings);
-
-        // @ts-ignore
         const orderedResult = preorderNestedIterableMap(multi, (voicings, previous) => this.partWriterParams.yieldOrdering(voicings, [...previous.slice().reverse()], this));
 
-        // @ts-ignore
-        yield* resultsOfLength(orderedResult, constraints.length);
+        const ofLength = resultsOfLength(orderedResult, constraints.length);
+
+        yield* ofLength;
     }
 
     /**
-     * Yields all possible voicings at the current level in consideration to the previous, along with a lazy iterator to this function one grouping to the right
+     * Yields all possible voicings at the current level in consideration to the previous
      * Makes no guarantee that all yielded results will be complete, consider wrapping with resultsOfLength if that is needed
      */
-    * voiceWithContext(constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, scale: Scale, previous: CompleteChord[] = []): NestedIterable<CompleteChord[]> {
+    * voiceWithContext(constraints: IncompleteChord[], progression: NestedLazyMultiIterable<HarmonizedChord[]>, previous: CompleteChord[] = []): NestedIterable<CompleteChord> {        
         // TODO can remove constraints from this function?
-        if(constraints.length == previous.length) {
+        if(constraints.length === previous.length) {
             return;
         }
-        
-        const lookup = new Map<CompleteChord, NestedLazyMultiIterable<HarmonizedChord[]>>();
-
-        // TODO clean this up
-        const voicings = iteratorFlatMap(progression, ([current, future]) => (function * (this: PartWriter) {
-            for(let [voicing, nested] of this.chordVoicings(current, previous)) {
-                lookup.set(voicing, future);
-                yield [voicing, nested] as [CompleteChord, NestedIterable<CompleteChord>];
-            }
-        }).apply(this));
-        
-        for(const voicing of unnestNestedIterable(voicings)) {
-            const future = lookup.get(voicing[0]);
-            if(future === undefined) {
-                continue;
-            }
-            const newPrevious = [...voicing.slice().reverse(), ...previous];
-            const recurse = this.voiceWithContext(constraints, future, scale, newPrevious);
-            yield [voicing, recurse];
+        for(const [current, future] of progression) {
+            const voicings = this.chordVoicings(current, previous);
+            yield * postorderNestedIterableMap(voicings, (nested, treePrevious) => defaultChainedIterator(nested, () => this.voiceWithContext(constraints, future, [...treePrevious.slice().reverse(), ...previous])));
         }
     }
 
@@ -260,7 +242,7 @@ export class PartWriter {
         if(reconciledConstraints.length === 0) {
             return;
         }
-        
+
         for(const voicing of this.chordVoicing(reconciledConstraints[0], previous)) {
             yield [voicing, this.chordVoicings(reconciledConstraints.slice(1), [voicing, ...previous])];
         }
