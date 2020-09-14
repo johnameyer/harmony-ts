@@ -13,13 +13,14 @@
         "jest": "^26.0.0",
         "ts-jest": "^26.0.0",
         "ts-node": "^8.10.2",
-        "typedoc": "^0.17.8",
+        "typedoc": "^0.19.1",
         "typescript": "^3.8.3"
     },
     "scripts": {
         "clean": "rm -rf dist tsconfig.tsbuildinfo",
         "tsc": "./node_modules/.bin/tsc",
         "build": "npm run clean && npm run tsc",
+        "clean-docs": "rm -rf docs",
         "docs": "typedoc",
         "test": "jest --config jest.config.json",
         "lint": "eslint --fix src/**.ts",
