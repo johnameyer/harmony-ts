@@ -22,18 +22,18 @@ npm install harmony-ts
 ### Using the Library
 
 To use the harmonizer, first set up the constraints you wish to use. This might consist of particular notes or a [roman numeral](https://en.wikipedia.org/wiki/Roman_numeral_analysis) in a scale. The incomplete chord struct is meant to represent a vertical slice and single chord that is to be harmonized.
-```
+```ts
 const sopranoNotes = ['E5', 'E5', 'D5', 'D5', 'C5', 'C5', 'B4', 'C5'];
 const constraints = sopranoNotes.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
 ```
 
 Then initialize the part-writer with your choice of parameters (see documentation for options)
-```
+```ts
 const partWriter = new PartWriter();
 ```
 
 Then select the scale to harmonize within and pass the constraints to the part-writer.
-```
+```ts
 const scale = Scale.Major.notes;
 const results = flattenResults(partWriter.voiceAll(constraints, scale));
 const bestResult = results.next().value;
@@ -41,9 +41,13 @@ const bestResult = results.next().value;
 
 It is also possible to just generate the chords that could go with a melody or bass-line, or perform voice-leading checks on a provided set of chords.
 
+### Demo
+
+[Part Writing Demo](https://johnameyer.github.io/harmony-ts-demo)
+
 ### Code Examples
 
-[Library Demo](https://johnameyer.github.io/harmony-ts-demo)
+[Library Demo Source](https://github/johnameyer/harmony-ts-demo)
 
 [Unit Tests](https://github.com/search?q=repo%3Ajohnameyer%2Fharmony-ts+path%3Asrc+filename%3Atest.ts+language%3ATypeScript&type=Code&ref=advsearch&l=TypeScript)
 
@@ -51,7 +55,7 @@ It is also possible to just generate the chords that could go with a melody or b
 
 ### Documentation
 
-[Typedoc](johnameyer.github.io/harmony-ts)
+[Typedoc](https://johnameyer.github.io/harmony-ts)
 
 ## Versioning
 
