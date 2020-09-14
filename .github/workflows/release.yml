@@ -1,11 +1,11 @@
-name: docs
+name: release
 on:
   push:
     branches:
       - master
 
 jobs:
-  docs:
+  release:
     runs-on: ubuntu-latest
     strategy:
       matrix:

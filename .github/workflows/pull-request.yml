@@ -5,7 +5,7 @@ on:
       - master
 
 jobs:
-  docs:
+  pull-request:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,7 +33,7 @@ jobs:
       - name: Get Package.json From Base
         uses: wei/wget@v1
         with:
-          args: -O old-package.json https://raw.githubusercontent.com/${{github.repository}}/${{ github.payload.pull_request.base.sha }}/package.json
+          args: -O old-package.json https://raw.githubusercontent.com/${{github.repository}}/${{ github.event.pull_request.base.sha }}/package.json
 
       - name: Check NPM Version Greater
         run: npx semver -r ">$(node -p -e "require('./old-package.json').version")" $(node -p -e "require('./package.json').version")
