@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 
 if(!performance) {
     var { performance } = require('perf_hooks');
