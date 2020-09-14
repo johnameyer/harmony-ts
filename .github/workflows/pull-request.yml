@@ -38,7 +38,7 @@ jobs:
       - name: Check NPM Version Greater
         run: npx semver -r ">$(node -p -e "require('./old-package.json').version")" $(node -p -e "require('./package.json').version")
 
-      - uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_PUBLISH_TOKEN }}
-          dry-run: true
+      # - uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     token: ${{ secrets.NPM_PUBLISH_TOKEN }}
+      #     dry-run: true
