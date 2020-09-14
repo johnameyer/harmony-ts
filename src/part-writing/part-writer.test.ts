@@ -70,7 +70,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResult(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
             expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
 
@@ -91,7 +91,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResult(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
             // @ts-ignore
             expect(result.map(chords => chords.voices[3].name)).toEqual(notes);
         });
@@ -118,7 +118,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResult(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
             // @ts-ignore
             expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
         });
@@ -142,7 +142,7 @@ describe('PartWriter', () => {
 
                 expect(iterator.hasItems).toBe(true);
                 
-                const result = flattenResult(iterator).next().value as CompleteChord[];
+                const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
                 // @ts-ignore
                 expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
             });
@@ -164,7 +164,7 @@ describe('PartWriter', () => {
 
             expect(iterator.hasItems).toBe(true);
             
-            const result = flattenResult(iterator).next().value as CompleteChord[];
+            const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
             expect(result.map(chords => chords.voices[0].name)).toEqual(notes);
         });
     });
@@ -245,7 +245,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
         
-        const result = flattenResult(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
         }
@@ -282,7 +282,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResult(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
         }
@@ -316,7 +316,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResult(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
         
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
@@ -366,7 +366,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResult(iterator).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];// const result = Harmony.harmonizeAll(params);
         
         for(let i = 0; i < expected.length; i++) {
             expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
@@ -386,7 +386,7 @@ describe('PartWriter', () => {
 
         expect(iterator.hasItems).toBe(true);
 
-        const result = flattenResult(iterator).next().value as CompleteChord[];
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
         
         for(let i = 0; i < constraints.length; i++) {
             expect(result[i].voices[0].name).toEqual(soprano[i]);

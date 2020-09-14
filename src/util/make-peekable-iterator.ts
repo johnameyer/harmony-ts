@@ -1,4 +1,4 @@
-export interface PeekableIterator<T> extends IterableIterator<T> {
+export interface PeekableIterator<T> extends Iterable<T> {
     [Symbol.iterator](): IterableIterator<T>;
     hasItems: boolean;
 };

@@ -734,7 +734,7 @@ export namespace PartWriting {
                     return true;
                 }
                 const {flags: prevFlags, romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
-                if(currFlags.sequence && prevFlags.sequence) {
+                if(currFlags.sequence && (prevFlags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
                     for(let index = 0; index < currVoices.length; index++) {
                         if(!currRomanNumeral || !prevRomanNumeral) {
                             continue;
@@ -1039,6 +1039,7 @@ export namespace PartWriting {
                 }
                 return 0;
             }
+
         }
 
         /**
