@@ -50,8 +50,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.publish.version }}
-          release_name: Release v${{ steps.publish.version }}
+          tag_name: v${{ env.version }}
+          release_name: Release v${{ env.version }}
           body: ${{ env.changelog }}
           draft: false
           prerelease: false
@@ -67,5 +67,5 @@ jobs:
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: ./dist.tar
-          asset_name: v${{ steps.publish.version }}.tar
+          asset_name: v${{ env.version }}.tar
           asset_content_type: application/tar
