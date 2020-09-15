@@ -12,6 +12,8 @@ import { IChord } from '../chord/ichord';
 import { CompleteChord } from '../chord/complete-chord';
 import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
+import { isNeighborTone } from '../util/is-neighbor-tone';
+import { isPassingTone } from '../util/is-passing-tone';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -371,7 +373,7 @@ export namespace PartWriting {
              * @param prev the chord before this chord
              */
             export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, { voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized }: IChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals }: IChord) {
-                if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence) {
+                if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence || prevRomanNumeral?.flags.voiceLeading) {
                     return true;
                 }
                 // TODO delayed resolution
@@ -762,8 +764,72 @@ export namespace PartWriting {
                 return true;
             }
 
-            // TODO better way?
-            export function rapidKeyChange({ scope }: {scope: number}, chord: IChord, ...prev: IChord[]) {
+            /**
+             * @param { innerVoiceNotSoprano } whether to allow the passing/neighbor voicings to be outside the soprano 
+             * @param chord 
+             * @param middle 
+             * @param prev 
+             */
+            export function voiceLeadingCorrective({ innerVoiceNotSoprano }: { innerVoiceNotSoprano: boolean }, chord: IChord, middle: IChord, prev: IChord) {
+                if(!middle || !prev) {
+                    return true;
+                }
+                if(!middle.flags.voiceLeading) {
+                    return true;
+                }
+                // breaking up 8ve or 5ths
+                const bassVoice = chord.voices.length - 1;
+                const prevBass = prev.voices[bassVoice];
+                const currBass = chord.voices[bassVoice];
+                if(prevBass && currBass) {
+                    for(let voice = 0; voice < bassVoice; voice++) {
+                        const currVoice = chord.voices[voice];
+                        const prevVoice = prev.voices[voice];
+                        if(!currVoice || !prevVoice) {
+                            continue;
+                        }
+                        if(Motion.from(prevBass, currBass, prevVoice, currVoice) === Motion.PARALLEL) {
+                            const interval = new Interval(prevBass, prevVoice);
+                            if(interval.name === 'PU' || interval.name === 'P5') {
+                                return true;
+                            }
+                        }
+                    }
+                    
+                    const middleBass = middle.voices[bassVoice];
+                    if(middleBass) {
+                        // neighbor tone in bass
+                        // bass passing tone
+                        if(isNeighborTone(prevBass, middleBass, currBass) || isPassingTone(prevBass, middleBass, currBass)) {
+                            return true;
+                        }
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+
+                for(let voice = 0; voice < 1 || (innerVoiceNotSoprano && voice < bassVoice); voice++) {
+                    const currVoice = chord.voices[voice];
+                    const middleVoice = middle.voices[voice];
+                    const prevVoice = prev.voices[voice];
+
+                    if(!currVoice || !prevVoice || !middleVoice) {
+                        continue;
+                    }
+                    // support for passing tone in upper
+                    // neighbor tone in upper
+                    if(isNeighborTone(prevVoice, middleVoice, currVoice) || isPassingTone(prevVoice, middleVoice, currVoice)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+
+            //TODO better way?
+            export function rapidKeyChange({scope}: {scope: number}, chord: IChord, ...prev: IChord[]) {
                 if(chord.flags.pivot) {
                     for(let i = 0; i < prev.length && i < scope; i++) {
                         if(prev[i].flags.pivot) {
@@ -1166,8 +1232,11 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
             frustratedLeadingTone: true,
         },
         rapidKeyChange: {
-            scope: 3,
+            scope: 3
         },
+        voiceLeadingCorrective: {
+            innerVoiceNotSoprano: false
+        }
     },
     preferences: defaultPartWritingPreferences,
     singularPreferences: [

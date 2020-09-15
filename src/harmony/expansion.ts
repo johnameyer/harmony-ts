@@ -326,6 +326,142 @@ export namespace Expansion {
         },
     ];
 
+    export const fiveThreeTechniques = [
+        // TODO all valid? are there more?
+        {
+            type: ExpansionType.FULL,
+            source: match(V),
+            target: match(V),
+            expansion: [ match(II) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(IV),
+            expansion: [ match(I) ]
+        },
+
+        
+        {
+            type: ExpansionType.FULL,
+            source: match(II),
+            target: match(II),
+            expansion: [ match(IV) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(IV),
+            expansion: [ match(VI) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(I),
+            target: match(I),
+            expansion: [ match(III) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(I),
+            target: match(II),
+            expansion: [ match(VI, { flags: { voiceLeading: true }}) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(I),
+            target: match(II),
+            expansion: [ match(V, { flags: { voiceLeading: true }}) ]
+        },
+        
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(V),
+            expansion: [ match(II, { flags: { voiceLeading: true }}) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(V),
+            expansion: [ match(I, { flags: { voiceLeading: true }}) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(II),
+            target: match(V),
+            expansion: [ match(IV, { flags: { voiceLeading: true }}) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(VI),
+            target: match(IV),
+            expansion: [ match(III, { flags: { voiceLeading: true }}) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(II),
+            expansion: [ match(I, { flags: { voiceLeading: true }}) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(IV),
+            target: match(IV, { inversions: [1] }),
+            expansion: [ match(V, { flags: { voiceLeading: true }}) ]
+        },
+        
+        {
+            type: ExpansionType.FULL,
+            source: match(V, { inversions: [1]}),
+            target: match(V, { inversions: [2], hasSeventh: true }),
+            expansion: [ match(I, { flags: { voiceLeading: true }}) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: match(I),
+            target: match(I),
+            expansion: [ match(IV, { flags: { voiceLeading: true }}) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(V),
+            target: match(V),
+            expansion: [ match(I, { flags: { voiceLeading: true }}) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(I),
+            target: match(I),
+            expansion: [ match(VI, { flags: { voiceLeading: true }}) ]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: match(V),
+            target: match(V),
+            expansion: [ match(VI, { flags: { voiceLeading: true }}) ]
+        },
+        
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(I, { chordQuality: MINOR }),
+            target: matchAsIs(VI),
+            expansion: [ match(V, { inversions: [1], chordQuality: MINOR }) ]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(I, { chordQuality: MINOR }),
+            target: matchAsIs(IV, { inversions: [1], chordQuality: MINOR }),
+            expansion: [ match(V, { inversions: [1], chordQuality: MINOR }) ]
+        },
+    ];
+
     // TODO write out more compactly
     export const sequences = [
         // TODO how to make the target also part of the sequence?
@@ -563,12 +699,12 @@ export namespace Expansion {
         ]),
     ];
 
-    export const defaultExpansions = [ ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant ] as ExpansionRule[];
+    export const defaultExpansions = [ ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant ] as ExpansionRule[];
 
     export function * matchingExpansions(scale: Scale, previous: RomanNumeral, option: RomanNumeral, expansions: ExpansionRule[] = defaultExpansions): Generator<RomanNumeral[]> {
         yield [ option ];
         const expansionsByType = expansions
-            .filter(expansion => {
+            .filter(expansion => { 
                 if(expansion.source && !checkAgainstRule(previous, expansion.source)) {
                     return false;
                 }
