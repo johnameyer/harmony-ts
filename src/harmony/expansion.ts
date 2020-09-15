@@ -23,6 +23,7 @@ const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) 
 const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)];
 const replaceWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
 const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
+const insertVoiceLeading = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized()), flags: { voiceLeading: true }}), ...chords.slice()];
 
 /**
  * Expansions consist of elaborations beyond basic progressions
@@ -149,6 +150,38 @@ export namespace Expansion {
         startingWithAsIs('VII', movingToAsIs('V7', insert('iv6')))
     ];
 
+    export const fiveThreeTechniques = [
+        // TODO all valid? are there more?
+        startingWith('V', movingTo('V', insert('ii'))),
+        startingWith('V', movingTo('V7', insert('ii'))),
+        startingWith('IV', movingTo('IV', insert('I'))),
+
+        startingWith('ii', movingTo('ii', insert('IV'))),
+        startingWith('IV', movingTo('IV', insert('vi'))),
+        startingWith('I', movingTo('I', insert('iii'))),
+
+        startingWith('I', movingTo('ii', insertVoiceLeading('vi'))),
+        startingWith('I', movingTo('ii', insertVoiceLeading('V'))),
+        startingWith('IV', movingTo('V', insertVoiceLeading('ii'))),
+        startingWith('IV', movingTo('V', insertVoiceLeading('I'))),
+        startingWith('ii', movingTo('V', insertVoiceLeading('IV'))),
+        startingWith('vi', movingTo('IV', insertVoiceLeading('iii'))),
+        startingWith('IV', movingTo('ii', insertVoiceLeading('I'))),
+        
+        startingWith('IV', movingTo('IV6', insertVoiceLeading('V'))),
+        startingWith('V6', movingTo('V43', insertVoiceLeading('I'))),
+
+        
+        startingWith('I', movingTo('I', insertVoiceLeading('IV'))),
+        startingWith('V', movingTo('V', insertVoiceLeading('I'))),
+        startingWith('I', movingTo('I', insertVoiceLeading('vi'))),
+
+        startingWith('V', movingTo('V', insertVoiceLeading('vi'))),
+
+        startingWithAsIs('i', movingToAsIs('VI', insertAsIs('v6'))),
+        startingWithAsIs('i', movingToAsIs('iv6', insertAsIs('v6'))),
+    ];
+
     // TODO write out more compactly
     export const sequences = [movingTo, movingToWithinSequence].flatMap(movingTo => [
         // descending fifths
@@ -175,7 +208,7 @@ export namespace Expansion {
         // TODO AsIs here?
         startingWith('I', movingTo('viio6', sequenceInsert(['vi6', 'ii']))),
         startingWith('I', movingTo('iii', sequenceInsert(['vi6', 'ii', 'viio6']))),
-        startingWith('I', movingTo('IV6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii']))),
+        startingWith('I', movingTo('I6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii']))),
         startingWith('I', movingTo('I', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6']))),
         startingWith('I', movingTo('ii6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6', 'IV']))),
 
@@ -265,7 +298,7 @@ export namespace Expansion {
         ]),
     ];
 
-    export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
+    export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
     
     export function * matchingExpansion(scale: Scale, previous: HarmonizedChord[], option: HarmonizedChord[], expansions: ExpansionOperator[] = defaultExpansions) {
         for(const expansion of expansions) {
