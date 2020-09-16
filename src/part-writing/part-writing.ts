@@ -379,11 +379,17 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
+                if(new Interval(currRomanNumeral.root, prevRomanNumeral.inversionInterval.transposeUp(prevRomanNumeral.root)).name === 'PU') {
+                    return true;
+                }
                 if (prevRomanNumeral.symbol == 'V' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
                     if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if(new Interval(prevVoice, currVoice).name === 'PU') {
                         return true;
                     }
                     if (new Interval(prevVoice, currVoice).simpleSize !== '2') {

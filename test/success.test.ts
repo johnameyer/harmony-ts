@@ -16,7 +16,6 @@ const argv = yargs
 .options({
     o: { choices: ['greedy', 'default', 'depth'], alias: 'ordering', desc: 'What order to generate results in' },
     k: { choices: ['Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'], default: 'C', alias: 'key', desc: 'What key to use' },
-    // m: { type: 'boolean', alias: 'minor', desc: 'Should be minor key' }
 })
 .strict()
 .showHelpOnFail(false, 'Use --help for available options')

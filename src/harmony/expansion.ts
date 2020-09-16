@@ -176,6 +176,7 @@ export namespace Expansion {
         startingWith('V', movingTo('V', insertVoiceLeading('I'))),
         startingWith('I', movingTo('I', insertVoiceLeading('vi'))),
 
+        // TODO consider 'voice leading' vs passing or neighboring
         startingWith('V', movingTo('V', insertVoiceLeading('vi'))),
 
         startingWithAsIs('i', movingToAsIs('VI', insertAsIs('v6'))),
@@ -246,6 +247,35 @@ export namespace Expansion {
         startingWith('I', movingTo('ii', sequenceInsert(['V6', 'vi', 'iii6', 'IV', 'I6']))),
     ]);
 
+    export const sixThreeTechniques = [
+
+        startingWith('III', movingTo('III', insertVoiceLeading('iio6'))),
+
+        startingWithAsIs('V', movingToAsIs('V', replaceWithAsIs('III+6'))), // TODO fix
+        startingWithAsIs('V', movingToAsIs('V', replaceWithAsIs('iii6'))),
+        startingWithAsIs('v', movingToAsIs('v', replaceWithAsIs('III6'))),
+
+        startingWithAsIs('V', insertAsIs('III+6')), // TODO fix
+        startingWithAsIs('V', insertAsIs('iii6')),
+        startingWithAsIs('v', insertAsIs('III6')),
+
+        movingToAsIs('v', replaceWithAsIs('III6')),
+        
+        movingTo('V', replaceWith('iii6')),
+    ];
+
+    export const sixFourTechniques = [
+        // startingWith('v', movingTo('v', insertVoiceLeading(''))),
+        // startingWith('v', movingTo('v', insertVoiceLeading(''))),
+
+
+        movingToAsIs('ii', insert('V64')),
+        movingTo('vi', insert('ii64')),
+
+        startingWith('I', movingTo('I6', insertVoiceLeading('V64'))),
+        startingWith('I6', movingTo('I', insertVoiceLeading('V64'))),
+    ];
+
     export const leadingToneSevenths = [
         startingWith('I', movingTo('I', insertAsIs('vii07'))),
         startingWith('I6', movingTo('I6', insertAsIs('vii043')))
@@ -298,7 +328,7 @@ export namespace Expansion {
         ]),
     ];
 
-    export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
+    export const defaultExpansions = [...Expansion.identity, ...Expansion.basic, ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.sixThreeTechniques, ...Expansion.sixFourTechniques, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionOperator[];
     
     export function * matchingExpansion(scale: Scale, previous: HarmonizedChord[], option: HarmonizedChord[], expansions: ExpansionOperator[] = defaultExpansions) {
         for(const expansion of expansions) {
