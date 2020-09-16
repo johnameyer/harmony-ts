@@ -341,7 +341,6 @@ export namespace Expansion {
             expansion: [ match(I) ]
         },
 
-        
         {
             type: ExpansionType.FULL,
             source: match(II),
@@ -583,6 +582,68 @@ export namespace Expansion {
         }),
     ].flat();
 
+    export const sixThreeTechniques = [
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(III),
+            target: matchAsIs(III),
+            expansion: [matchAsIs(II, { inversions: [1], chordQuality: DIMINISHED })]
+        },
+
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(V),
+            target: matchAsIs(V),
+            expansion: [matchAsIs(III, { inversions: [1], chordQuality: AUGMENTED })]
+        }, // TODO fix        
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(V),
+            target: matchAsIs(V),
+            expansion: [matchAsIs(III, { inversions: [1], chordQuality: MINOR })]
+        },
+        {
+            type: ExpansionType.FULL,
+            source: matchAsIs(V, { chordQuality: MINOR }),
+            target: matchAsIs(V, { chordQuality: MINOR }),
+            expansion: [matchAsIs(III, { inversions: [1], chordQuality: MAJOR })]
+        },
+
+        // startingWithAsIs('V', insertAsIs('III+6')), // TODO fix
+        // startingWithAsIs('V', insertAsIs('iii6')),
+        // startingWithAsIs('v', insertAsIs('III6')),
+
+        // movingToAsIs('v', replaceWithAsIs('III6')),
+        
+        // movingTo('V', replaceWith('iii6')),
+    ];
+
+    export const sixFourTechniques = [
+        // startingWith('v', movingTo('v', insertVoiceLeading(''))),
+        // startingWith('v', movingTo('v', insertVoiceLeading(''))),
+
+        {
+            type: ExpansionType.PREFIX,
+            priority: CLOSEST_PRIORITY,
+            target: matchAsIs(II, { chordQuality: MINOR }),
+            expansion: [match(V, { inversions: [2] })]
+        },
+        {
+            type: ExpansionType.PREFIX,
+            priority: CLOSEST_PRIORITY,
+            target: match(VI),
+            expansion: [match(II, { inversions: [2] })]
+        },
+        
+        {
+            type: ExpansionType.PREFIX,
+            priority: CLOSEST_PRIORITY,
+            source: match(I, { inversions: [0, 1]}),
+            target: match(I, { inversions: [0, 1]}),
+            expansion: [matchAsIs(V, { inversions: [2] })]
+        },
+    ];
+
     export const leadingToneSevenths = [
         {
             type: ExpansionType.PREFIX,
@@ -699,7 +760,7 @@ export namespace Expansion {
         ]),
     ];
 
-    export const defaultExpansions = [ ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant ] as ExpansionRule[];
+    export const defaultExpansions = [ ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.fiveThreeTechniques, ...Expansion.sequences, ...Expansion.sixThreeTechniques, ...Expansion.sixFourTechniques, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant ] as ExpansionRule[];
 
     export function * matchingExpansions(scale: Scale, previous: RomanNumeral, option: RomanNumeral, expansions: ExpansionRule[] = defaultExpansions): Generator<RomanNumeral[]> {
         yield [ option ];

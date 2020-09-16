@@ -30,13 +30,6 @@ const DIMINISHED = ChordQuality.DIMINISHED;
 
 export namespace Progression {
     export namespace Shared {
-        /*
-         * TODO implied
-         * export const identity = [
-         *     [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]
-         * ];
-         */
-
         export const basic = [
             /* I-V */
             [ match(I), matchAsIs(V) ],
@@ -99,7 +92,7 @@ export namespace Progression {
             [ match(I), match(IV, { inversions: [ 1 ] }) ],
 
             /* vi root motion by 3rd */
-            [ match(I), match(VI) ],
+            [ match(I, { inversions: [0,1] }), match(VI) ],
             [ match(VI), match(IV, { inversions: [ 0, 1 ] }) ],
 
             /* IV6 root motion by 3rd */

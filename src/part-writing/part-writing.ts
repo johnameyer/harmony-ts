@@ -380,6 +380,9 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
+                if(new Interval(currRomanNumeral.root, prevRomanNumeral.inversionInterval.transposeUp(prevRomanNumeral.root)).name === 'PU') {
+                    return true;
+                }
                 const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
                 const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
                 if(isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
@@ -389,7 +392,10 @@ export namespace PartWriting {
                     if(!prevVoice || !currVoice) {
                         return true;
                     }
-                    if(new Interval(prevVoice, currVoice).simpleSize !== '2') {
+                    if(new Interval(prevVoice, currVoice).simpleSize === 'U') {
+                        return true;
+                    }
+                    if (new Interval(prevVoice, currVoice).simpleSize !== '2') {
                         if(prevVoice.midi < currVoice.midi) {
                             return false;
                         }
