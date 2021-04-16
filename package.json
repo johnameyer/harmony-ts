@@ -1,20 +1,20 @@
 {
     "name": "harmony-ts",
-    "version": "0.12.2",
+    "version": "0.12.3",
     "description": "This project is an engine for generating and analyzing four-part textures (and eventually other forms) in the style of Bach and the classical era. Currently, it allows one to pass a series of constraints, such as chord/type/inversion and voice parts, and it will produce the complete texture using the settings provided. It also gives many useful basic music theory functions like intervals and chords though.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "dependencies": {},
     "devDependencies": {
-        "@types/jest": "^25.1.4",
-        "@typescript-eslint/eslint-plugin": "^2.24.0",
-        "@typescript-eslint/parser": "^2.24.0",
+        "@types/jest": "^25.2.3",
+        "@typescript-eslint/eslint-plugin": "^2.34.0",
+        "@typescript-eslint/parser": "^2.34.0",
         "eslint": "^6.8.0",
-        "jest": "^26.0.0",
-        "ts-jest": "^26.0.0",
+        "jest": "^26.6.3",
+        "ts-jest": "^26.5.5",
         "ts-node": "^8.10.2",
-        "typedoc": "^0.19.1",
-        "typescript": "^3.8.3"
+        "typedoc": "^0.20.35",
+        "typescript": "^3.9.9"
     },
     "scripts": {
         "clean": "rm -rf dist tsconfig.tsbuildinfo",
