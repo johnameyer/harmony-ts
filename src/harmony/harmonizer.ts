@@ -233,8 +233,8 @@ export class Harmonizer {
         const scale = constraint.romanNumeral?.scale || previous.scale;
         const options = [ ...Progression.matchingProgressions(scale, previous, progressions) ];
         /*
-         * console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-         * console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
+         * console.log('Previous is', previous?.name);
+         * console.log('Options are', options.map(option => option?.name).join(', '));
          */
 
         // TODO rethink modulation again

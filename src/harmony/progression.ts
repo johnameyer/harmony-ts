@@ -3,6 +3,7 @@ import { Scale } from '../scale';
 import { Rule, MatchingRule, checkAgainstRule, yieldChordsFromRule, match, matchAsIs } from './rule';
 import { ChordQuality } from '../chord/chord-quality';
 import { ScaleDegree } from './scale-degree';
+import { Accidental } from '../accidental';
 
 export interface ProgressionRule extends Rule {
     source: MatchingRule,
@@ -30,13 +31,6 @@ const DIMINISHED = ChordQuality.DIMINISHED;
 
 export namespace Progression {
     export namespace Shared {
-        /*
-         * TODO implied
-         * export const identity = [
-         *     [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]
-         * ];
-         */
-
         export const basic = [
             /* I-V */
             [ match(I), matchAsIs(V) ],
@@ -139,9 +133,23 @@ export namespace Progression {
 
             [ matchAsIs(VII, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 0, 1 ] }) ],
         ].map(ruleOf);
+        
+        export const neopolitan = [
+            [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+            [ match(IV), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+            [ match(II, { inversions: [ 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+
+            [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+            [ match(II), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+            [ match(IV), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+            
+            [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }), matchAsIs(V) ],
+
+            [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }), matchAsIs(V, { inversions: [ 1 ] }) ],
+        ].map(ruleOf);
     }
 
-    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant ];
+    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant, ...Progression.Shared.neopolitan ];
 
     export function * matchingProgressions(scale: Scale, previous: RomanNumeral, progressions: ProgressionRule[] = defaultProgressions): Generator<RomanNumeral> {
         yield previous;

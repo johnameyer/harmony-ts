@@ -46,7 +46,7 @@ export class Note {
             throw note + ' is invalid';
         }
         const [ letter, accidentalString ] = match.slice(1);
-        const accidental = Accidental.fromString(accidentalString || '');
+        const accidental = Accidental.fromString(accidentalString || '') || Accidental.NATURAL;
 
         return new Note(letter, accidental);
     }

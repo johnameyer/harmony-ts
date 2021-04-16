@@ -12,6 +12,7 @@ import { IChord } from '../chord/ichord';
 import { CompleteChord } from '../chord/complete-chord';
 import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
+import { Accidental } from '../accidental';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -378,8 +379,9 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
-                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
+                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
+                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
+                const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
                 if(isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
@@ -420,6 +422,17 @@ export namespace PartWriting {
                         return false;
                     }
                 }
+                if(isbII(prevRomanNumeral) && !isbII(currRomanNumeral)) {
+                    const index = intervals.findIndex(Interval.ofSize('U'));
+                    const prevVoice = prevVoices[index];
+                    const currVoice = currVoices[index];
+                    if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if(index === -1 || ![ '2', '3' ].includes(new Interval(currVoice, prevVoice).simpleSize)) {
+                        return false;
+                    }
+                }
                 return true;
             }
 
@@ -453,13 +466,13 @@ export namespace PartWriting {
                     return true;
                 }
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(oldVoice, voice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
                 } catch {}
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(voice, oldVoice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }

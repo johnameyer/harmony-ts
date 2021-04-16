@@ -13,6 +13,7 @@ describe('RomanNumeral', () => {
                 [ 'ii', CMajor ],
                 [ 'viio', CMajor ],
                 [ 'V/V', CMajor ],
+                [ 'bVI', CMajor ],
             ])('%p', (value, scale) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -24,6 +25,7 @@ describe('RomanNumeral', () => {
                 [ 'I6', CMajor ],
                 [ 'ii6', CMajor ],
                 [ 'viio6', CMajor ],
+                [ 'bVII6', CMajor ],
             ])('%p', (value, scale) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -36,6 +38,7 @@ describe('RomanNumeral', () => {
                 [ 'V7', CMajor ],
                 [ 'vii07', CMajor ],
                 [ 'viio7', CMinor ],
+                [ 'bVII7', CMajor ],
             ])('%p', (value, scale) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -49,6 +52,7 @@ describe('RomanNumeral', () => {
                 [ 'V42', CMajor ],
                 [ 'vii065', CMajor ],
                 [ 'viio65', CMinor ],
+                [ 'bVII42', CMajor ],
             ])('%p', (value, scale) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 expect(romanNumeral.name).toBe(value);
@@ -76,19 +80,13 @@ describe('RomanNumeral', () => {
                 [ 'ii', CMajor, 'D' ],
                 [ 'viio', CMajor, 'B' ],
                 [ 'V/V', CMinor, 'D' ],
-            ])('%p', (value, scale, root) => {
-                const romanNumeral = RomanNumeral.fromString(value, scale);
-                expect(romanNumeral.root.name).toBe(root);
-            });
-        });
-
-        describe('root', () => {
-            test.each([
                 [ 'i', CMinor, 'C' ],
                 [ 'iio', CMinor, 'D' ],
                 [ 'VII', CMinor, 'Bb' ],
                 [ 'viio6', CMinor, 'B' ], // special case
                 [ 'V/V', CMinor, 'D' ],
+                [ 'bVI', CMajor, 'Ab' ],
+                [ '#iii', CMinor, 'E' ],
             ])('%p', (value, scale, root) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 expect(romanNumeral.root.name).toBe(root);
@@ -103,6 +101,9 @@ describe('RomanNumeral', () => {
                 [ 'ii', CMajor, [ Key.F, Scale.Quality.MAJOR ] as Scale, 'vi' ],
                 [ 'I', CMajor, [ Key.F, Scale.Quality.MAJOR ] as Scale, 'V' ],
                 [ 'i7', CMinor, [ Key.BFlat, Scale.Quality.MAJOR ] as Scale, 'ii7' ],
+                [ 'bVI', CMajor, [ Key.BFlat, Scale.Quality.MAJOR ] as Scale, 'bVII' ],
+                [ 'bVII', CMajor, [ Key.BFlat, Scale.Quality.MAJOR ] as Scale, 'I' ],
+                [ '#III', CMinor, [ Key.E, Scale.Quality.MAJOR ] as Scale, 'I' ],
             ])('%s %p %p %s', (value, scale, newScale: Scale, expected) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 const relative = romanNumeral.relativeToScale(newScale);
@@ -129,6 +130,7 @@ describe('RomanNumeral', () => {
                 [ 'ii7', CMinor, 'ii07' ],
                 [ 'vi', CMinor, 'VI' ],
                 [ 'viio', CMinor, 'VII' ],
+                [ 'bIII', CMajor, 'iii' ],
             ])('%s %p %p %s', (value, scale, expected) => {
                 const romanNumeral = RomanNumeral.fromString(value, scale);
                 const relative = romanNumeral.diatonicized();
@@ -140,23 +142,25 @@ describe('RomanNumeral', () => {
             });
         });
     });
-    
-    describe('invalid', () => {
-        describe('relativeToScale', () => {
-            test.each([
-                [ 'I', CMajor, [ Key.B, Scale.Quality.MAJOR ] as Scale ],
-                [ 'viio6', CMajor, [ Key.GFlat, Scale.Quality.MAJOR ] as Scale ],
-                [ 'IV', CMajor, [ Key.G, Scale.Quality.MAJOR ] as Scale ],
-                [ 'ii', CMajor, [ Key.AFlat, Scale.Quality.MAJOR ] as Scale ],
-            ])('%s %p %p', (value, scale, newScale: Scale) => {
-                const romanNumeral = RomanNumeral.fromString(value, scale);
-                const relative = romanNumeral.relativeToScale(newScale);
-                // expect(relative).toBe(null);
-                if(relative === null) {
-                    return;
-                }
-                expect(relative.name).toBe(null);
-            });
+
+    describe('with', () => {
+        test.each([
+            [ 'I', CMajor ],
+            [ 'ii', CMajor ],
+            [ 'viio', CMajor ],
+            [ 'V/V', CMinor ],
+            [ 'i', CMinor ],
+            [ 'iio', CMinor ],
+            [ 'VII', CMinor ],
+            [ 'viio6', CMinor ],
+            [ 'V/V', CMinor ],
+            [ 'bVI', CMajor ],
+            [ '#iii', CMinor ],
+        ])('%p', (value, scale) => {
+            const romanNumeral = RomanNumeral.fromString(value, scale);
+            expect(romanNumeral.name).toBe(value);
+            const withRomanNumeral = romanNumeral.with({});
+            expect(withRomanNumeral.name).toBe(value);
         });
     });
 });
