@@ -12,6 +12,7 @@ import { IChord } from '../chord/ichord';
 import { CompleteChord } from '../chord/complete-chord';
 import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
+import { Accidental } from '../accidental';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -378,8 +379,9 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
-                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
+                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
+                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
+                const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
                 if(isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
@@ -420,6 +422,17 @@ export namespace PartWriting {
                         return false;
                     }
                 }
+                if(isbII(prevRomanNumeral) && !isbII(currRomanNumeral)) {
+                    const index = intervals.findIndex(Interval.ofSize('U'));
+                    const prevVoice = prevVoices[index];
+                    const currVoice = currVoices[index];
+                    if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if(index === -1 || ![ '2', '3' ].includes(new Interval(currVoice, prevVoice).simpleSize)) {
+                        return false;
+                    }
+                }
                 return true;
             }
 
@@ -453,13 +466,13 @@ export namespace PartWriting {
                     return true;
                 }
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(oldVoice, voice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
                 } catch {}
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(voice, oldVoice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
@@ -559,6 +572,33 @@ export namespace PartWriting {
                  *     }
                  * }
                  */
+                return true;
+            }
+
+            /**
+             * Checks that an altered note is preceeded by an altered note of the same letter if the chord contains it
+             * @param _ 
+             * @param chord the chord under consideration
+             * @param prev the chord before `chord`
+             */
+             export function alteredNotePreparation(_: undefined, chord: IChord, prev: IChord) {
+                const prevLetterNames = new Set(prev.romanNumeral?.notes.map(note => note.letterName));
+                const prevNames = new Set(prev.romanNumeral?.notes.map(note => note.simpleName));
+                const notesOfInterest = new Set(chord.romanNumeral?.notes.filter(note => prevLetterNames.has(note.letterName) && !prevNames.has(note.name)).map(note => note.letterName));
+                for(let i = 0; i < chord.voices.length; i++) {
+                    let letterName = chord.voices[i]?.letterName;
+                    if(letterName && notesOfInterest?.has(letterName)) {
+                        if(prev.voices[i]?.letterName && prev.voices[i]?.letterName !== letterName) {
+                            return false;
+                        }
+                    }
+                    letterName = prev.voices[i]?.letterName;
+                    if(letterName && notesOfInterest?.has(letterName)) {
+                        if(chord.voices[i]?.letterName && chord.voices[i]?.letterName !== letterName) {
+                            return false;
+                        }
+                    }
+                }
                 return true;
             }
 
