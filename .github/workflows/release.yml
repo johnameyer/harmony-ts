@@ -33,10 +33,13 @@ jobs:
         run: npm run build
         
       - name: Get Version
-        run: echo "::set-env name=version::$(node -p -e "require('./package.json').version")"
+        run: echo "version=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
 
       - name: Get Changelog
-        run: echo "::set-env name=changelog::$(git log --format=%B -n 1)"
+        run: |
+          echo "changelog<<EOF" >> $GITHUB_ENV
+          git log --format=%B -n 1 >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
 
       - name: NPM Publish
         id: publish
