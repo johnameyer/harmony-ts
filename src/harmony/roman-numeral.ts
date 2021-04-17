@@ -180,7 +180,7 @@ export class RomanNumeral {
 
         this.scale = scale;
 
-        this.flags = Object.freeze({ ...params.flags } || {});
+        this.flags = Object.freeze({ ...params.flags });
 
         this.name = ScaleDegree.toRomanNumeral(this.scaleDegree);
         switch (this.quality) {
