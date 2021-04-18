@@ -38,7 +38,7 @@ jobs:
       - name: Get Changelog
         run: |
           echo "changelog<<EOF" >> $GITHUB_ENV
-          git log --format=%B -n 1 >> $GITHUB_ENV
+          git log $(git describe --tags --abbrev=0)..HEAD --format=%B >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
       - name: NPM Publish

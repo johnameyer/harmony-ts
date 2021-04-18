@@ -5,9 +5,16 @@ import { Note } from "../note/note";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
 
+const cachedScalarIntervals: Interval[][] = [];
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
-    const notes = Scale.getNamesOfScale(scale);
-    return new Interval(new Note(notes[lower]), new Note(notes[upper]));
+    if(!cachedScalarIntervals[lower]) {
+        cachedScalarIntervals[lower] = [];
+    }
+    if(!cachedScalarIntervals[lower][upper]) {
+        const notes = Scale.getNotesOfScale(scale);
+        cachedScalarIntervals[lower][upper] = new Interval(notes[lower], notes[upper]);
+    }
+    return cachedScalarIntervals[lower][upper];
 }
 
 function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, scale: Scale) {
@@ -17,7 +24,7 @@ function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, 
 
 export class RomanNumeral {
 
-    protected _name!: string;
+    protected _name: string;
 
     protected _scaleDegree: ScaleDegree;
     protected _inversion: number;
@@ -29,14 +36,14 @@ export class RomanNumeral {
     protected _seventh: boolean;
 
     // protected _accidental!: Accidental;
-    protected _applied!: ScaleDegree | null;
+    protected _applied: ScaleDegree | null;
 
     protected _scale: Scale;
 
     /**
      * Intervals above the root
      */
-    protected _intervals!: Interval[];
+    protected _intervals: Interval[];
 
     /**
      * Intervals above the bass
@@ -125,6 +132,10 @@ export class RomanNumeral {
         }
     }
 
+    // TODO
+    // static fromString() {
+    // }
+
     get name() {
         return this._name;
     }
@@ -146,15 +157,15 @@ export class RomanNumeral {
         if(this.symbol == 'V') {
             // dominant 5 is always built on the fifth of the tonic triad
             if(this._applied) {
-                return new Interval('P5').transposeUp(scale[this._applied - 1]);
+                return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[this._applied - 1]);
             }
-            return new Interval('P5').transposeUp(scale[0]);
+            return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[0]);
         } else if(this.symbol == 'viio' || this.symbol == 'vii0'){
             // leading tone is always a semitone below the note
             if(this._applied) {
-                return new Interval('m2').transposeDown(scale[this._applied - 1]);
+                return new Interval(IntervalQuality.MINOR, 2).transposeDown(scale[this._applied - 1]);
             }
-            return new Interval('m2').transposeDown(scale[0]);
+            return new Interval(IntervalQuality.MINOR, 2).transposeDown(scale[0]);
         }
         return scale[this._scaleDegree - 1];
     }

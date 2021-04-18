@@ -25,7 +25,7 @@ export class Chord {
         const notes: Note[] = [... new Set(this._notes)].filter(isDefined);
         // TODO support nonharmonic notes
         const root = notes.find(note => {
-            const modified = new AbsoluteNote(note.letterName + '0');
+            const modified = new AbsoluteNote(note.letterName, note.accidental, 0);
             const intervals: Interval[] = notes.map(note => new Interval(modified, note));
             if(intervals.findIndex(Interval.ofSize('2')) < 0 && intervals.findIndex(Interval.ofSize('4')) && intervals.findIndex(Interval.ofSize('6')) < 0) {
                 return true;
@@ -34,7 +34,7 @@ export class Chord {
         if(!root) {
             throw 'Must have a root';
         }
-        this._root = new AbsoluteNote(root.letterName + '0');
+        this._root = new Note(root.letterName, root.accidental);
         const intervals: Interval[] = notes.map(other => new Interval(this._root, other));
         const fifth = intervals.find(Interval.ofSize('5'));
         if(fifth) {

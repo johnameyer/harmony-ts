@@ -1,5 +1,6 @@
 import { Note } from './note/note';
 import { Interval } from './interval/interval';
+import { Accidental } from './accidental';
 
 export enum Key {
     CFlat = -7,
@@ -38,11 +39,11 @@ export namespace Key {
     }
 
     export function toNote(key: Key): Note {
-        return new Note(toString(key));
+        return Note.fromString(toString(key));
     }
 
     export function getScaleInKey(scale: string[], key: Key) {
-        const transposition = new Interval(new Note('C'), Key.toNote(key));
-        return scale.map(note => transposition.transposeUp(new Note(note)).letterName);
+        const transposition = new Interval(new Note('C', Accidental.NATURAL), Key.toNote(key));
+        return scale.map(note => transposition.transposeUp(Note.fromString(note)).letterName);
     }
 }

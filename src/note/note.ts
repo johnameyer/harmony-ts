@@ -5,11 +5,11 @@ const notes: string[] = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
 const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
 
 export class Note {
-    protected _letter!: string;
-    protected _accidental!: Accidental;
-    
-    constructor(protected value: string) {
-        this.parseValue();
+    constructor(protected _letter: string, protected _accidental: Accidental) {
+        // TODO move to letter enum
+        if(_letter.length !== 1 || _letter.toLowerCase() < "a" || _letter.toLowerCase() > "g") {
+            throw _letter + ' is not [A-Ga-g]';
+        }
     }
 
     get chromaticPosition(): number {
@@ -32,21 +32,22 @@ export class Note {
         return this.simpleName;
     }
 
-    parseValue() {
-        const match = this.value.match(/^([a-gA-G])(#{1,2}|b{1,2}|)?/);
-        if(match == null) {
-            throw this.value + ' is invalid';
-        }
-        let accidental;
-        [this._letter, accidental] = match.slice(1);
-        this._accidental = Accidental.fromString(accidental || '');
-    }
-
     get absolute(): boolean {
         return false;
     }
 
     public applyAccidental(accidental: Accidental) {
-        return new Note(this.letterName + Accidental.toString(this.accidental + accidental));
+        return new Note(this.letterName, this.accidental + accidental);
+    }
+    
+    static fromString(note: string): Note {
+        const match = note.match(/^([a-gA-G])(#{1,2}|b{1,2}|)?/);
+        if(match == null) {
+            throw note + ' is invalid';
+        }
+        const [letter, accidentalString] = match.slice(1);
+        const accidental = Accidental.fromString(accidentalString || '');
+
+        return new Note(letter, accidental);
     }
 }

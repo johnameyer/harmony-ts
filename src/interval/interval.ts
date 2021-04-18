@@ -12,35 +12,9 @@ export class Interval {
     protected _simpleSize!: number;
     protected _quality!: IntervalQuality;
 
-    constructor(name: string);
     constructor(quality: IntervalQuality, size: number);
     constructor(one: Note, two: Note);
-    constructor(one: IntervalQuality | Note | string, two?: number | Note) {
-        if(two === undefined && isString(one)) {
-            const match = one.match(/^([PMmAd])([U2-7])$/); 
-            if(match) {
-                const [quality, size] = match.slice(1);
-                this._quality = IntervalQuality.fromString(quality);
-                this._simpleSize = Number(size) || 1;
-                this._semitones = semitones[this._simpleSize - 1];
-                switch(this._quality) {
-                    case IntervalQuality.AUGMENTED:
-                        this._semitones += 1;
-                        break;
-                    case IntervalQuality.MINOR:
-                        this._semitones -= 1;
-                        break;
-                    case IntervalQuality.DIMINISHED:
-                        if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5 || this._simpleSize == 8) {
-                            this._semitones -= 1;
-                        } else {
-                            this._semitones -= 2;
-                        }
-                        break;
-                }
-                return;
-            }
-        }
+    constructor(one: IntervalQuality | Note, two?: number | Note) {
         if(isNumber(one) && isNumber(two)) {
             this._quality = one;
             this._simpleSize = two;
@@ -92,6 +66,17 @@ export class Interval {
         throw 'Invalid invocation of Interval constructor with values ' + JSON.stringify(one) + ' and ' + JSON.stringify(two);
     }
 
+    static fromString(name: string): Interval {
+        const match = name.match(/^([PMmAd])([U2-7])$/); 
+        if(!match) {
+            throw name + ' is not a valid interval';
+        }
+        const [qualityString, sizeString] = match.slice(1);
+        const quality = IntervalQuality.fromString(qualityString);
+        const simpleSize = Number(sizeString) || 1;
+        return new Interval(quality, simpleSize);
+    }
+
     get semitones() {
         return this._semitones;
     }
@@ -117,9 +102,9 @@ export class Interval {
             index = index - 7;
         }
         const letterName = notes[index];
-        let result = new Note(letterName);
-        const accidental = Accidental.toString((12 + note.chromaticPosition + this._semitones - result.chromaticPosition + 2) % 12 - 2);
-        return new Note(letterName + accidental);
+        const result = new Note(letterName, Accidental.NATURAL);
+        const accidental = (12 + note.chromaticPosition + this._semitones - result.chromaticPosition + 2) % 12 - 2;
+        return new Note(letterName, accidental);
     }
     
     transposeDown(note: Note): Note {
@@ -128,9 +113,9 @@ export class Interval {
             index = index + 7;
         }
         const letterName = notes[index];
-        let result = new Note(letterName);
-        const accidental = Accidental.toString((24 + note.chromaticPosition - this._semitones - result.chromaticPosition + 2) % 12 - 2);
-        return new Note(letterName + accidental);
+        const result = new Note(letterName, Accidental.NATURAL);
+        const accidental = (24 + note.chromaticPosition - this._semitones - result.chromaticPosition + 2) % 12 - 2;
+        return new Note(letterName, accidental);
     }
     
     static ofSize(size: string) {

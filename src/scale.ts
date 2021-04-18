@@ -31,22 +31,24 @@ export namespace Scale {
         export const semitones = [0, 2, 3, 5, 7, 9, 11, 12];
     }
 
-    export function getNamesOfScale(scale: Scale): string[] {
-        const interval = new Interval(new Note('C'), Key.toNote(scale[0]));
-        if(scale[1] === Quality.MAJOR) {
-            return Major.notes.map(note => interval.transposeUp(new Note(note))).map(note => note.name);
-        } else {
-            return NaturalMinor.notes.map(note => interval.transposeUp(new Note(note))).map(note => note.name);
-        }
-    }
-
     const scaleHash = (scale: Scale) => 2 * scale[0] + scale[1];
     const getNotesOfScaleMemo: Note[][] = [];
 
     export function getNotesOfScale(scale: Scale): Note[] {
         if(!getNotesOfScaleMemo[scaleHash(scale)]) {
-            getNotesOfScaleMemo[scaleHash(scale)] = getNamesOfScale(scale).map(note => new Note(note));
+            const interval = new Interval(Note.fromString('C'), Key.toNote(scale[0]));
+            const baseScale = scale[1] === Quality.MAJOR ? Major.notes : NaturalMinor.notes;
+
+            getNotesOfScaleMemo[scaleHash(scale)] = baseScale.map(note => interval.transposeUp(Note.fromString(note)));
         }
         return getNotesOfScaleMemo[scaleHash(scale)];
+    }
+
+    export function getNamesOfScale(scale: Scale): string[] {
+        return getNotesOfScale(scale).map(note => note.name);
+    }
+
+    export function toString(scale: Scale): string {
+        return Key.toString(scale[0]) + (scale[1] === Scale.Quality.MAJOR ? 'M' : 'm');
     }
 }
