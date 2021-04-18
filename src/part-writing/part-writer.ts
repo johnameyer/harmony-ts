@@ -177,22 +177,19 @@ export class PartWriter {
         for(let i = 1; i < constraints.length; i++) {
             const failed = PartWriting.Rules.checkAll(this.partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
-                console.error('Failed rule ' + failed + ' on constraint ' + i);
-                return;
+                throw 'Failed rule ' + failed + ' on constraint ' + i;
             }
         }
         //TODO harmonize tonic or come up with options
         const start = new RomanNumeral(constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
-            console.error('Failed to reconcile first constraint');
-            return;
+            throw 'Failed to reconcile first constraint';
         }
         {
             const failed = PartWriting.Rules.checkSingular(this.partWritingParams, reconciledConstraint).next().value;
             if(failed) {
-                console.error('First reconciled constraint failed rule ' + failed);
-                return;
+                throw 'First reconciled constraint failed rule ' + failed;
             }
         }
 
@@ -228,6 +225,7 @@ export class PartWriter {
             return;
         }
         for(const [current, future] of progression) {
+            // console.log('Voicing', previous.map(prev => prev.romanNumeral.name).reverse(), Scale.toString(current[0].romanNumeral.scale), current.map(curr => curr.romanNumeral.name));
             const voicings = this.chordVoicings(current, previous);
             yield * postorderNestedIterableMap(voicings, (nested, treePrevious) => defaultChainedIterator(nested, () => this.voiceWithContext(constraints, future, [...treePrevious.slice().reverse(), ...previous])));
         }
@@ -255,9 +253,9 @@ export class PartWriter {
      */
     * chordVoicing(reconciledConstraint: HarmonizedChord, previous: CompleteChord[] = []) {
         const mapToNearby = (previous: AbsoluteNote) => (note: Note) => [
-            new AbsoluteNote(note.name + [previous.octavePosition + 1]),
-            new AbsoluteNote(note.name + [previous.octavePosition]),
-            new AbsoluteNote(note.name + [previous.octavePosition - 1]),
+            new AbsoluteNote(note.letterName, note.accidental, previous.octavePosition + 1),
+            new AbsoluteNote(note.letterName, note.accidental, previous.octavePosition),
+            new AbsoluteNote(note.letterName, note.accidental, previous.octavePosition - 1),
         ];
         
         const romanNumeral = reconciledConstraint.romanNumeral;
@@ -295,7 +293,7 @@ export class PartWriter {
                     const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
                     return [...needed]
                         .flatMap(note => [...Array(high - low).keys()]
-                        .map((i) => new AbsoluteNote(note.letterName + Accidental.toString(note.accidental) + (i + low))))
+                        .map((i) => new AbsoluteNote(note.letterName, note.accidental, i + low)))
                         .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
                 }
             };
@@ -304,21 +302,43 @@ export class PartWriter {
             tenorNotes = get(needed)(2);
             bassNotes = get([bassNote])(3);
         }
+
+        const check = (voices: (AbsoluteNote | undefined)[]) => {
+            const voicing = new IncompleteChord({...reconciledConstraint, voices});
+            if(previous.length) {
+                if(!PartWriting.Rules.testAll(this.partWritingParams, [voicing, ...previous])) {
+                    return false;
+                }
+            } else {
+                if(!PartWriting.Rules.testSingular(this.partWritingParams, voicing)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         //TODO make more efficient by following doubling rules outright
         for(const bass of bassNotes) {
             for(const soprano of sopranoNotes) {
+                if(!check([soprano, undefined, undefined, bass])) {
+                    continue;
+                }
                 for(const alto of altoNotes) {
+                    if(!check([soprano, alto, undefined, bass])) {
+                        continue;
+                    }
                     for(const tenor of tenorNotes) {
                         const voicing = new CompleteChord([soprano, alto, tenor, bass], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
                         if(previous.length) {
-                            if(PartWriting.Rules.testAll(this.partWritingParams, [voicing, ...previous])) {
-                                yield voicing;
+                            if(!PartWriting.Rules.testAll(this.partWritingParams, [voicing, ...previous])) {
+                                continue;
                             }
                         } else {
-                            if(PartWriting.Rules.testSingular(this.partWritingParams, voicing)) {
-                                yield voicing;
+                            if(!PartWriting.Rules.testSingular(this.partWritingParams, voicing)) {
+                                continue;
                             }
                         }
+                        yield voicing;
                     }
                 }
             }

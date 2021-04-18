@@ -9,7 +9,7 @@ describe('Chord', () => {
             ['D5', 'G4', 'F4', 'B3', ChordQuality.MAJOR],
         ])('of [%s %s %s %s]', (soprano, alto, tenor, bass, quality) => {
             test('is of the right quality', () => {
-                const chord = new Chord([new AbsoluteNote(soprano), new AbsoluteNote(alto), new AbsoluteNote(tenor), new AbsoluteNote(bass)]);
+                const chord = new Chord([AbsoluteNote.fromString(soprano), AbsoluteNote.fromString(alto), AbsoluteNote.fromString(tenor), AbsoluteNote.fromString(bass)]);
                 expect(chord.quality).toBe(quality);
             });
         });

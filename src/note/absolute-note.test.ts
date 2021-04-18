@@ -10,22 +10,22 @@ describe('AbsoluteNote', () => {
             ['G#5', 8]
         ])('"%s"', (value, chromaticPosition) => {
             test('constructor', () => {
-                const note = new AbsoluteNote(value);
+                const note = AbsoluteNote.fromString(value);
                 expect(note).toBeTruthy();
             });
 
             test('name', () => {
-                const note = new AbsoluteNote(value);
+                const note = AbsoluteNote.fromString(value);
                 expect(note.name).toBe(value);
             });
 
             test('chromaticPosition', () => {
-                const note = new AbsoluteNote(value);
+                const note = AbsoluteNote.fromString(value);
                 expect(note.chromaticPosition).toBe(chromaticPosition);
             });
 
             test('octavePosition', () => {
-                const note = new AbsoluteNote(value);
+                const note = AbsoluteNote.fromString(value);
                 expect(note.octavePosition).toBe(Number(value.substr(value.length - 1)));
             });
         });

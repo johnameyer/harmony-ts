@@ -14,7 +14,7 @@ import { CompleteChord } from "../chord/complete-chord";
 import { NestedIterable } from "../util/nested-iterable";
 import { arrayComparator } from "../util/array-comparator";
 
-const absoluteNote = (note: string) => new AbsoluteNote(note);
+const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
 
@@ -321,6 +321,27 @@ export namespace PartWriting {
             }
 
             /**
+             * Checks whether any of the parts cross with where the notes where previously
+             * @param chord the chord to check
+             * @param prev the chord before this chord
+             */
+             export function voiceOverlap(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
+                for(let i = 0; i < currVoices.length - 1; i++) {
+                    const lower = currVoices[i+1];
+                    const upper = currVoices[i];
+                    const oldLower = prevVoices[i+1];
+                    const oldUpper = prevVoices[i];
+                    if(upper && oldLower && upper.midi < oldLower.midi) {
+                        return false;
+                    }
+                    if(oldUpper && lower && oldUpper.midi < lower.midi) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            /**
              * Checks whether there are hidden fifths in the soprano and bass
              * Hidden fifths being perfect fifths arrived at through similar motion where the soprano is not moving up by step
              * @param chord the chord to check
@@ -340,27 +361,6 @@ export namespace PartWriting {
                         return true;
                     }
                     if(!romanNumeral.name.startsWith('V') && new Interval(romanNumeral.root, oldSopranoVoice).simpleSize != '3' && new Interval(oldSopranoVoice, sopranoVoice).name != 'm2') {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            /**
-             * Checks whether any of the parts cross with where the notes where previously
-             * @param chord the chord to check
-             * @param prev the chord before this chord
-             */
-            export function voiceOverlap(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
-                for(let i = 0; i < currVoices.length - 1; i++) {
-                    const lower = currVoices[i+1];
-                    const upper = currVoices[i];
-                    const oldLower = prevVoices[i+1];
-                    const oldUpper = prevVoices[i];
-                    if(upper && oldLower && upper.midi < oldLower.midi) {
-                        return false;
-                    }
-                    if(oldUpper && lower && oldUpper.midi < lower.midi) {
                         return false;
                     }
                 }

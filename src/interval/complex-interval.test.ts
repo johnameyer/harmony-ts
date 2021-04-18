@@ -1,7 +1,7 @@
 import { ComplexInterval } from "./complex-interval";
 import { AbsoluteNote } from "../note/absolute-note";
 
-const createComplexInterval = (one: string, two: string) => new ComplexInterval(new AbsoluteNote(one), new AbsoluteNote(two));
+const createComplexInterval = (one: string, two: string) => new ComplexInterval(AbsoluteNote.fromString(one), AbsoluteNote.fromString(two));
 
 describe('ComplexInterval', () => {
     describe('valid', () => {
@@ -29,12 +29,12 @@ describe('ComplexInterval', () => {
 
             test('transposes up correctly', () => {
                 const interval = createComplexInterval(first, second);
-                expect(interval.transposeUp(new AbsoluteNote(first)).name).toBe(second);
+                expect(interval.transposeUp(AbsoluteNote.fromString(first)).name).toBe(second);
             });
 
             test('transposes down correctly', () => {
                 const interval = createComplexInterval(first, second);
-                expect(interval.transposeDown(new AbsoluteNote(second)).name).toBe(first);
+                expect(interval.transposeDown(AbsoluteNote.fromString(second)).name).toBe(first);
             });
         });
     });

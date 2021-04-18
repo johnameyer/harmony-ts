@@ -12,7 +12,7 @@ import { Key } from "../key";
 import { Scale } from "../scale";
 import { PartWriterParameters } from "..";
 
-const absoluteNote = (note: string) => new AbsoluteNote(note);
+const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const CMajor = [Key.C, Scale.Quality.MAJOR] as Scale;
 const GMajor = [Key.G, Scale.Quality.MAJOR] as Scale;
@@ -60,7 +60,7 @@ describe('PartWriter', () => {
             [['C5', 'C5', 'C5'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes]],
             [['E4', 'F4', 'G4'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths]],
         ])('soprano line %s', (notes, enabled) => {
-            const soprano = notes.map(note => new AbsoluteNote(note));
+            const soprano = notes.map(note => AbsoluteNote.fromString(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale = CMajor;
 
@@ -80,8 +80,8 @@ describe('PartWriter', () => {
             [['C3', 'D3', 'E3'], [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths]],
             [['C3', 'C3', 'B2', 'C3'], [...Progression.Shared.basic, ...Progression.Shared.dominantSevenths, ...Progression.Shared.subdominantSevenths]],
         ])('bass line %s', (notes, enabled) => {
-            // const soprano = ['G4', 'F4', 'E4', 'D4', 'C4'].map(note => new AbsoluteNote(note));
-            const bass = notes.map(note => new AbsoluteNote(note));
+            // const soprano = ['G4', 'F4', 'E4', 'D4', 'C4'].map(note => AbsoluteNote.fromString(note));
+            const bass = notes.map(note => AbsoluteNote.fromString(note));
             const constraints = bass.map(bass => new IncompleteChord({voices: [undefined, undefined, undefined, bass]}));
             const scale = CMajor;
 
@@ -153,7 +153,7 @@ describe('PartWriter', () => {
             [Key.AFlat, ['Eb4', 'Db4', 'C4']],
             [Key.F,     ['C4', 'C4', 'E4']],
         ])('major key %s', (key, notes) => {
-            const soprano = notes.map(note => new AbsoluteNote(note));
+            const soprano = notes.map(note => AbsoluteNote.fromString(note));
             const constraints = soprano.map(soprano => new IncompleteChord({voices: [soprano, undefined, undefined, undefined]}));
             const scale: Scale = [key, Scale.Quality.MAJOR];
             const enabled = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths];
@@ -232,10 +232,10 @@ describe('PartWriter', () => {
         let first = true;
         for(const [voices, romanNumeral] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, undefined], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, undefined], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
         
@@ -269,10 +269,10 @@ describe('PartWriter', () => {
         let first = true;
         for(const [voices, romanNumeral] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale)}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [undefined, undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [undefined, undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
 
@@ -303,10 +303,10 @@ describe('PartWriter', () => {
         let first = true;
         for(const [voices, romanNumeral, scale, flags] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
 
@@ -353,10 +353,10 @@ describe('PartWriter', () => {
         let first = true;
         for(const [voices, romanNumeral, scale, flags] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => new AbsoluteNote(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [new AbsoluteNote(voices[0]), undefined, undefined, new AbsoluteNote(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
             }
         }
 
@@ -378,7 +378,7 @@ describe('PartWriter', () => {
         [['C5', 'D5', 'Eb5']],
         [['C5', 'B4', 'B4', 'C5']],
     ])('minor key %s', (soprano) => {
-        const constraints = soprano.map(note => new IncompleteChord({voices: [new AbsoluteNote(note), undefined, undefined, undefined] }));
+        const constraints = soprano.map(note => new IncompleteChord({voices: [AbsoluteNote.fromString(note), undefined, undefined, undefined] }));
         
         const harmonizer = new Harmonizer({ canModulate: false, useProgressions: true });
         const partWriter = new PartWriter(undefined, undefined, harmonizer);

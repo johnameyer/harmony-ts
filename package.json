@@ -1,6 +1,6 @@
 {
     "name": "harmony-ts",
-    "version": "0.12.6",
+    "version": "0.13.0",
     "description": "This project is an engine for generating and analyzing four-part textures (and eventually other forms) in the style of Bach and the classical era. Currently, it allows one to pass a series of constraints, such as chord/type/inversion and voice parts, and it will produce the complete texture using the settings provided. It also gives many useful basic music theory functions like intervals and chords though.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,6 +19,7 @@
     "scripts": {
         "clean": "rm -rf dist tsconfig.tsbuildinfo",
         "tsc": "./node_modules/.bin/tsc",
+        "tsc-watch": "./node_modules/.bin/tsc --watch",
         "build": "npm run clean && npm run tsc",
         "clean-docs": "rm -rf docs",
         "docs": "typedoc",
@@ -28,7 +29,7 @@
         "prepublishOnly": "npm run madge && npm run lint && npm run build && npm test"
     },
     "author": "Jack Meyer",
-    "license": "",
+    "license": "Apache-2.0",
     "files": [
         "dist/**/*"
     ]
