@@ -49,6 +49,6 @@ export class ComplexInterval extends Interval {
         const result = new AbsoluteNote(transposed.letterName, transposed.accidental, note.octavePosition);
         const octaveDisplacement = (this._complexSize - this._simpleSize) / 7 +
             (Scale.Major.notes.indexOf(note.letterName) < Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
-        return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition + octaveDisplacement);
+        return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition - octaveDisplacement);
     }
 }

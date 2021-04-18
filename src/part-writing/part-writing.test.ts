@@ -7,7 +7,7 @@ import { Key } from "../key";
 
 const CMajor = [Key.C, Scale.Quality.MAJOR] as Scale;
 
-const absoluteNote = (note: string) => new AbsoluteNote(note);
+const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index], arr[index + 1]] as [T, T])
 

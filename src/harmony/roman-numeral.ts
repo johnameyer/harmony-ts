@@ -5,16 +5,19 @@ import { Note } from "../note/note";
 import { IntervalQuality } from "../interval/interval-quality";
 import { Scale } from "../scale";
 
-const cachedScalarIntervals: Interval[][] = [];
+const cachedScalarIntervals: Interval[][][] = [];
 function qualityOfScalarInterval(lower: ScaleDegree, upper: ScaleDegree, scale: Scale) {
-    if(!cachedScalarIntervals[lower]) {
-        cachedScalarIntervals[lower] = [];
+    if(!cachedScalarIntervals[scale[1]]) {
+        cachedScalarIntervals[scale[1]] = [];
     }
-    if(!cachedScalarIntervals[lower][upper]) {
+    if(!cachedScalarIntervals[scale[1]][lower]) {
+        cachedScalarIntervals[scale[1]][lower] = [];
+    }
+    if(!cachedScalarIntervals[scale[1]][lower][upper]) {
         const notes = Scale.getNotesOfScale(scale);
-        cachedScalarIntervals[lower][upper] = new Interval(notes[lower], notes[upper]);
+        cachedScalarIntervals[scale[1]][lower][upper] = new Interval(notes[lower], notes[upper]);
     }
-    return cachedScalarIntervals[lower][upper];
+    return cachedScalarIntervals[scale[1]][lower][upper];
 }
 
 function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, scale: Scale) {

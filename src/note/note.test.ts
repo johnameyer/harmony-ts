@@ -12,17 +12,17 @@ describe('Note', () => {
             ['B#', 0]
         ])('"%s"', (value, chromaticPosition) => {
             test('constructor', () => {
-                const note = new Note(value);
+                const note = Note.fromString(value);
                 expect(note).toBeTruthy();
             });
 
             test('name', () => {
-                const note = new Note(value);
+                const note = Note.fromString(value);
                 expect(note.name).toBe(value);
             });
 
             test('chromaticPosition', () => {
-                const note = new Note(value);
+                const note = Note.fromString(value);
                 expect(note.chromaticPosition).toBe(chromaticPosition);
             });
         });

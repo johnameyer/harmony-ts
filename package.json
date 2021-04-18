@@ -29,7 +29,7 @@
         "prepublishOnly": "npm run madge && npm run lint && npm run build && npm test"
     },
     "author": "Jack Meyer",
-    "license": "",
+    "license": "Apache-2.0",
     "files": [
         "dist/**/*"
     ]
