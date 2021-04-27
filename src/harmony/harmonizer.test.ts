@@ -70,7 +70,7 @@ describe('Harmony', () => {
             [['I', 'V', 'I']],
             [['I', 'ii42', 'V65', 'I']],
         ])('roman numerals without check %s', (numerals) => {
-            const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
+            const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: RomanNumeral.fromString(numeral, CMajor)}));
             const scale = CMajor;
             const harmonizer = setUpHarmonizer({ useProgressions: false });
             const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
@@ -93,7 +93,7 @@ describe('Harmony', () => {
             [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
             [['I', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
         ])('roman numerals %s', (numerals, enabled) => {
-            const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: new RomanNumeral(numeral, CMajor)}));
+            const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: RomanNumeral.fromString(numeral, CMajor)}));
             const scale = CMajor;
             const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
             const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
@@ -136,10 +136,10 @@ describe('Harmony', () => {
         let first = true;
         for(const [voices, romanNumeral, scale, flags] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale), flags}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: RomanNumeral.fromString(romanNumeral, scale)}));
             }
         }
         const harmonizer = setUpHarmonizer({ canModulate: true, useProgressions });
@@ -183,10 +183,10 @@ describe('Harmony', () => {
         let first = true;
         for(const [voices, romanNumeral, scale, flags] of expected) {
             if(first) {
-                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: new RomanNumeral(romanNumeral, scale), flags}));
+                constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale), flags}));
                 first = false;
             } else {
-                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: new RomanNumeral(romanNumeral, scale)}));
+                constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3])], romanNumeral: RomanNumeral.fromString(romanNumeral, scale)}));
             }
         }
         const harmonizer = setUpHarmonizer({ canModulate: false, useProgressions });

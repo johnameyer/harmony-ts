@@ -13,6 +13,7 @@ import { minGenerator } from "../util/min-generator";
 import { CompleteChord } from "../chord/complete-chord";
 import { NestedIterable } from "../util/nested-iterable";
 import { arrayComparator } from "../util/array-comparator";
+import { ChordQuality } from "../chord/chord-quality";
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -380,7 +381,7 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                if (prevRomanNumeral.symbol == 'V' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                if (prevRomanNumeral.name.startsWith('V') && !(currRomanNumeral.name.startsWith('V') || currRomanNumeral.name.startsWith('viio'))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -409,7 +410,7 @@ export namespace PartWriting {
                             return false;
                         }
                     }
-                } else if(prevRomanNumeral.symbol == 'viio' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                } else if(prevRomanNumeral.name.startsWith('viio') && !(currRomanNumeral.name.startsWith('V') || currRomanNumeral.name.startsWith('viio'))) {
                     const index = intervals.findIndex(Interval.ofSize('U'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -437,7 +438,7 @@ export namespace PartWriting {
                 if(prevRomanNumeral.root === currRomanNumeral.root && prevRomanNumeral.hasSeventh) {
                     return true;
                 }
-                if (currRomanNumeral.symbol == 'V') {
+                if (currRomanNumeral.name.startsWith('V')) {
                     return true;
                 }
                 if(!intervals) {
@@ -477,12 +478,13 @@ export namespace PartWriting {
             export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
                 //V42 can support 3 4 5
                 if (before[0]
-                    && before[0].romanNumeral?.symbol.toLowerCase() == 'i'
+                    && before[0].romanNumeral?.scaleDegree == ScaleDegree.TONIC
                     && before[0].romanNumeral?.inversionInterval.simpleSize == 'U'
-                    && prev.romanNumeral?.symbol == 'V'
+                    && prev.romanNumeral?.scaleDegree == ScaleDegree.DOMINANT
+                    && prev.romanNumeral?.quality == ChordQuality.MAJOR
                     && prev.romanNumeral?.inversionInterval.simpleSize == '5'
                     && prev.romanNumeral?.hasSeventh
-                    && chord.romanNumeral?.symbol.toLowerCase() == 'i'
+                    && chord.romanNumeral?.scaleDegree == ScaleDegree.TONIC
                     && chord.romanNumeral?.inversionInterval.simpleSize == '3'
                 ) {
                     const index = prev.intervals?.findIndex(Interval.ofSize('7'));

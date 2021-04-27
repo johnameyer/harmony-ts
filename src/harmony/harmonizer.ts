@@ -1,14 +1,17 @@
 import { HarmonizedChord } from "../chord/harmonized-chord";
 import { IncompleteChord } from "../chord/incomplete-chord";
-import { ProgressionPredicate, ProgressionProducer, Progression } from "./progression";
+import { Progression, ProgressionRule } from "./progression";
 import { RomanNumeral } from "./roman-numeral";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
-import { Expansion, ExpansionOperator } from "./expansion";
+import { Expansion, ExpansionRule } from "./expansion";
 import { Interval } from "../interval/interval";
 import { Key } from "../key";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { NestedIterable } from "../util/nested-iterable";
+import { ScaleDegree } from "./scale-degree";
+import { Chord } from "../chord/chord";
+import { ChordQuality } from "../chord/chord-quality";
 
 
 function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
@@ -117,12 +120,12 @@ export interface HarmonizerParameters {
     /**
      * The chords that are enabled if using progressions
      */
-    enabledProgressions?: [ProgressionPredicate, ProgressionProducer][];
+    enabledProgressions?: ProgressionRule[];
 
     /**
      * The expansions that are enabled if using progressions
      */
-    enabledExpansions?: ExpansionOperator[];
+    enabledExpansions?: ExpansionRule[];
 
     /*
     * If not greedy, the depth at which to sum through for comparisons
@@ -202,9 +205,9 @@ export class Harmonizer {
         // Get options available to us from current chord
         const progressions = this.params.enabledProgressions || Progression.defaultProgressions;
         const scale = constraint.romanNumeral?.scale || previous[0].romanNumeral.scale;
-        let options = [...Progression.matchingProgressions(scale, previous, progressions)];
+        let options = [...Progression.matchingProgressions(scale, previous[0], progressions)];
         // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-        // console.log('Options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
+        // console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
 
         if(this.params.canModulate && !constraint.romanNumeral?.scale) {
             const oldScale = previous[0].romanNumeral.scale;
@@ -214,16 +217,16 @@ export class Harmonizer {
             const possibleScales = modulationsAllowed ? modulationsAllowed.map(modulation => Key.fromString(modulation.transposeUp(Key.toNote(oldScale[0])).name)).flatMap(majorAndMinor) : Key.names.map(Key.fromString).flatMap(majorAndMinor);
 
             // TODO remove options of multiple length?
-            options.push(...options.filter(option => option.length === 1)
+            options.push(...options
                 .flatMap(option => possibleScales.map(scale => {
-                    if(scale === option[0].romanNumeral.scale) {
+                    if(scale === option.romanNumeral.scale) {
                         return undefined;
                     }
-                    const romanNumeral = option[0].romanNumeral.relativeToScale(scale);
+                    const romanNumeral = option.romanNumeral.relativeToScale(scale);
                     if(romanNumeral) {
-                        const flags = {...option[0].flags};
+                        const flags = {...option.flags};
                         flags.pivot = true;
-                        return [new HarmonizedChord({...option[0], flags, romanNumeral})];
+                        return new HarmonizedChord({...option, flags, romanNumeral});
                     }
                     return undefined;
                 }))
@@ -233,14 +236,14 @@ export class Harmonizer {
 
         //use expansions
         const expansions = this.params.enabledExpansions || Expansion.defaultExpansions;
-        let expandedOptions = options.flatMap(option => [...Expansion.matchingExpansion(scale, previous, option, expansions)]);
+        let expandedOptions = options.flatMap(option => [...Expansion.matchingExpansions(scale, previous[0], option, expansions)]);
         // TODO option chaining
         expandedOptions.sort((a, b) => b.length - a.length);
         // TODO remove duplicates
-        // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(' '));
+        // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(', '));
         for(let option of expandedOptions) {
             if(previous.length + option.length <= constraints.length) {
-                if(option.some(chord => !chord.romanNumeral)) {
+                if(option.some(chord => !chord)) {
                     // console.log(option);
                     // TODO why is this?
                     continue;
@@ -321,7 +324,7 @@ export class Harmonizer {
         if(constraints.length === 0) {
             return;
         }
-        const start = new RomanNumeral(constraints[0].romanNumeral?.name || (scale[1] === Scale.Quality.MAJOR ? 'I' : 'i'), scale);
+        const start = constraints[0].romanNumeral || new RomanNumeral({scaleDegree: ScaleDegree.TONIC, quality: scale[1] === Scale.Quality.MAJOR ? ChordQuality.MAJOR : ChordQuality.MINOR}, scale);
 
         const chord = reconcileConstraints(new HarmonizedChord({romanNumeral: start}), constraints[0]);
         if(chord === null) {
