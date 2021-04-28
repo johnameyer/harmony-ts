@@ -18,9 +18,11 @@ export interface MatchingRule {
     applied?: ScaleDegree;
 
     fullyDiminishedSeventh?: boolean;
+
+    flags: {[key: string]: boolean};
 }
 
-type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh'>>;
+type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags'>>;
 
 export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied }: MatchParams = {}): MatchingRule {
     return { scaleDegree, chordQuality, inversions, hasSeventh, applied, matchingQuality: false } as MatchingRule;

@@ -353,20 +353,30 @@ export namespace Expansion {
 
     // // TODO write out more compactly
     export const sequences = [
-    //[movingTo, movingToWithinSequence].flatMap(movingTo => [
-    //     // descending fifths
-    //     startingWith('I', movingTo('iii', sequenceInsert(['IV', 'viio']))),
-    //     startingWith('I', movingTo('vi', sequenceInsert(['IV', 'viio', 'iii']))),
-    //     startingWith('I', movingTo('ii', sequenceInsert(['IV', 'viio', 'iii', 'vi']))),
-    //     startingWith('I', movingToAsIs('V', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii']))),
-    //     // TODO fix V here
-    //     startingWith('I', movingTo('I', sequenceInsert(['IV', 'viio', 'iii', 'vi', 'ii', 'V']))),
-
-    //     startingWith('I', movingTo('iii', sequenceInsert(['IV6', 'viio']))),
-    //     startingWith('I', movingTo('vi', sequenceInsert(['IV6', 'viio', 'iii6']))),
-    //     startingWith('I', movingTo('ii6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi']))),
-    //     startingWith('I', movingToAsIs('V', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6']))),
-    //     startingWith('I', movingTo('I6', sequenceInsert(['IV6', 'viio', 'iii6', 'vi', 'ii6', 'V']))),
+        [IV, VII, III, VI, II, V, I].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [    
+                    // descending fifths, root position
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                    }, 
+                    // descending fifths, alternating first inversion and root
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map((expansion, index) => 
+                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
+                        )
+                    }
+                ];
+            } else {
+                return [];
+            }
+        }),
 
     //     // ascending 5-6
     //     startingWith('I', movingTo('viio', sequenceInsert(['vi', 'ii']))),
@@ -414,7 +424,7 @@ export namespace Expansion {
     //     startingWith('I', movingTo('IV', sequenceInsert(['V6', 'vi', 'iii6']))),
     //     startingWith('I', movingTo('I6', sequenceInsert(['V6', 'vi', 'iii6', 'IV']))),
     //     startingWith('I', movingTo('ii', sequenceInsert(['V6', 'vi', 'iii6', 'IV', 'I6']))),
-    ];
+    ].flat();
 
     export const leadingToneSevenths = [
         {

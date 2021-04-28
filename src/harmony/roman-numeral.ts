@@ -37,6 +37,8 @@ export interface RomanNumeralParameters {
     fullyDiminishedSeventh?: boolean;
 
     applied?: ScaleDegree | null;
+
+    flags?: {[key: string]: boolean};
 }
 
 export class RomanNumeral {
@@ -64,6 +66,8 @@ export class RomanNumeral {
      * Intervals above the bass
      */
     protected _figuredBass!: string;
+
+    readonly flags: Readonly<{[key: string]: boolean}>;
 
     static fromString(value: string, scale: Scale) {
         let _name = value;
@@ -166,6 +170,8 @@ export class RomanNumeral {
         }
 
         this.scale = scale;
+
+        this.flags = Object.freeze({...params.flags} || {});
 
         this.name = ScaleDegree.toRomanNumeral(this.scaleDegree);
         switch(this.quality) {
@@ -311,6 +317,25 @@ export class RomanNumeral {
             inversion: this.inversion,
             hasSeventh: this.hasSeventh,
             fullyDiminishedSeventh
+        }, this.scale);
+    }
+
+    asParams(): RomanNumeralParameters {
+        return {
+            quality: this.quality,
+            scaleDegree: this.scaleDegree,
+            applied: this.applied,
+            flags: this.flags,
+            fullyDiminishedSeventh: this.hasSeventh && this.intervals.find(Interval.ofSize('7'))?.quality === IntervalQuality.DIMINISHED,
+            hasSeventh: this.hasSeventh,
+            inversion: this.inversion
+        }
+    }
+
+    with(params: Partial<RomanNumeralParameters>) {
+        return new RomanNumeral({
+            ...this.asParams(),
+            ...params
         }, this.scale);
     }
 }

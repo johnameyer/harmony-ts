@@ -32,7 +32,7 @@ const scale = [Key.fromString(argv.k), Scale.Quality.MAJOR] as Scale;
 const chords = argv._ as string[];
 chords.push('I');
 
-const constraints = chords.map(chord => new IncompleteChord({romanNumeral: new RomanNumeral(chord, scale)}));
+const constraints = chords.map(chord => new IncompleteChord({romanNumeral: RomanNumeral.fromString(chord, scale)}));
 
 const postSetup = performance.now();
 

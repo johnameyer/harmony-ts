@@ -224,9 +224,9 @@ export class Harmonizer {
                     }
                     const romanNumeral = option.romanNumeral.relativeToScale(scale);
                     if(romanNumeral) {
-                        const flags = {...option.flags};
+                        const flags = {...romanNumeral.flags};
                         flags.pivot = true;
-                        return new HarmonizedChord({...option, flags, romanNumeral});
+                        return new HarmonizedChord({...option, romanNumeral: romanNumeral.with({ flags })});
                     }
                     return undefined;
                 }))

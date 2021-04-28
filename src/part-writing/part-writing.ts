@@ -14,6 +14,7 @@ import { CompleteChord } from "../chord/complete-chord";
 import { NestedIterable } from "../util/nested-iterable";
 import { arrayComparator } from "../util/array-comparator";
 import { ChordQuality } from "../chord/chord-quality";
+import { RomanNumeral } from "../harmony/roman-numeral";
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -143,7 +144,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              */
             export function leadingToneDoubling(_: undefined, {romanNumeral, intervals, flags}: IChord) {
-                if(flags?.sequence) {
+                if(romanNumeral?.flags.sequence) {
                     return true;
                 }
                 if(!romanNumeral || !intervals) {
@@ -211,7 +212,7 @@ export namespace PartWriting {
                             return true;
                         }
                         // @ts-ignore
-                        if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
+                        if(!prev || !prev.romanNumeral.name.startsWith('V') || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
                             return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
                     } else {
@@ -373,15 +374,17 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral, flags}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
-                if(flags?.sequence) {
+            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
+                if(currRomanNumeral?.flags.sequence) {
                     return true;
                 }
                 //TODO delayed resolution
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                if (prevRomanNumeral.name.startsWith('V') && !(currRomanNumeral.name.startsWith('V') || currRomanNumeral.name.startsWith('viio'))) {
+                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
+                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
+                if (isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -410,7 +413,7 @@ export namespace PartWriting {
                             return false;
                         }
                     }
-                } else if(prevRomanNumeral.name.startsWith('viio') && !(currRomanNumeral.name.startsWith('V') || currRomanNumeral.name.startsWith('viio'))) {
+                } else if(isViio(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('U'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -731,12 +734,12 @@ export namespace PartWriting {
              * @param chord
              * @param prev 
              */
-            export function sequence(_: undefined, {flags: currFlags, voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
+            export function sequence(_: undefined, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
                 if(!prev) {
                     return true;
                 }
-                const {flags: prevFlags, romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
-                if(currFlags.sequence && (prevFlags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                const {romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
+                if(currRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
                     for(let index = 0; index < currVoices.length; index++) {
                         if(!currRomanNumeral || !prevRomanNumeral) {
                             continue;
@@ -920,7 +923,7 @@ export namespace PartWriting {
              * @param chord the chord to look at
              */
             export function checkSequence(chord: CompleteChord) {
-                if(chord.flags?.sequence) {
+                if(chord.romanNumeral?.flags.sequence) {
                     return 1;
                 }
                 return 0;
@@ -1023,7 +1026,7 @@ export namespace PartWriting {
              * Prefers that a pivot chord has a predominant function in the new key
              */
             export function modulationToPredominant(chord: CompleteChord){
-                if(!chord.flags.pivot) {
+                if(!chord.romanNumeral.flags.pivot) {
                     return 0;
                 }
                 if(chord.romanNumeral.scaleDegree === ScaleDegree.TONIC || chord.romanNumeral.scaleDegree === ScaleDegree.DOMINANT) {
@@ -1036,7 +1039,7 @@ export namespace PartWriting {
              * Prefers that there are fewer modulations
              */
             export function fewerModulations(chord: CompleteChord){
-                if(chord.flags.pivot) {
+                if(chord.romanNumeral.flags.pivot) {
                     return -1;
                 }
                 return 0;

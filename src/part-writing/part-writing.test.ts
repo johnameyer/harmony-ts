@@ -61,7 +61,7 @@ describe('PartWriting', () => {
         ]))('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);;
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
             expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
             expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [chord, prev]).next().value).toBe(undefined);
             expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [chord, prev])).toBe(true);
@@ -79,10 +79,10 @@ describe('PartWriting', () => {
                 ['V', 'B4', 'D4', 'G3', 'G2'],
                 ['I', 'C5', 'E4', 'G3', 'C3']
             ];
-            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor), {sequence: true}));
+            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor).with({ flags: {sequence: true} })));
             
             for(let i = 1; i < chords.length; i++) {
-                expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chords[i]).next().value).toBe(undefined);;
+                expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chords[i]).next().value).toBe(undefined);
                 expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chords[i])).toBe(true);
                 expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
                 expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse())).toBe(true);
@@ -111,7 +111,7 @@ describe('PartWriting', () => {
                 ['vi', 'E5', 'A4', 'C4', 'A3'],
                 ['ii', 'F5', 'A4', 'D4', 'D3'],
             ];
-            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor), {sequence: true}));
+            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor).with({ flags: { sequence: true } })));
             for(let i of [3,4,5]) {
                 expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
                 expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i).reverse())).toBe(false);
