@@ -31,6 +31,10 @@ export class CompleteChord implements IChord {
         return this._romanNumeral;
     }
 
+    get romanNumeralFinalized(): boolean {
+        return true;
+    }
+
     get flags() {
         return this._flags;
     }

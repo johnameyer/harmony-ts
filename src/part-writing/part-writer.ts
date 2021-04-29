@@ -113,7 +113,7 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
         }
     }
     
-    const romanNumeral = one.romanNumeral || two.romanNumeral;
+    const romanNumeral = (one.romanNumeral || two.romanNumeral)?.with({...one.romanNumeral?.flags, ...two.romanNumeral?.flags});
     const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
     const flags = {...(one.flags || {}), ...(two.flags || {})};
     return new IncompleteChord({romanNumeral, voices, flags});

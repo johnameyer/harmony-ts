@@ -351,8 +351,9 @@ export namespace Expansion {
         },
     ];
 
-    // // TODO write out more compactly
+    // TODO write out more compactly
     export const sequences = [
+        // TODO how to make the target also part of the sequence?
         [IV, VII, III, VI, II, V, I].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
@@ -367,7 +368,7 @@ export namespace Expansion {
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target),
+                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
                         expansion: array.slice(0, index).map((expansion, index) => 
                             match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
                         )
@@ -378,52 +379,107 @@ export namespace Expansion {
             }
         }),
 
-    //     // ascending 5-6
-    //     startingWith('I', movingTo('viio', sequenceInsert(['vi', 'ii']))),
-    //     startingWith('I', movingTo('iii', sequenceInsert(['vi', 'ii', 'viio']))),
-    //     startingWith('I', movingTo('IV', sequenceInsert(['vi', 'ii', 'viio', 'iii']))),
-    //     startingWith('I', movingTo('I', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I']))),
-    //     startingWith('I', movingTo('ii', sequenceInsert(['vi', 'ii', 'viio', 'iii', 'I', 'IV']))),
+        [VI, II, VII, III, I, IV, II, V].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [    
+                    // ascending 5-6, root position
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                    }, 
+                    // ascending 5-6s, alternating first inversion and root
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
+                        expansion: array.slice(0, index).map((expansion, index) => 
+                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
+                        )
+                    }
+                ];
+            } else {
+                return [];
+            }
+        }),
 
-    //     // TODO AsIs here?
-    //     startingWith('I', movingTo('viio6', sequenceInsert(['vi6', 'ii']))),
-    //     startingWith('I', movingTo('iii', sequenceInsert(['vi6', 'ii', 'viio6']))),
-    //     startingWith('I', movingTo('IV6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii']))),
-    //     startingWith('I', movingTo('I', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6']))),
-    //     startingWith('I', movingTo('ii6', sequenceInsert(['vi6', 'ii', 'viio6', 'iii', 'I6', 'IV']))),
+        [V, II, VI, III, VII, IV, I].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [    
+                    // ascending fifths, root position
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                    }, 
+                    // ascending fifths, alternating first inversion and root
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
+                        expansion: array.slice(0, index).map((expansion, index) => 
+                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
+                        )
+                    }
+                ];
+            } else {
+                return [];
+            }
+        }),
 
-    //     // ascending fifths
-    //     startingWith('I', movingTo('vi', sequenceInsert(['V', 'ii']))),
-    //     startingWith('I', movingTo('iii', sequenceInsert(['V', 'ii', 'vi']))),
-    //     startingWith('I', movingTo('viio', sequenceInsert(['V', 'ii', 'vi', 'iii']))),
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V', 'ii', 'vi', 'iii', 'viio']))),
-    //     startingWith('I', movingTo('I', sequenceInsert(['V', 'ii', 'vi', 'iii', 'viio', 'IV']))),
+        // skipping over iii - viio
+        [V, II, VI, IV, I].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [    
+                    // ascending fifths, root position
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                    }, 
+                    // ascending fifths, alternating first inversion and root
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
+                        expansion: array.slice(0, index).map((expansion, index) => 
+                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
+                        )
+                    }
+                ];
+            } else {
+                return [];
+            }
+        }),
 
-    //     // skipping over iii - viio
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V', 'ii', 'vi']))),
-    //     startingWith('I', movingTo('I', sequenceInsert(['V', 'ii', 'vi', 'IV']))),
-
-    //     // ascending fifths
-    //     startingWith('I', movingTo('vi6', sequenceInsert(['V6', 'ii']))),
-    //     startingWith('I', movingTo('iii', sequenceInsert(['V6', 'ii', 'vi6']))),
-    //     startingWith('I', movingTo('viio6', sequenceInsert(['V6', 'ii', 'vi6', 'iii']))),
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V6', 'ii', 'vi6', 'iii', 'viio6']))),
-    //     startingWith('I', movingTo('I6', sequenceInsert(['V6', 'ii', 'vi6', 'iii', 'viio6', 'IV']))),
-
-    //     // skipping over iii - viio
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V6', 'ii', 'vi6']))),
-    //     startingWith('I', movingTo('I6', sequenceInsert(['V6', 'ii', 'vi6', 'IV']))),
-
-    //     // descending 5-6
-    //     startingWith('I', movingTo('iii', sequenceInsert(['V', 'vi']))),
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V', 'vi', 'iii']))),
-    //     startingWith('I', movingTo('I', sequenceInsert(['V', 'vi', 'iii', 'IV']))),
-    //     startingWith('I', movingTo('ii', sequenceInsert(['V', 'vi', 'iii', 'IV', 'I']))),
-
-    //     startingWith('I', movingTo('iii6', sequenceInsert(['V6', 'vi']))),
-    //     startingWith('I', movingTo('IV', sequenceInsert(['V6', 'vi', 'iii6']))),
-    //     startingWith('I', movingTo('I6', sequenceInsert(['V6', 'vi', 'iii6', 'IV']))),
-    //     startingWith('I', movingTo('ii', sequenceInsert(['V6', 'vi', 'iii6', 'IV', 'I6']))),
+        // descending 5-6
+        [V, VI, III, IV, I, II].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [    
+                    // descending 5-6, root position
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target),
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                    }, 
+                    // descending 5-6, alternating first inversion and root
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
+                        expansion: array.slice(0, index).map((expansion, index) => 
+                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
+                        )
+                    }
+                ];
+            } else {
+                return [];
+            }
+        }),
     ].flat();
 
     export const leadingToneSevenths = [
@@ -439,18 +495,42 @@ export namespace Expansion {
         },
     ];
 
-    // //TODO fix problem of vii0 instead of viio
+    //TODO fix problem of vii0 instead of viio
     export const otherSeventhChords = [
-    //[movingTo, movingToWithinSequence].flatMap(movingTo => [
-    //     ...[['7','7'],['7',''],['65',''],['43',''],['43','7'],['42','63'],['42','65']].flatMap(([firstInversion, secondInversion]) => [
-    //         // descending fifths
-    //         startingWith(`I`, movingTo(`iii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`]))),
-    //         startingWith(`I`, movingTo(`vi${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`]))),
-    //         startingWith(`I`, movingTo(`ii${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`]))),
-    //         startingWith(`I`, movingToAsIs(`V${secondInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`]))),
-    //         startingWith(`I`, movingTo(`I${firstInversion}`, sequenceInsert([`IV${firstInversion}`, `vii0${secondInversion}`, `iii${firstInversion}`, `vi${secondInversion}`, `ii${firstInversion}`, `V${secondInversion}`]))),
-    //     ]),
-    ];
+        [
+            {primaryInversion: 0, secondaryInversion: 0, hasSeventh: true},
+            {primaryInversion: 0, secondaryInversion: 0, hasSeventh: false},
+            {primaryInversion: 1, secondaryInversion: 0, hasSeventh: false},
+            {primaryInversion: 2, secondaryInversion: 0, hasSeventh: false},
+            {primaryInversion: 2, secondaryInversion: 0, hasSeventh: true},
+            {primaryInversion: 3, secondaryInversion: 1, hasSeventh: true},
+            {primaryInversion: 3, secondaryInversion: 1, hasSeventh: false}
+        ].flatMap(({ primaryInversion, secondaryInversion, hasSeventh }) =>
+            [IV, VII, III, VI, II, V, I].flatMap((target, index, array) => {
+                if(index >= 2) {
+                    return [
+                        // descending fifths with seventh chords, e.g. I IV43 viio iii43 vi ii43 V
+                        {
+                            type: ExpansionType.FULL,
+                            source: match(I),
+                            target: match(target, {
+                                hasSeventh: index % 2 === 1 ? hasSeventh : true,
+                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion],
+                                // flags: { sequence: true }?
+                            }),
+                            expansion: array.slice(0, index).map((expansion, index) => match(expansion, {
+                                hasSeventh: index % 2 === 1 ? hasSeventh : true,
+                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion],
+                                flags: { sequence: true }
+                            }))
+                        },
+                    ];
+                } else {
+                    return [];
+                }
+            }),
+        )
+    ].flat();
 
     export const secondaryDominants = [
         ...[II, III, IV, V, VI, VII].flatMap(root => [

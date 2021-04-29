@@ -28,6 +28,10 @@ export class IncompleteChord implements IChord {
         return this._romanNumeral;
     }
 
+    get romanNumeralFinalized(): boolean {
+        return false;
+    }
+
     get flags(): {[key: string]: boolean} {
         return this._flags;
     }

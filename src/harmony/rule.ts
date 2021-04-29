@@ -24,12 +24,12 @@ export interface MatchingRule {
 
 type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags'>>;
 
-export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, matchingQuality: false } as MatchingRule;
+export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: false } as MatchingRule;
 }
 
-export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, matchingQuality: true } as MatchingRule;
+export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: true } as MatchingRule;
 }
 
 export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boolean {
@@ -53,6 +53,7 @@ export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boole
     if(rule.fullyDiminishedSeventh !== undefined && rule.fullyDiminishedSeventh != rule.fullyDiminishedSeventh) {
         return false;
     }
+    // TODO handle flags
     return true;
 }
 
@@ -64,7 +65,8 @@ export function * yieldChordsFromRule(rule: MatchingRule, scale: Scale): Generat
             inversion: inversion,
             hasSeventh: rule.hasSeventh,
             applied: rule.applied,
-            fullyDiminishedSeventh: rule.fullyDiminishedSeventh
+            fullyDiminishedSeventh: rule.fullyDiminishedSeventh,
+            flags: rule.flags
         }, scale);
         if(rule.matchingQuality) {
             yield next;

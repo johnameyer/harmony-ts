@@ -143,8 +143,8 @@ export namespace PartWriting {
              * Checks that the chord does not double the leading tone
              * @param chord the chord to check
              */
-            export function leadingToneDoubling(_: undefined, {romanNumeral, intervals, flags}: IChord) {
-                if(romanNumeral?.flags.sequence) {
+            export function leadingToneDoubling(_: undefined, {romanNumeral, romanNumeralFinalized, intervals, flags}: IChord) {
+                if(!romanNumeralFinalized || romanNumeral?.flags.sequence) {
                     return true;
                 }
                 if(!romanNumeral || !intervals) {
@@ -374,8 +374,8 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
-                if(currRomanNumeral?.flags.sequence) {
+            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
+                if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence) {
                     return true;
                 }
                 //TODO delayed resolution

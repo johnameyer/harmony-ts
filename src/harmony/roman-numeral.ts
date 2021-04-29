@@ -316,7 +316,8 @@ export class RomanNumeral {
             scaleDegree: scaleDegree + 1,
             inversion: this.inversion,
             hasSeventh: this.hasSeventh,
-            fullyDiminishedSeventh
+            fullyDiminishedSeventh,
+            flags: this.flags
         }, this.scale);
     }
 

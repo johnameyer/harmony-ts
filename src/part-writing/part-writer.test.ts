@@ -108,6 +108,7 @@ describe('PartWriter', () => {
             [['I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
             [['I', 'IV', 'ii7', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
             [['I', 'V', 'V42', 'I6'], [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes]],
+            [['I', 'IV', 'viio', 'iii', 'vi', 'ii', 'V', 'I'], [...Progression.Shared.basic]],
         ])('roman numerals %s', (numerals, enabled) => {
             const constraints = numerals.map(numeral => new IncompleteChord({romanNumeral: RomanNumeral.fromString(numeral, CMajor)}));
             const scale = CMajor;
@@ -216,7 +217,7 @@ describe('PartWriter', () => {
                 [['C4', 'C4', 'G3', 'E3'], 'I6'] as [string[], string]
             ],
             [...Progression.Shared.basic, ...Progression.Shared.basicInversions]
-        ],
+        ]
         // [
         //     'I V7 vi',
         //     [
@@ -237,6 +238,39 @@ describe('PartWriter', () => {
             } else {
                 constraints.push(new IncompleteChord({voices: [AbsoluteNote.fromString(voices[0]), undefined, undefined, undefined], romanNumeral: RomanNumeral.fromString(romanNumeral, scale)}));
             }
+        }
+        
+        const harmonizer = new Harmonizer({ enabledProgressions: enabled, useProgressions: true });
+        const partWriter = new PartWriter(undefined, undefined, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
+
+        expect(iterator.hasItems).toBe(true);
+        
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
+        
+    });
+
+    test.only.each([
+        [
+            'I IV viio iii vi V',
+            [
+                [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
+                [['F4', 'C4', 'A3', 'F3'], 'IV'] as [string[], string],
+                [['D4', 'B3', 'F3', 'B2'], 'viio'] as [string[], string],
+                [['E4', 'B3', 'G3', 'E3'], 'iii'] as [string[], string],
+                [['E4', 'C4', 'A3', 'A2'], 'vi'] as [string[], string],
+                [['G4', 'D4', 'B3', 'G2'], 'V'] as [string[], string],
+            ],
+            [...Progression.Shared.basic, ...Progression.Shared.submediant, ...Progression.Shared.mediant]
+        ]
+    ])('fully specified %s', (_, expected, enabled) => {
+        const scale = CMajor;
+        const constraints = [];
+        for(const [voices, romanNumeral] of expected) {
+            constraints.push(new IncompleteChord({voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale)}));
         }
         
         const harmonizer = new Harmonizer({ enabledProgressions: enabled, useProgressions: true });
