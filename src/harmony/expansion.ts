@@ -515,8 +515,7 @@ export namespace Expansion {
                             source: match(I),
                             target: match(target, {
                                 hasSeventh: index % 2 === 1 ? hasSeventh : true,
-                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion],
-                                // flags: { sequence: true }?
+                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion]
                             }),
                             expansion: array.slice(0, index).map((expansion, index) => match(expansion, {
                                 hasSeventh: index % 2 === 1 ? hasSeventh : true,

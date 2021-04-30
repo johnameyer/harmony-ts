@@ -253,7 +253,7 @@ describe('PartWriter', () => {
         
     });
 
-    test.only.each([
+    test.each([
         [
             'I IV viio iii vi V',
             [

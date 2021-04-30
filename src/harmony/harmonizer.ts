@@ -205,8 +205,8 @@ export class Harmonizer {
         const progressions = this.params.enabledProgressions || Progression.defaultProgressions;
         const scale = constraint.romanNumeral?.scale || previous[0].romanNumeral.scale;
         let options = [...Progression.matchingProgressions(scale, previous[0], progressions)];
-        console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-        console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
+        // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
+        // console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
 
         if(this.params.canModulate && !constraint.romanNumeral?.scale) {
             const oldScale = previous[0].romanNumeral.scale;
@@ -239,7 +239,7 @@ export class Harmonizer {
         // TODO option chaining
         expandedOptions.sort((a, b) => b.length - a.length);
         // TODO remove duplicates
-        console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(', '));
+        // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(', '));
         for(let option of expandedOptions) {
             if(previous.length + option.length <= constraints.length) {
                 if(option.some(chord => !chord)) {

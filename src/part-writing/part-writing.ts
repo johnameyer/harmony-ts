@@ -9,10 +9,7 @@ import { ScaleDegree } from "../harmony/scale-degree";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
-import { minGenerator } from "../util/min-generator";
 import { CompleteChord } from "../chord/complete-chord";
-import { NestedIterable } from "../util/nested-iterable";
-import { arrayComparator } from "../util/array-comparator";
 import { ChordQuality } from "../chord/chord-quality";
 import { RomanNumeral } from "../harmony/roman-numeral";
 
@@ -734,12 +731,12 @@ export namespace PartWriting {
              * @param chord
              * @param prev 
              */
-            export function sequence(_: undefined, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
+            export function sequence(_: undefined, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, {romanNumeral: middleRomanNumeral}: IChord, prev: IChord) {
                 if(!prev) {
                     return true;
                 }
                 const {romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
-                if(currRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
                     for(let index = 0; index < currVoices.length; index++) {
                         if(!currRomanNumeral || !prevRomanNumeral) {
                             continue;
@@ -761,7 +758,6 @@ export namespace PartWriting {
                 }
                 return true;
             }
-
 
             //TODO better way?
             export function rapidKeyChange({scope}: {scope: number}, chord: IChord, ...prev: IChord[]) {
@@ -992,6 +988,34 @@ export namespace PartWriting {
                 return 0;
             }
 
+            export function checkSequenceTarget({voices: currVoices, romanNumeral: currRomanNumeral}: CompleteChord, {romanNumeral: middleRomanNumeral}: CompleteChord, prev: CompleteChord) {
+                if(!prev) {
+                    return 0;
+                }
+                const {romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
+                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                    for(let index = 0; index < currVoices.length; index++) {
+                        if(!currRomanNumeral || !prevRomanNumeral) {
+                            continue;
+                        }
+                        const oldVoice = prevVoices[index];
+                        const voice = currVoices[index];
+                        if(!oldVoice || !voice) {
+                            return 0;
+                        }
+                        const voiceChange = new Interval(voice, oldVoice);
+                        if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== voiceChange.simpleSize) {
+                            return -1;
+                        }
+                        if(Math.abs(voice.midi - oldVoice.midi) > 7) {
+                            // the inversion would be smaller
+                            return -1;
+                        }
+                    }
+                }
+                return 0;
+            }
+
             /**
              * Prefer proper succession of chromatic tones, as might result in ii - V/V
              * @param chord the chord under consideration
@@ -1145,6 +1169,7 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'fewerModulations',
         'modulationToPredominant',
         'checkSequence',
+        'checkSequenceTarget',
         'checkRepetition',
         'checkRange',
         'checkDoubling',
