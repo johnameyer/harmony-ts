@@ -82,6 +82,7 @@ export namespace PartWriting {
         newSingularPreferences?: (keyof U)[];
         newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
     } = {}) {
+        // TODO revisit
         return {
             rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
             singularRules: [...defaultPartWritingParameters.singularRules, ...(newSingularRules || [])],
@@ -89,7 +90,7 @@ export namespace PartWriting {
             preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
             preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
-        } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
+        } as unknown as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
     export namespace Rules {

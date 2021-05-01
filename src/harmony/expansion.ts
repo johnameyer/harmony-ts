@@ -47,22 +47,6 @@ const MINOR = ChordQuality.MINOR;
 const AUGMENTED = ChordQuality.AUGMENTED;
 const DIMINISHED = ChordQuality.DIMINISHED;
 
-// TODO add operators that operate over all and each
-// const startingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-// const startingWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
-// const movingTo = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0].romanNumeral.name === new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-// const movingToAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && chords[0].romanNumeral.name === romanNumeral ? next(scale, chords, prev) : [];
-
-// //TODO clone map
-// const insert = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice()];
-// const insertAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()], prev) : [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice()];
-// const insertMany = (romanNumerals: string[]) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())})), ...chords.slice()];
-// const sequenceInsert = (romanNumerals: string[]) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => [...romanNumerals.flatMap(romanNumeral => new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized()), flags: {sequence: true}})), ...chords.slice()];
-// const movingToWithinSequence = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => { if(next && chords[0]?.romanNumeral?.name === romanNumeral) { chords = chords.slice(); chords[0] = new HarmonizedChord({...chords[0]} as {romanNumeral:RomanNumeral}); chords[0].flags.sequence = true; return next(scale, chords, prev); } return [] };
-// const replaceWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: returnOrError(new RomanNumeral(romanNumeral, scale).diatonicized())}), ...chords.slice(1)];
-// const replaceWithAsIs = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next ? next(scale, [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)], prev) : [new HarmonizedChord({romanNumeral: new RomanNumeral(romanNumeral, scale)}), ...chords.slice(1)];
-// const notStartingWith = (romanNumeral: string, next?: ExpansionOperator) => (scale: Scale, chords: HarmonizedChord[], prev: HarmonizedChord[]) => next && prev[0].romanNumeral.name !== new RomanNumeral(romanNumeral, scale).diatonicized()?.name ? next(scale, chords, prev) : [];
-
 /**
  * Expansions consist of elaborations beyond basic progressions
  * I.e. I - I6 could be expanded to be I - V64 - I6
@@ -169,8 +153,8 @@ export namespace Expansion {
         // I6 passing tone
         {
             type: ExpansionType.FULL,
-            source: match(II, { inversions: [1] }),
-            target: match(II, { inversions: [1] }),
+            source: match(II, { inversions: [0, 1] }),
+            target: match(II, { inversions: [0, 1] }),
             expansion: [ match(I, { inversions: [1] }) ]
         },
 
@@ -186,15 +170,9 @@ export namespace Expansion {
     export const cadential64 = [
         // not preceded by V or vii ??
         // notStartingWith('V', notStartingWith('viio', movingToAsIs('V', replaceWithAsIs('V42', insert('I64')))))
-        
         {
             type: ExpansionType.FULL,
             target: matchAsIs(V),
-            expansion: [ match(I, { inversions: [2] }) ]
-        },
-        {
-            type: ExpansionType.FULL,
-            target: matchAsIs(V, { hasSeventh: true }),
             expansion: [ match(I, { inversions: [2] }) ]
         },
     ];
@@ -244,36 +222,23 @@ export namespace Expansion {
         },
     ];
 
-    export const supertonicSevenths = [
-        // I6 passing tone
-    
+    export const subdominantSevenths = [
         {
             type: ExpansionType.FULL,
-            source: match(II),
-            target: match(II, { hasSeventh: true, inversions: [1] }),
-            expansion: [ match(I, { inversions: [1] }) ]
-        },
-        {
-            type: ExpansionType.FULL,
-            source: match(II, { hasSeventh: true }),
-            target: match(II, { hasSeventh: true, inversions: [1] }),
-            expansion: [ match(I, { inversions: [1] }) ]
-        },
-
-        {
-            type: ExpansionType.FULL,
-            source: matchAsIs(IV, { hasSeventh: true, inversions: [1] }),
+            source: match(I),
+            target: match(I),
             expansion: [
+                match(II, { inversions: [3], hasSeventh: true }),
                 matchAsIs(V, { inversions: [1] }),
-                match(I)
             ]
         },
         {
             type: ExpansionType.FULL,
-            source: matchAsIs(IV, { hasSeventh: true, inversions: [1] }),
+            source: match(I),
+            target: match(I),
             expansion: [
+                match(II, { inversions: [3], hasSeventh: true }),
                 matchAsIs(V, { inversions: [1], hasSeventh: true }),
-                match(I)
             ]
         },
     ];
@@ -285,7 +250,6 @@ export namespace Expansion {
             target: match(I, { inversions: [0, 1] }),
             expansion: [ match(IV) ]
         },
-
         {
             type: ExpansionType.FULL,
             source: match(I),
@@ -298,17 +262,10 @@ export namespace Expansion {
             target: match(I, { inversions: [1] }),
             expansion: [ match(IV, { inversions: [1] }) ]
         },
-
         {
             type: ExpansionType.FULL,
             source: matchAsIs(V),
             target: matchAsIs(V, { inversions: [1] }),
-            expansion: [ match(IV, { inversions: [1] }) ]
-        },
-        {
-            type: ExpansionType.FULL,
-            source: matchAsIs(V),
-            target: matchAsIs(V, { inversions: [1], hasSeventh: true }),
             expansion: [ match(IV, { inversions: [1] }) ]
         },
     ];
@@ -342,12 +299,6 @@ export namespace Expansion {
             source: matchAsIs(VII),
             target: matchAsIs(V),
             expansion: [ match(IV, { inversions: [1] }) ]
-        },
-        {
-            type: ExpansionType.FULL,
-            source: matchAsIs(VII),
-            target: matchAsIs(V),
-            expansion: [ match(IV, { inversions: [1], hasSeventh: true }) ]
         },
     ];
 
@@ -585,22 +536,22 @@ export namespace Expansion {
         ]),
     ];
 
-    export const defaultExpansions = [...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionRule[];
+    export const defaultExpansions = [...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionRule[];
 
-    export function * matchingExpansions(scale: Scale, previous: HarmonizedChord, option: HarmonizedChord, expansions: ExpansionRule[] = defaultExpansions): Generator<HarmonizedChord[]> {
+    export function * matchingExpansions(scale: Scale, previous: RomanNumeral, option: RomanNumeral, expansions: ExpansionRule[] = defaultExpansions): Generator<RomanNumeral[]> {
         yield [option];
         for(const expansion of expansions) {
-            if(expansion.source && !checkAgainstRule(previous.romanNumeral, expansion.source)) {
+            if(expansion.source && !checkAgainstRule(previous, expansion.source)) {
                 continue;
             }
-            if(expansion.target && !checkAgainstRule(option.romanNumeral, expansion.target)) {
+            if(expansion.target && !checkAgainstRule(option, expansion.target)) {
                 continue;
             }
             switch(expansion.type) {
                 case ExpansionType.FULL:
-                    const options: RomanNumeral[][] = product(...expansion.expansion.map(expansion => Array.from(yieldChordsFromRule(expansion, scale))), [option.romanNumeral]);
+                    const options: RomanNumeral[][] = product(...expansion.expansion.map(expansion => Array.from(yieldChordsFromRule(expansion, scale))), [option]);
                     for(const option of options){
-                        yield (option as RomanNumeral[]).map(romanNumeral => new HarmonizedChord({ romanNumeral }));
+                        yield option as RomanNumeral[];
                     }
             }
         }

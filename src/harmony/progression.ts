@@ -43,13 +43,6 @@ export namespace Progression {
             /* I-V */
             [ match(I), matchAsIs(V) ],
             [ matchAsIs(V), match(I) ],
-
-            /* I-V7 */
-            [ match(I),  matchAsIs(V, {hasSeventh: true}) ],
-            [ matchAsIs(V, {hasSeventh: true}), match(I) ],
-
-            /* V-V7 intensification */
-            [ matchAsIs(V),  matchAsIs(V, {hasSeventh: true}) ],
         ].map(ruleOf);
 
         export const basicInversions = [
@@ -71,10 +64,6 @@ export namespace Progression {
         ].map(ruleOf);
 
         export const dominantSevenths = [
-            /* V65 */
-            [ match(I, { inversions: [0, 1] }), matchAsIs(V, { inversions: [1], hasSeventh: true }) ],
-            [ matchAsIs(V, { inversions: [1], hasSeventh: true }), match(I) ],
-
             /* V43 */
             [ match(I, { inversions: [0, 1] }), matchAsIs(V, { inversions: [2], hasSeventh: true }) ],
             [ matchAsIs(V, { inversions: [2], hasSeventh: true }), match(I, { inversions: [0, 1] }) ],
@@ -128,32 +117,8 @@ export namespace Progression {
         ].map(ruleOf);
 
         export const subdominantSevenths = [
-            [ match(I, { inversions: [0, 1] }), match(II, { hasSeventh: true }) ],
-            [ match(IV, { inversions: [0, 1] }), match(II, { hasSeventh: true }) ],
-            [ match(VI), match(II, { hasSeventh: true }) ],
-
-            [ match(I, { inversions: [0, 1] }), match(II, { inversions: [1], hasSeventh: true }) ],
-            
-            [ match(I), match(II, { inversions: [3], hasSeventh: true }) ],
-
-            [ match(II, { inversions: [0, 1], hasSeventh: true }), matchAsIs(V, { hasSeventh: false }) ],
-            [ match(II, { inversions: [0, 1], hasSeventh: true }), matchAsIs(V, { hasSeventh: true }) ],
-
-            [ match(IV, { inversions: [1] }), match(II, { inversions: [1], hasSeventh: true }) ],
-            [ match(IV), match(II, { hasSeventh: true }) ],
-            [ match(II, { inversions: [0, 1], hasSeventh: true }), match(II, { inversions: [0, 1], hasSeventh: true }) ],
-            [ match(II, { inversions: [1], hasSeventh: true }), matchAsIs(V, { inversions: [3], hasSeventh: true }) ],
-            
-            [ match(VI), match(II, { inversions: [0, 1], hasSeventh: true }) ],
-            
-            [ match(II, { inversions: [1] }), match(II, { hasSeventh: true }) ],
-
             [ match(II, { inversions: [3], hasSeventh: true }), matchAsIs(V, { inversions: [1], hasSeventh: false }) ],
             [ match(II, { inversions: [3], hasSeventh: true }), matchAsIs(V, { inversions: [1], hasSeventh: true }) ],
-            
-            [ match(I, { inversions: [0, 1] }), match(IV, { hasSeventh: true }) ],
-            [ match(IV), match(IV, { hasSeventh: true }) ],
-            [ match(IV, { hasSeventh: true }), matchAsIs(V) ],
         ].map(ruleOf);
 
         export const tonicSubstitutes = [
@@ -166,7 +131,6 @@ export namespace Progression {
         export const mediant = [
             [ match(I), match(III) ],
             [ match(III), matchAsIs(V, { inversions: [0, 1] }) ],
-            [ match(III), matchAsIs(V, { inversions: [2, 3], hasSeventh: true }) ],
             [ match(I), match(VI) ],
             [ match(I), match(IV, { inversions: [0, 1] }) ],
             [ match(I), match(II, { inversions: [0, 1] }) ],
@@ -176,17 +140,16 @@ export namespace Progression {
             // TODO scale type?
 
             [ matchAsIs(VII, { inversions: [0, 1] }), matchAsIs(V, { inversions: [0, 1] }) ],
-            [ matchAsIs(VII, { inversions: [0, 1] }), matchAsIs(V, { inversions: [0, 1], hasSeventh: true }) ],
         ].map(ruleOf);
     }
 
     export const defaultProgressions = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant];
 
-    export function * matchingProgressions(scale: Scale, previous: HarmonizedChord, progressions: ProgressionRule[] = defaultProgressions): Generator<HarmonizedChord> {
+    export function * matchingProgressions(scale: Scale, previous: RomanNumeral, progressions: ProgressionRule[] = defaultProgressions): Generator<RomanNumeral> {
         yield previous;
         for(const {source, target} of progressions) {
-            if(checkAgainstRule(previous.romanNumeral, source)) {
-                yield * iteratorMap(yieldChordsFromRule(target, scale), romanNumeral => new HarmonizedChord({ romanNumeral }));
+            if(checkAgainstRule(previous, source)) {
+                yield * yieldChordsFromRule(target, scale);
             }
         }
     }
