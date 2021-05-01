@@ -247,7 +247,7 @@ export class Harmonizer {
             // TODO option chaining
             expanded.sort((a, b) => b.length - a.length);
             // TODO remove duplicates
-            // console.log('Applied options are', expandedOptions.map(option => '[' + option.map(chord => chord.romanNumeral?.name).join(' ') + ']').join(', '));
+            // console.log('Applied options are', expanded.map(option => '[' + option.map(chord => chord.name).join(' ') + ']').join(', '));
 
             const substitutions = this.params.enabledSubstitutions || Substitution.defaultSubstitutions;
             const substituted = [...Substitution.matchingSubstitutions(scale, terminal, substitutions)];

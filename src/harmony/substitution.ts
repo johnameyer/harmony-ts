@@ -5,7 +5,7 @@ import { RomanNumeral } from "./roman-numeral";
 import { checkAgainstRule, match, matchAsIs, MatchingRule, yieldChordsFromRule } from "./rule";
 import { ScaleDegree } from "./scale-degree";
 
-export interface SubstitutionRule {
+export type SubstitutionRule = {
     target: MatchingRule,
     substitute: MatchingRule
 }

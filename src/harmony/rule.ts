@@ -79,7 +79,7 @@ export function * yieldChordsFromRule(rule: MatchingRule, scale: Scale): Generat
     }
 }
 
-export interface Rule {
+export type Rule = {
     source?: MatchingRule,
     target?: MatchingRule
 }
