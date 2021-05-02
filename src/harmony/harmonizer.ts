@@ -8,13 +8,14 @@ import { Expansion, ExpansionRule } from "./expansion";
 import { Interval } from "../interval/interval";
 import { Key } from "../key";
 import { makePeekableIterator } from "../util/make-peekable-iterator";
-import { NestedIterable } from "../util/nested-iterable";
+import { convertToMultiIterator, NestedIterable, NestedLazyMultiIterable } from "../util/nested-iterable";
 import { ScaleDegree } from "./scale-degree";
 import { Chord } from "../chord/chord";
 import { ChordQuality } from "../chord/chord-quality";
 import { Substitution, SubstitutionRule } from "./substitution";
 import { product } from "../util/product";
 import { iteratorMap } from "../util/iterator-map";
+import { makeLazyMultiIterable } from "../util/make-lazy-iterator";
 
 function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
     for(let voicePart in one.voices) {
@@ -114,6 +115,22 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
     return new HarmonizedChord({romanNumeral, voices, flags});
 }
 
+class HarmonizerContext {
+    private cache: { [paramsString: string]: NestedLazyMultiIterable<HarmonizedChord[]> }[] = [];
+
+    getOrSet(position: number, terminal: RomanNumeral, generator: () => NestedLazyMultiIterable<HarmonizedChord[]>) {
+        const asParams = { ...terminal.asParams(), scale: terminal.scale };
+        const paramsString = JSON.stringify(asParams, Object.keys(asParams).sort());
+        if(!this.cache[position]) {
+            this.cache[position] = {};
+        }
+        if(!this.cache[position][paramsString]) {
+            this.cache[position][paramsString] = generator();
+        }
+        return this.cache[position][paramsString];
+    }
+}
+
 /**
  * The parameters that the harmonizer uses
  */
@@ -185,6 +202,11 @@ export interface HarmonizerParameters {
      * false is the 'old' behavior resulting in exponential backtracking for failure
      */
     // prechecks: boolean;
+
+    /**
+     * Disables caching within one harmonization
+     */
+    disableCaching?: boolean;
 }
 
 export type CompleteHarmonyGenerator = NestedIterable<HarmonizedChord[]>;
@@ -313,19 +335,28 @@ export class Harmonizer {
         }
     }
 
+    private * checkCache(constraints: IncompleteChord[], position: number, previous: RomanNumeral, context?: HarmonizerContext) {
+        // TODO consider caching only if the solution is dead-end
+        if(!this.params.disableCaching && context) {
+            yield * context.getOrSet(position, previous, () => convertToMultiIterator(this.matchingCompleteHarmonyWithContext(constraints, position, previous, context)))
+        } else {
+            yield * this.matchingCompleteHarmonyWithContext(constraints, position, previous);
+        }
+    }
+
     /**
      * Finds the next possible complete harmonization of the constraints (with using the previous chords)
      * @param params the params to harmonize using
      * @param constraints the constraints to match against
      * @param previous the chords before this one
      */
-    * matchingCompleteHarmonyWithContext(constraints: IncompleteChord[], position: number, previous: RomanNumeral): CompleteHarmonyGenerator {
+    * matchingCompleteHarmonyWithContext(constraints: IncompleteChord[], position: number, previous: RomanNumeral, context?: HarmonizerContext): CompleteHarmonyGenerator {
         if(position >= constraints.length) {
             return;
         }
         for(const [match, next] of this.matchingHarmony(constraints, position, previous)){
             // TODO consider doing something to prevent re-evaluation of first item
-            const recurse = makePeekableIterator(this.matchingCompleteHarmonyWithContext(constraints, position + match.length, next));
+            const recurse = makePeekableIterator(this.checkCache(constraints, position + match.length, next, context));
             
             // TODO move to resultsOfLength approach
             if(recurse.hasItems || match.length + position === constraints.length) {
@@ -348,7 +379,7 @@ export class Harmonizer {
         if(chord === null) {
             return;
         }
-        const recurse = makePeekableIterator(this.matchingCompleteHarmonyWithContext(constraints, 1, chord.romanNumeral));
+        const recurse = makePeekableIterator(this.matchingCompleteHarmonyWithContext(constraints, 1, chord.romanNumeral, new HarmonizerContext()));
         if(recurse.hasItems || constraints.length === 1) {
             yield [[chord], recurse[Symbol.iterator]()];
         }
