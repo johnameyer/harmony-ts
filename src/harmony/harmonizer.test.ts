@@ -1,12 +1,12 @@
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { AbsoluteNote } from "../note/absolute-note";
-import { Harmonizer, HarmonizerParameters } from "./harmonizer";
-import { RomanNumeral } from "./roman-numeral";
-import { Scale } from "../scale";
-import { Progression } from "./progression";
-import { Key } from "../key";
-import { HarmonizedChord } from "..";
-import { flattenResults } from "../util/nested-iterable";
+import { IncompleteChord } from '../chord/incomplete-chord';
+import { AbsoluteNote } from '../note/absolute-note';
+import { Harmonizer, HarmonizerParameters } from './harmonizer';
+import { RomanNumeral } from './roman-numeral';
+import { Scale } from '../scale';
+import { Progression } from './progression';
+import { Key } from '../key';
+import { HarmonizedChord } from '..';
+import { flattenResults } from '../util/nested-iterable';
 
 const useProgressions = true;
 

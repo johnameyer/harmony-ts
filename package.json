@@ -10,6 +10,7 @@
         "@typescript-eslint/eslint-plugin": "^4.22.0",
         "@typescript-eslint/parser": "^4.22.0",
         "eslint": "^6.8.0",
+        "eslint-plugin-unused-imports": "^1.1.1",
         "jest": "^26.6.3",
         "ts-jest": "^26.5.5",
         "ts-node": "^8.10.2",
@@ -24,7 +25,7 @@
         "clean-docs": "rm -rf docs",
         "docs": "typedoc",
         "test": "jest --config jest.config.json",
-        "lint": "eslint --fix src/**.ts",
+        "lint": "eslint --fix src/**/*.ts",
         "madge": "npx madge --circular --extensions ts ./src",
         "prepublishOnly": "npm run madge && npm run lint && npm run build && npm test"
     },

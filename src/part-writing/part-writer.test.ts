@@ -1,23 +1,23 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { RomanNumeral } from "../harmony/roman-numeral";
-import { CompleteChord } from "../chord/complete-chord";
-import { Progression } from "../harmony/progression";
-import { AbsoluteNote } from "../note/absolute-note";
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { Harmonizer } from "../harmony/harmonizer";
+import { HarmonizedChord } from '../chord/harmonized-chord';
+import { RomanNumeral } from '../harmony/roman-numeral';
+import { CompleteChord } from '../chord/complete-chord';
+import { Progression } from '../harmony/progression';
+import { AbsoluteNote } from '../note/absolute-note';
+import { IncompleteChord } from '../chord/incomplete-chord';
+import { Harmonizer } from '../harmony/harmonizer';
 import { PartWriter } from './part-writer';
-import { makePeekableIterator } from "../util/make-peekable-iterator";
-import { flattenResult } from "../util/nested-iterable";
-import { Key } from "../key";
-import { Scale } from "../scale";
-import { PartWriterParameters } from "..";
+import { makePeekableIterator } from '../util/make-peekable-iterator';
+import { flattenResult } from '../util/nested-iterable';
+import { Key } from '../key';
+import { Scale } from '../scale';
+import { PartWriterParameters } from '..';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const CMajor = [Key.C, Scale.Quality.MAJOR] as Scale;
 const GMajor = [Key.G, Scale.Quality.MAJOR] as Scale;
 const CMinor = [Key.C, Scale.Quality.MINOR] as Scale;
-const GMinor = [Key.G, Scale.Quality.MINOR] as Scale;
+// const GMinor = [Key.G, Scale.Quality.MINOR] as Scale;
 
 const defaultPartWriter = new PartWriter();
 

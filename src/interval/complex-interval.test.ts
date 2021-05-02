@@ -1,5 +1,5 @@
-import { ComplexInterval } from "./complex-interval";
-import { AbsoluteNote } from "../note/absolute-note";
+import { ComplexInterval } from './complex-interval';
+import { AbsoluteNote } from '../note/absolute-note';
 
 const createComplexInterval = (one: string, two: string) => new ComplexInterval(AbsoluteNote.fromString(one), AbsoluteNote.fromString(two));
 

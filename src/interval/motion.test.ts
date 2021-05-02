@@ -1,5 +1,5 @@
-import { Motion } from "./motion"
-import { AbsoluteNote } from "../note/absolute-note";
+import { Motion } from './motion';
+import { AbsoluteNote } from '../note/absolute-note';
 
 describe('Motion', () => {
     describe.each([
@@ -15,7 +15,7 @@ describe('Motion', () => {
         [['G0', 'A0', 'E1', 'C1'], 'Contrary'],
     ])('from %p is %p', (notes: string[], actualMotion: string) => {
         test('from', () => {
-            let [lowerPrev, lowerNext, upperPrev, upperNext] = notes.map(note => AbsoluteNote.fromString(note));
+            const [lowerPrev, lowerNext, upperPrev, upperNext] = notes.map(note => AbsoluteNote.fromString(note));
             const motion = Motion.from(lowerPrev, lowerNext, upperPrev, upperNext);
             expect(motion).toBe(Motion.fromString(actualMotion));
         });

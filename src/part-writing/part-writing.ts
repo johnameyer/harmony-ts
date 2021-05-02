@@ -1,17 +1,17 @@
-import { AbsoluteNote } from "../note/absolute-note";
-import { Interval } from "../interval/interval";
-import { IntervalQuality } from "../interval/interval-quality";
-import { ComplexInterval } from "../interval/complex-interval";
-import { Motion } from "../interval/motion";
-import { zip } from "../util/zip";
+import { AbsoluteNote } from '../note/absolute-note';
+import { Interval } from '../interval/interval';
+import { IntervalQuality } from '../interval/interval-quality';
+import { ComplexInterval } from '../interval/complex-interval';
+import { Motion } from '../interval/motion';
+import { zip } from '../util/zip';
 import { makeLazyArray } from '../util/make-lazy-array';
-import { ScaleDegree } from "../harmony/scale-degree";
-import { Scale } from "../scale";
-import { isDefined } from "../util";
-import { IChord } from "../chord/ichord";
-import { CompleteChord } from "../chord/complete-chord";
-import { ChordQuality } from "../chord/chord-quality";
-import { RomanNumeral } from "../harmony/roman-numeral";
+import { ScaleDegree } from '../harmony/scale-degree';
+import { Scale } from '../scale';
+import { isDefined } from '../util';
+import { IChord } from '../chord/ichord';
+import { CompleteChord } from '../chord/complete-chord';
+import { ChordQuality } from '../chord/chord-quality';
+import { RomanNumeral } from '../harmony/roman-numeral';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -31,11 +31,11 @@ export const voiceRange = [sopranoRange, altoRange, tenorRange, bassRange];
 
 export interface PartWritingRules {
     [ruleName: string]: PartWritingRule
-};
+}
 
 export interface PartWritingPreferences {
     [ruleName: string]: PartWritingPreference
-};
+}
 
 // Thanks to https://stackoverflow.com/questions/51419176/how-to-get-a-subset-of-keyof-t-whose-value-tk-are-callable-functions-in-typ
 type ParamOfType<T extends PartWritingRules, U> = {[P in keyof T]: Parameters<T[P]>[0] extends U ? P : never}[keyof T]
@@ -55,7 +55,7 @@ export interface PartWritingParameters<T extends PartWritingRules = typeof defau
     preferences: U,
     singularPreferences: (keyof U)[],
     preferencesOrdering: (keyof U)[],
-};
+}
 
 /**
  * Contains methods that allow for the vertical checking of chords (to verify good part-writing) across a series of rules
@@ -326,20 +326,20 @@ export namespace PartWriting {
              * @param prev the chord before this chord
              */
              export function voiceOverlap(_: undefined, {voices: currVoices}: IChord, {voices: prevVoices}: IChord) {
-                for(let i = 0; i < currVoices.length - 1; i++) {
-                    const lower = currVoices[i+1];
-                    const upper = currVoices[i];
-                    const oldLower = prevVoices[i+1];
-                    const oldUpper = prevVoices[i];
-                    if(upper && oldLower && upper.midi < oldLower.midi) {
-                        return false;
-                    }
-                    if(oldUpper && lower && oldUpper.midi < lower.midi) {
-                        return false;
-                    }
-                }
-                return true;
-            }
+                 for(let i = 0; i < currVoices.length - 1; i++) {
+                     const lower = currVoices[i+1];
+                     const upper = currVoices[i];
+                     const oldLower = prevVoices[i+1];
+                     const oldUpper = prevVoices[i];
+                     if(upper && oldLower && upper.midi < oldLower.midi) {
+                         return false;
+                     }
+                     if(oldUpper && lower && oldUpper.midi < lower.midi) {
+                         return false;
+                     }
+                 }
+                 return true;
+             }
 
             /**
              * Checks whether there are hidden fifths in the soprano and bass
@@ -355,7 +355,7 @@ export namespace PartWriting {
                 if(!bassVoice || !sopranoVoice || !oldBassVoice || !oldSopranoVoice) {
                     return true;
                 }
-                let interval = new ComplexInterval(bassVoice, sopranoVoice);
+                const interval = new ComplexInterval(bassVoice, sopranoVoice);
                 if(interval.name == 'P5' && Motion.from(oldBassVoice, bassVoice, oldSopranoVoice, sopranoVoice) == Motion.SIMILAR) {
                     if(!romanNumeral) {
                         return true;
@@ -498,7 +498,7 @@ export namespace PartWriting {
                         && prev.intervals[index]?.simpleSize === '3'
                         && chord.intervals[index]?.simpleSize === '3'
                     ) {
-                            return true;
+                        return true;
                     }
                 }
                 // TODO O(n) check - is there a better way?
@@ -1078,7 +1078,7 @@ export namespace PartWriting {
          */
         export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
-            let checks = parameters.preferencesOrdering
+            const checks = parameters.preferencesOrdering
                 .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
                 .map(func => func.apply(null, [chordToCheck]));
             return checks;
@@ -1091,7 +1091,7 @@ export namespace PartWriting {
          */
         export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
             //TODO make combined version of previous
-            let checks = makeLazyArray(parameters.preferencesOrdering
+            const checks = makeLazyArray(parameters.preferencesOrdering
                 .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
                 .map(func => () => func.apply(null, [chordToCheck]))
             );
@@ -1106,7 +1106,7 @@ export namespace PartWriting {
         export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
-            let checks = parameters.preferencesOrdering
+            const checks = parameters.preferencesOrdering
                 .map(preference => parameters.preferences[preference])
                 .map(func => func.apply(null, [chordToCheck, prev]));
             return checks;
@@ -1121,7 +1121,7 @@ export namespace PartWriting {
         export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             //TODO make combined version of previous
             //TODO need V7 VI/vi prefer double 3rd?
-            let checks = makeLazyArray(parameters.preferencesOrdering
+            const checks = makeLazyArray(parameters.preferencesOrdering
                 .map(preference => parameters.preferences[preference])
                 .map(func => () => func.apply(null, [chordToCheck, prev]))
             );

@@ -18,7 +18,8 @@
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "unused-imports"
     ],
     "rules": {
         "indent": [
@@ -39,6 +40,12 @@
         ],
         "@typescript-eslint/no-namespace": "off",
         "no-inner-declarations": "off",
-        "prefer-const": "error"
+        "prefer-const": "error",
+        "@typescript-eslint/ban-ts-comment": "warn",
+        "no-empty": "warn",
+        "@typescript-eslint/ban-types": "warn",
+        "prefer-rest-params": "warn",
+        "no-fallthrough": "warn",
+		"unused-imports/no-unused-imports": "error"
     }
 }

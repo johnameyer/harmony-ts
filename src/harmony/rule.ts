@@ -1,7 +1,7 @@
-import { ChordQuality } from "../chord/chord-quality";
-import { Scale } from "../scale";
-import { RomanNumeral } from "./roman-numeral";
-import { ScaleDegree } from "./scale-degree";
+import { ChordQuality } from '../chord/chord-quality';
+import { Scale } from '../scale';
+import { RomanNumeral } from './roman-numeral';
+import { ScaleDegree } from './scale-degree';
 
 export interface MatchingRule {
     // TODO refactor with romanNumeral toString

@@ -1,8 +1,7 @@
-import { AbsoluteNote } from "../note/absolute-note";
-import { Interval } from "./interval";
-import { Accidental } from "../accidental";
-import { IntervalQuality } from "./interval-quality";
-import { Scale } from "../scale";
+import { AbsoluteNote } from '../note/absolute-note';
+import { Interval } from './interval';
+import { IntervalQuality } from './interval-quality';
+import { Scale } from '../scale';
 
 export class ComplexInterval extends Interval {
     protected _complexSize!: number;

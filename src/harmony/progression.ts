@@ -1,12 +1,8 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { RomanNumeral } from "./roman-numeral";
-import { Scale } from "../scale";
+import { RomanNumeral } from './roman-numeral';
+import { Scale } from '../scale';
 import { Rule, MatchingRule, checkAgainstRule, yieldChordsFromRule, match, matchAsIs } from './rule';
-import { returnOrError } from "../util/return-or-error";
-import { ChordQuality } from "../chord/chord-quality";
-import { ScaleDegree } from "./scale-degree";
-import { iteratorMap } from "../util/iterator-map";
+import { ChordQuality } from '../chord/chord-quality';
+import { ScaleDegree } from './scale-degree';
 
 export interface ProgressionRule extends Rule {
     source: MatchingRule,

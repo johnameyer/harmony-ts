@@ -1,7 +1,7 @@
 export interface PeekableIterator<T> extends Iterable<T> {
     [Symbol.iterator](): IterableIterator<T>;
     hasItems: boolean;
-};
+}
 
 export function makePeekableIterator<S>(generator: IterableIterator<S>) {
     let top: S | undefined;
@@ -32,7 +32,7 @@ export function makePeekableIterator<S>(generator: IterableIterator<S>) {
             // @ts-ignore
             return Reflect.get(...arguments);
         }
-    }
+    };
 
     return new Proxy({}, proxyHandler) as PeekableIterator<S>;
 }

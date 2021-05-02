@@ -1,12 +1,12 @@
 //TODO figure out whether should be chords : IncompleteChord[] or chord: IncompleteChord and how to handle
 
-import { RomanNumeral } from "./roman-numeral";
-import { Scale } from "../scale";
-import { MatchingRule, match, matchAsIs, checkAgainstRule, yieldChordsFromRule, Rule } from "./rule";
-import { product } from "../util/product";
-import { ChordQuality } from "../chord/chord-quality";
-import { ScaleDegree } from "./scale-degree";
-import { isDefined } from "../util";
+import { RomanNumeral } from './roman-numeral';
+import { Scale } from '../scale';
+import { MatchingRule, match, matchAsIs, checkAgainstRule, yieldChordsFromRule, Rule } from './rule';
+import { product } from '../util/product';
+import { ChordQuality } from '../chord/chord-quality';
+import { ScaleDegree } from './scale-degree';
+import { isDefined } from '../util';
 
 export enum ExpansionType {
     /**

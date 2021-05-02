@@ -1,6 +1,6 @@
-import { RomanNumeral } from "./roman-numeral";
-import { Scale } from "../scale";
-import { Key } from "../key";
+import { RomanNumeral } from './roman-numeral';
+import { Scale } from '../scale';
+import { Key } from '../key';
 
 const CMajor: Scale = [Key.C, Scale.Quality.MAJOR];
 const CMinor: Scale = [Key.C, Scale.Quality.MINOR];

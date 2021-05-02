@@ -1,15 +1,15 @@
-import { AbsoluteNote } from "../note/absolute-note";
-import { PartWriting, defaultPartWritingParameters, PartWritingParameters } from "./part-writing";
-import { CompleteChord } from "../chord/complete-chord";
-import { RomanNumeral } from "../harmony/roman-numeral";
-import { Scale } from "../scale";
-import { Key } from "../key";
+import { AbsoluteNote } from '../note/absolute-note';
+import { PartWriting, defaultPartWritingParameters } from './part-writing';
+import { CompleteChord } from '../chord/complete-chord';
+import { RomanNumeral } from '../harmony/roman-numeral';
+import { Scale } from '../scale';
+import { Key } from '../key';
 
 const CMajor = [Key.C, Scale.Quality.MAJOR] as Scale;
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
-const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index], arr[index + 1]] as [T, T])
+const pair = <T>(arr: T[]) => [...Array(arr.length - 1).keys()].map((index) => [arr[index], arr[index + 1]] as [T, T]);
 
 describe('PartWriting', () => {
     describe('checkAll', () => {
@@ -112,7 +112,7 @@ describe('PartWriting', () => {
                 ['ii', 'F5', 'A4', 'D4', 'D3'],
             ];
             chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor).with({ flags: { sequence: true } })));
-            for(let i of [3,4,5]) {
+            for(const i of [3,4,5]) {
                 expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
                 expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i).reverse())).toBe(false);
             }
@@ -141,5 +141,5 @@ describe('PartWriting', () => {
 
         expect(PartWriting.Rules.checkSingular(customRules, validChord).next().value).toBe('newRule');
         expect(PartWriting.Rules.testSingular(customRules, validChord)).toBe(false);
-    })
+    });
 });

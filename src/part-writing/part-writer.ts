@@ -1,25 +1,24 @@
-import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWriting } from "./part-writing";
-import { Harmonizer } from "../harmony/harmonizer";
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { Scale } from "../scale";
-import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, resultsOfLength } from "../util/nested-iterable";
-import { CompleteChord } from "../chord/complete-chord";
-import { RomanNumeral } from "../harmony/roman-numeral";
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { postorderNestedIterableMap, preorderNestedIterableMap } from "../util/nested-iterator-map";
-import { AbsoluteNote } from "../note/absolute-note";
-import { Note } from "../note/note";
-import { isDefined } from "../util";
-import { Accidental } from "../accidental";
-import { minGenerator } from "../util/min-generator";
-import { arrayComparator } from "../util/array-comparator";
-import { nestedIterableFilter } from "../util/nested-iterator-filter";
-import { makePeekableIterator } from "../util/make-peekable-iterator";
-import { lazyArrayMerge } from "../util/lazy-array-merge";
-import { minValueGenerator } from "../util/min-value-generator";
-import { defaultChainedIterator } from "../util/default-chained-iterator";
-import { ScaleDegree } from "../harmony/scale-degree";
-import { ChordQuality } from "../chord/chord-quality";
+import { PartWritingParameters, defaultPartWritingParameters, voiceRange, PartWriting } from './part-writing';
+import { Harmonizer } from '../harmony/harmonizer';
+import { IncompleteChord } from '../chord/incomplete-chord';
+import { Scale } from '../scale';
+import { NestedIterable, convertToMultiIterator, resultsOfTotalLength, NestedLazyMultiIterable, resultsOfLength } from '../util/nested-iterable';
+import { CompleteChord } from '../chord/complete-chord';
+import { RomanNumeral } from '../harmony/roman-numeral';
+import { HarmonizedChord } from '../chord/harmonized-chord';
+import { postorderNestedIterableMap, preorderNestedIterableMap } from '../util/nested-iterator-map';
+import { AbsoluteNote } from '../note/absolute-note';
+import { Note } from '../note/note';
+import { isDefined } from '../util';
+import { minGenerator } from '../util/min-generator';
+import { arrayComparator } from '../util/array-comparator';
+import { nestedIterableFilter } from '../util/nested-iterator-filter';
+import { makePeekableIterator } from '../util/make-peekable-iterator';
+import { lazyArrayMerge } from '../util/lazy-array-merge';
+import { minValueGenerator } from '../util/min-value-generator';
+import { defaultChainedIterator } from '../util/default-chained-iterator';
+import { ScaleDegree } from '../harmony/scale-degree';
+import { ChordQuality } from '../chord/chord-quality';
 
 function swap<T>(arr: T[], first: number, second: number) {
     [arr[first], arr[second]] = [arr[second], arr[first]];
@@ -67,7 +66,7 @@ export function * nestedMinGenerator<T>(iterable: Iterable<T>, mapper: (value: T
 
 function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
-    for(let voicePart in one.voices) {
+    for(const voicePart in one.voices) {
         if(!compatible(one.voices[voicePart]?.name, two.voices[voicePart]?.name)) {
             return null;
         }
@@ -262,12 +261,12 @@ export class PartWriter {
         
         const romanNumeral = reconciledConstraint.romanNumeral;
         const needed = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root) : undefined).filter(isDefined);
-        let bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
+        const bassNote = romanNumeral.inversionInterval.transposeUp(romanNumeral.root);
         
         let sopranoNotes, altoNotes, tenorNotes, bassNotes;
         if(previous.length) {
             const get = (voicePart: number) => {
-                let voice = reconciledConstraint.voices[voicePart];
+                const voice = reconciledConstraint.voices[voicePart];
                 if(isDefined(voice)) {
                     return [voice];
                 } else {
@@ -286,7 +285,7 @@ export class PartWriter {
             }
         } else {
             const get = (needed: Note[]) => (voicePart: number) => {
-                let voice = reconciledConstraint.voices[voicePart];
+                const voice = reconciledConstraint.voices[voicePart];
                 if(isDefined(voice)) {
                     return [voice];
                 } else {
@@ -295,7 +294,7 @@ export class PartWriter {
                     const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
                     return [...needed]
                         .flatMap(note => [...Array(high - low).keys()]
-                        .map((i) => new AbsoluteNote(note.letterName, note.accidental, i + low)))
+                            .map((i) => new AbsoluteNote(note.letterName, note.accidental, i + low)))
                         .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
                 }
             };
@@ -317,7 +316,7 @@ export class PartWriter {
                 }
             }
             return true;
-        }
+        };
 
         //TODO make more efficient by following doubling rules outright
         for(const bass of bassNotes) {

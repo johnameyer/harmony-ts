@@ -1,4 +1,4 @@
-import { AbsoluteNote } from "./absolute-note";
+import { AbsoluteNote } from './absolute-note';
 
 describe('AbsoluteNote', () => {
     describe('valid', () => {

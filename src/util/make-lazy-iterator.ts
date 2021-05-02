@@ -1,11 +1,10 @@
-import { NestedIterable } from "..";
 
 export interface LazyMultiIterable<T> extends IterableIterator<T> {
     reset(): void;
 }
 
 export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
-    const arr: (S | undefined)[] = new Array();
+    const arr: (S | undefined)[] = [];
     let i = 0;
 
     const proxyHandler = {
@@ -24,7 +23,7 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
                         i++;
                         ({ done, value } = generator.next());
                     }
-                }
+                };
             }
             if(prop == 'length') {
                 return arr.length;
@@ -62,7 +61,7 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
             // @ts-ignore
             return Reflect.get(...arguments);
         }
-    }
+    };
 
     // @ts-ignore
     return new Proxy(arr, proxyHandler) as LazyMultiIterable<S>;

@@ -1,10 +1,10 @@
 import { Note } from '../note/note';
 import { IntervalQuality } from './interval-quality';
 import { Accidental } from '../accidental';
-import { isString, isNumber } from '../util';
+import { isNumber } from '../util';
 
 // TODO possible to have in only one place a la circular dependency
-let notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
 const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
 
 export class Interval {
@@ -20,19 +20,19 @@ export class Interval {
             this._simpleSize = two;
             this._semitones = semitones[this._simpleSize - 1];
             switch(this._quality) {
-                case IntervalQuality.AUGMENTED:
-                    this._semitones += 1;
-                    break;
-                case IntervalQuality.MINOR:
+            case IntervalQuality.AUGMENTED:
+                this._semitones += 1;
+                break;
+            case IntervalQuality.MINOR:
+                this._semitones -= 1;
+                break;
+            case IntervalQuality.DIMINISHED:
+                if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5 || this._simpleSize == 8) {
                     this._semitones -= 1;
-                    break;
-                case IntervalQuality.DIMINISHED:
-                    if(this._simpleSize == 1 || this._simpleSize == 4 || this._simpleSize == 5 || this._simpleSize == 8) {
-                        this._semitones -= 1;
-                    } else {
-                        this._semitones -= 2;
-                    }
-                    break;
+                } else {
+                    this._semitones -= 2;
+                }
+                break;
             }
             return;
         }

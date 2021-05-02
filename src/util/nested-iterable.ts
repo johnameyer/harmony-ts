@@ -1,5 +1,5 @@
-import { makeLazyMultiIterable, LazyMultiIterable } from "./make-lazy-iterator";
-import { makePeekableIterator } from "./make-peekable-iterator";
+import { makeLazyMultiIterable, LazyMultiIterable } from './make-lazy-iterator';
+import { makePeekableIterator } from './make-peekable-iterator';
 
 export type NestedIterable<T> = IterableIterator<[T, NestedIterable<T>]>;
 
@@ -84,7 +84,7 @@ export function * convertToDeepNested<T>(generator: NestedIterable<T[]>): Nested
         }
     }
 
-    for(let [t, nested] of generator) {
+    for(const [t, nested] of generator) {
         yield * handleNested(t, nested);
     }
 }

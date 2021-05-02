@@ -1,7 +1,7 @@
-import { RomanNumeral } from "../harmony/roman-numeral";
-import { AbsoluteNote } from "../note/absolute-note";
-import { Interval } from "../interval/interval";
-import { IChord } from "./ichord";
+import { RomanNumeral } from '../harmony/roman-numeral';
+import { AbsoluteNote } from '../note/absolute-note';
+import { Interval } from '../interval/interval';
+import { IChord } from './ichord';
 
 export class HarmonizedChord implements IChord {
 

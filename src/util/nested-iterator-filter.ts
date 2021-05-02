@@ -1,4 +1,4 @@
-import { NestedIterable } from "./nested-iterable";
+import { NestedIterable } from './nested-iterable';
 
 export function * nestedIterableFilter<T>(iterator: NestedIterable<T>, filter: (t: T, previous: T[]) => boolean, previous: T[] = []): NestedIterable<T> {
     for(const [t, nested] of iterator) {

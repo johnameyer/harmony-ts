@@ -1,5 +1,5 @@
-import { AbsoluteNote } from "../note/absolute-note";
-import { Interval } from "../interval/interval";
+import { AbsoluteNote } from '../note/absolute-note';
+import { Interval } from '../interval/interval';
 
 /**
  * Describes the motion between two voices

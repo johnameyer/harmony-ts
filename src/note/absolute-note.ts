@@ -53,9 +53,9 @@ export class AbsoluteNote extends Note {
         if(match == null) {
             throw note + ' is invalid';
         }
-        let [letter, accidentalString, octaveString] = match.slice(1);
-        let accidental = Accidental.fromString(accidentalString || '');
-        let octave = Number(octaveString);
+        const [letter, accidentalString, octaveString] = match.slice(1);
+        const accidental = Accidental.fromString(accidentalString || '');
+        const octave = Number(octaveString);
         return new AbsoluteNote(letter, accidental, octave);
     }
 }

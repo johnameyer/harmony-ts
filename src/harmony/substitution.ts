@@ -1,9 +1,7 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { Scale } from "../scale";
-import { iteratorMap } from "../util/iterator-map";
-import { RomanNumeral } from "./roman-numeral";
-import { checkAgainstRule, match, matchAsIs, MatchingRule, yieldChordsFromRule } from "./rule";
-import { ScaleDegree } from "./scale-degree";
+import { Scale } from '../scale';
+import { RomanNumeral } from './roman-numeral';
+import { checkAgainstRule, match, matchAsIs, MatchingRule, yieldChordsFromRule } from './rule';
+import { ScaleDegree } from './scale-degree';
 
 export type SubstitutionRule = {
     target: MatchingRule,
