@@ -17,7 +17,7 @@ export function makeLazyArray<S>(producers: (() => S)[]) {
             }
             // @ts-ignore
             return Reflect.get(...arguments);
-        }
+        },
     };
 
     return new Proxy(arr, proxyHandler) as S[];

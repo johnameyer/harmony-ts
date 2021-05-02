@@ -4,22 +4,26 @@ import { Accidental } from '../accidental';
 import { isNumber } from '../util';
 
 // TODO possible to have in only one place a la circular dependency
-const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
-const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
+const notes = [ 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C' ];
+const semitones = [ 0, 2, 4, 5, 7, 9, 11, 12 ];
 
 export class Interval {
     protected _semitones!: number;
+
     protected _simpleSize!: number;
+
     protected _quality!: IntervalQuality;
 
     constructor(quality: IntervalQuality, size: number);
+
     constructor(one: Note, two: Note);
+
     constructor(one: IntervalQuality | Note, two?: number | Note) {
         if(isNumber(one) && isNumber(two)) {
             this._quality = one;
             this._simpleSize = two;
             this._semitones = semitones[this._simpleSize - 1];
-            switch(this._quality) {
+            switch (this._quality) {
             case IntervalQuality.AUGMENTED:
                 this._semitones += 1;
                 break;
@@ -71,7 +75,7 @@ export class Interval {
         if(!match) {
             throw name + ' is not a valid interval';
         }
-        const [qualityString, sizeString] = match.slice(1);
+        const [ qualityString, sizeString ] = match.slice(1);
         const quality = IntervalQuality.fromString(qualityString);
         const simpleSize = Number(sizeString) || 1;
         return new Interval(quality, simpleSize);
@@ -99,7 +103,7 @@ export class Interval {
     transposeUp(note: Note): Note {
         let index = notes.indexOf(note.letterName) + this._simpleSize - 1;
         if(index >= 7) {
-            index = index - 7;
+            index -= 7;
         }
         const letterName = notes[index];
         const result = new Note(letterName, Accidental.NATURAL);
@@ -110,7 +114,7 @@ export class Interval {
     transposeDown(note: Note): Note {
         let index = notes.indexOf(note.letterName) - this._simpleSize + 1;
         if(index < 0) {
-            index = index + 7;
+            index += 7;
         }
         const letterName = notes[index];
         const result = new Note(letterName, Accidental.NATURAL);
@@ -124,6 +128,6 @@ export class Interval {
 }
 
 export namespace Interval {
-    export const perfectQualities = [IntervalQuality.DIMINISHED, IntervalQuality.PERFECT, IntervalQuality.AUGMENTED];
-    export const imperfectQualities = [IntervalQuality.DIMINISHED, IntervalQuality.MINOR, IntervalQuality.MAJOR, IntervalQuality.AUGMENTED];
+    export const perfectQualities = [ IntervalQuality.DIMINISHED, IntervalQuality.PERFECT, IntervalQuality.AUGMENTED ];
+    export const imperfectQualities = [ IntervalQuality.DIMINISHED, IntervalQuality.MINOR, IntervalQuality.MAJOR, IntervalQuality.AUGMENTED ];
 }

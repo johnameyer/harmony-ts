@@ -24,11 +24,11 @@ export interface MatchingRule {
 
 type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags'>>;
 
-export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
+export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
     return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: false } as MatchingRule;
 }
 
-export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [0], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
+export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
     return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: true } as MatchingRule;
 }
 
@@ -66,7 +66,7 @@ export function * yieldChordsFromRule(rule: MatchingRule, scale: Scale): Generat
             hasSeventh: rule.hasSeventh,
             applied: rule.applied,
             fullyDiminishedSeventh: rule.fullyDiminishedSeventh,
-            flags: rule.flags
+            flags: rule.flags,
         }, scale);
         if(rule.matchingQuality) {
             yield next;

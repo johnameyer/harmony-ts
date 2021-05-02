@@ -45,8 +45,11 @@ export class RomanNumeral {
     readonly name: string;
 
     readonly scaleDegree: ScaleDegree;
+
     readonly inversion: number;
+
     protected _inversionInterval: Interval;
+
     readonly quality: ChordQuality;
 
     readonly hasSeventh: boolean;
@@ -74,7 +77,7 @@ export class RomanNumeral {
         if(!match) {
             throw new Error('Invalid roman numeral ' + value);
         }
-        const [scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals, appliedString] = match.slice(1);
+        const [ scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals, appliedString ] = match.slice(1);
         const scaleDegree = ScaleDegree.fromRomanNumeral(scaleDegreeMajor || scaleDegreeMinor);
         let applied: ScaleDegree | null = ScaleDegree.fromRomanNumeral(appliedString || 'I');
         if(applied === ScaleDegree.TONIC) {
@@ -102,7 +105,7 @@ export class RomanNumeral {
             applied,
             inversion,
             hasSeventh: !!seventhIntervals,
-            fullyDiminishedSeventh: diminished === 'o'
+            fullyDiminishedSeventh: diminished === 'o',
         }, scale);
     }
 
@@ -113,14 +116,14 @@ export class RomanNumeral {
 
         this.applied = params.applied || null;
 
-        this._intervals = [new Interval(IntervalQuality.PERFECT, 1)];
+        this._intervals = [ new Interval(IntervalQuality.PERFECT, 1) ];
 
         this.hasSeventh = !!params.hasSeventh;
 
         let third = IntervalQuality.MAJOR;
         let fifth = IntervalQuality.PERFECT;
 
-        switch(this.quality) {
+        switch (this.quality) {
         case ChordQuality.AUGMENTED:
             fifth = IntervalQuality.AUGMENTED;
             break;
@@ -138,7 +141,7 @@ export class RomanNumeral {
         this.hasSeventh = params.hasSeventh || false;
         if(params.hasSeventh) {
             let seventhQuality = IntervalQuality.MINOR;
-            switch(params.quality) {
+            switch (params.quality) {
             case ChordQuality.AUGMENTED:
                 seventhQuality = IntervalQuality.MAJOR;
                 break;
@@ -170,10 +173,10 @@ export class RomanNumeral {
 
         this.scale = scale;
 
-        this.flags = Object.freeze({...params.flags} || {});
+        this.flags = Object.freeze({ ...params.flags } || {});
 
         this.name = ScaleDegree.toRomanNumeral(this.scaleDegree);
-        switch(this.quality) {
+        switch (this.quality) {
         case ChordQuality.MINOR:
             this.name = this.name.toLowerCase();
             break;
@@ -196,12 +199,14 @@ export class RomanNumeral {
         }
     }
 
-    // TODO
-    // static fromString() {
-    // }
+    /*
+     * TODO
+     * static fromString() {
+     * }
+     */
 
     get intervals() {
-        return [...this._intervals];
+        return [ ...this._intervals ];
     }
 
     get notes() {
@@ -216,7 +221,7 @@ export class RomanNumeral {
                 return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[this.applied - 1]);
             }
             return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[0]);
-        } else if(this.scaleDegree === ScaleDegree.SUBTONIC && this.quality === ChordQuality.DIMINISHED){
+        } else if(this.scaleDegree === ScaleDegree.SUBTONIC && this.quality === ChordQuality.DIMINISHED) {
             // leading tone is always a semitone below the note
             if(this.applied) {
                 return new Interval(IntervalQuality.MINOR, 2).transposeDown(scale[this.applied - 1]);
@@ -234,24 +239,24 @@ export class RomanNumeral {
         // TODO handle flats and sharps
         if(this.hasSeventh) {
             if(this._inversionInterval.simpleSize == 'U') {
-                return ['7', ''];
+                return [ '7', '' ];
             } else if(this._inversionInterval.simpleSize == '3') {
-                return ['6', '5'];
+                return [ '6', '5' ];
             } else if(this._inversionInterval.simpleSize == '5') {
-                return ['4', '3'];
+                return [ '4', '3' ];
             } else if(this._inversionInterval.simpleSize == '7') {
-                return ['4', '2'];
+                return [ '4', '2' ];
             }
         } else {
             if(this._inversionInterval.simpleSize == 'U') {
-                return ['', ''];
+                return [ '', '' ];
             } else if(this._inversionInterval.simpleSize == '3') {
-                return ['6', ''];
+                return [ '6', '' ];
             } else if(this._inversionInterval.simpleSize == '5') {
-                return ['6', '4'];
+                return [ '6', '4' ];
             }
         }
-        return ['',''];
+        return [ '', '' ];
     }
 
     get inversionString() {
@@ -273,7 +278,7 @@ export class RomanNumeral {
             scaleDegree: index + 1,
             inversion: this.inversion,
             hasSeventh: this.hasSeventh,
-            fullyDiminishedSeventh: this.intervals.find(interval => interval.simpleSize === '7')?.quality === IntervalQuality.DIMINISHED
+            fullyDiminishedSeventh: this.intervals.find(interval => interval.simpleSize === '7')?.quality === IntervalQuality.DIMINISHED,
         }, scale);
 
         if(resultant.notes.every(note => this.notes.some(other => note.name === other.name))) {
@@ -294,7 +299,7 @@ export class RomanNumeral {
         let quality: ChordQuality = ChordQuality.MAJOR;
         let fullyDiminishedSeventh = false;
 
-        switch(fifthInterval) {
+        switch (fifthInterval) {
         case IntervalQuality.AUGMENTED:
             quality = ChordQuality.AUGMENTED;
         case IntervalQuality.DIMINISHED:
@@ -316,7 +321,7 @@ export class RomanNumeral {
             inversion: this.inversion,
             hasSeventh: this.hasSeventh,
             fullyDiminishedSeventh,
-            flags: this.flags
+            flags: this.flags,
         }, this.scale);
     }
 
@@ -328,14 +333,14 @@ export class RomanNumeral {
             flags: this.flags,
             fullyDiminishedSeventh: this.hasSeventh && this.intervals.find(Interval.ofSize('7'))?.quality === IntervalQuality.DIMINISHED,
             hasSeventh: this.hasSeventh,
-            inversion: this.inversion
+            inversion: this.inversion,
         };
     }
 
     with(params: Partial<RomanNumeralParameters>) {
         return new RomanNumeral({
             ...this.asParams(),
-            ...params
+            ...params,
         }, this.scale);
     }
 }

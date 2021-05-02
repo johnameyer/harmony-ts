@@ -23,7 +23,7 @@ export enum Motion {
     CONTRARY,
 }
 export namespace Motion {
-    export const names = ['PARALLEL', 'SIMILAR', 'OBLIQUE', 'CONTRARY'];
+    export const names = [ 'PARALLEL', 'SIMILAR', 'OBLIQUE', 'CONTRARY' ];
 
     export function toString(motion: Motion) {
         return names[motion];

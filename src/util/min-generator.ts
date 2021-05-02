@@ -5,7 +5,7 @@
  * @param second the second index
  */
 function swap<T>(arr: T[], first: number, second: number) {
-    [arr[first], arr[second]] = [arr[second], arr[first]];
+    [ arr[first], arr[second] ] = [ arr[second], arr[first] ];
 }
 
 /**

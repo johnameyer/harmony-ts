@@ -34,18 +34,16 @@ export class AbsoluteNote extends Note {
             const two = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, (close.octavePosition + 1));
             if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
                 return one;
-            } else {
-                return two;
-            }
-        } else {
-            const one = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, (close.octavePosition - 1));
-            const two = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, close.octavePosition);
-            if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
-                return one;
-            } else {
-                return two;
-            }
-        }
+            } 
+            return two;
+            
+        } 
+        const one = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, (close.octavePosition - 1));
+        const two = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, close.octavePosition);
+        if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
+            return one;
+        } 
+        return two;
     }
     
     static fromString(note: string): AbsoluteNote {
@@ -53,7 +51,7 @@ export class AbsoluteNote extends Note {
         if(match == null) {
             throw note + ' is invalid';
         }
-        const [letter, accidentalString, octaveString] = match.slice(1);
+        const [ letter, accidentalString, octaveString ] = match.slice(1);
         const accidental = Accidental.fromString(accidentalString || '');
         const octave = Number(octaveString);
         return new AbsoluteNote(letter, accidental, octave);

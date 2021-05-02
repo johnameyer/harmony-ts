@@ -9,7 +9,7 @@ export interface ProgressionRule extends Rule {
     target: MatchingRule
 }
 
-const ruleOf = ([source, target]: MatchingRule[]) => ({ source, target } as ProgressionRule);
+const ruleOf = ([ source, target ]: MatchingRule[]) => ({ source, target } as ProgressionRule);
 
 // TODO move away from IncompleteChord model?
 
@@ -20,7 +20,7 @@ const {
     IV,
     V,
     VI,
-    VII
+    VII,
 } = ScaleDegree.ALIASED;
 
 const MAJOR = ChordQuality.MAJOR;
@@ -30,10 +30,12 @@ const DIMINISHED = ChordQuality.DIMINISHED;
 
 export namespace Progression {
     export namespace Shared {
-        // TODO implied
-        // export const identity = [
-        //     [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]
-        // ];
+        /*
+         * TODO implied
+         * export const identity = [
+         *     [() => true, (scale: Scale, previousChords: HarmonizedChord[]) => [new HarmonizedChord({romanNumeral: new RomanNumeral(previousChords[0].romanNumeral.name, scale)})]]
+         * ];
+         */
 
         export const basic = [
             /* I-V */
@@ -43,107 +45,107 @@ export namespace Progression {
 
         export const basicInversions = [
             /* I-I6 arpeggiation */
-            [ match(I),  match(I, { inversions: [1] }) ],
-            [ match(I, { inversions: [1] }), match(I) ],
+            [ match(I), match(I, { inversions: [ 1 ] }) ],
+            [ match(I, { inversions: [ 1 ] }), match(I) ],
 
-            [ match(I, { inversions: [1] }), matchAsIs(V) ],
+            [ match(I, { inversions: [ 1 ] }), matchAsIs(V) ],
 
             /* V6 */
-            [ match(I),  matchAsIs(V, { inversions: [1] }) ],
-            [ matchAsIs(V, { inversions: [1] }), match(I) ],
+            [ match(I), matchAsIs(V, { inversions: [ 1 ] }) ],
+            [ matchAsIs(V, { inversions: [ 1 ] }), match(I) ],
 
-            [ matchAsIs(V),  matchAsIs(V, { inversions: [1] }) ],
-            [ matchAsIs(V, { inversions: [1] }), matchAsIs(V) ],
+            [ matchAsIs(V), matchAsIs(V, { inversions: [ 1 ] }) ],
+            [ matchAsIs(V, { inversions: [ 1 ] }), matchAsIs(V) ],
 
             // TODO consider
-            [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [1] }), match(I, { inversions: [0, 1] }) ]
+            [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [ 1 ] }), match(I, { inversions: [ 0, 1 ] }) ],
         ].map(ruleOf);
 
         export const dominantSevenths = [
             /* V43 */
-            [ match(I, { inversions: [0, 1] }), matchAsIs(V, { inversions: [2], hasSeventh: true }) ],
-            [ matchAsIs(V, { inversions: [2], hasSeventh: true }), match(I, { inversions: [0, 1] }) ],
+            [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }) ],
+            [ matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }), match(I, { inversions: [ 0, 1 ] }) ],
 
             /* V42 */
-            [ match(I, { inversions: [0, 1] }), matchAsIs(V, { inversions: [3], hasSeventh: true }) ],
-            [ matchAsIs(V, { inversions: [3], hasSeventh: true }), match(I, { inversions: [1] }) ],
-            [ matchAsIs(V), matchAsIs(V, { inversions: [3], hasSeventh: true }) ], 
+            [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }) ],
+            [ matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }), match(I, { inversions: [ 1 ] }) ],
+            [ matchAsIs(V), matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }) ], 
         ].map(ruleOf);
 
         export const basicPredominant = [
             /* IV */
-            [ match(I, { inversions: [0, 1] }), match(IV) ],
+            [ match(I, { inversions: [ 0, 1 ] }), match(IV) ],
 
             [ match(IV), matchAsIs(V) ],
             [ match(IV), matchAsIs(V, { hasSeventh: true }) ],
 
             /* ii, ii6 */
-            [ match(I, { inversions: [0, 1] }), match(II, { inversions: [0, 1] }) ],
+            [ match(I, { inversions: [ 0, 1 ] }), match(II, { inversions: [ 0, 1 ] }) ],
 
-            [ match(II, { inversions: [0, 1] }), matchAsIs(V) ],
-            [ match(II, { inversions: [0, 1] }), matchAsIs(V, { hasSeventh: true }) ], // hasSeventh: null?
-            [ match(II, { inversions: [0] }), matchAsIs(V, { inversions: [1] }) ],
-            //viio6? V42?
+            [ match(II, { inversions: [ 0, 1 ] }), matchAsIs(V) ],
+            [ match(II, { inversions: [ 0, 1 ] }), matchAsIs(V, { hasSeventh: true }) ], // hasSeventh: null?
+            [ match(II, { inversions: [ 0 ] }), matchAsIs(V, { inversions: [ 1 ] }) ],
+            // viio6? V42?
 
             /* ii-ii6 arpeggiation */
-            [ match(II, { inversions: [0, 1] }), match(II, { inversions: [0, 1] }) ],
-            [ match(II, { inversions: [0, 1] }), match(II, { inversions: [0, 1] }) ],
+            [ match(II, { inversions: [ 0, 1 ] }), match(II, { inversions: [ 0, 1 ] }) ],
+            [ match(II, { inversions: [ 0, 1 ] }), match(II, { inversions: [ 0, 1 ] }) ],
 
-            [ match(IV), match(II, { inversions: [0, 1] }) ],
+            [ match(IV), match(II, { inversions: [ 0, 1 ] }) ],
         ].map(ruleOf);
 
         export const submediant = [
             [ match(I), match(VI) ],
-            [ match(I), match(IV, { inversions: [1] }) ],
+            [ match(I), match(IV, { inversions: [ 1 ] }) ],
 
             /* vi root motion by 3rd */
             [ match(I), match(VI) ],
-            [ match(VI), match(IV, { inversions: [0, 1] }) ],
+            [ match(VI), match(IV, { inversions: [ 0, 1 ] }) ],
 
             /* IV6 root motion by 3rd */
-            [ match(IV, { inversions: [1] }), match(II, { inversions: [1] }) ],
+            [ match(IV, { inversions: [ 1 ] }), match(II, { inversions: [ 1 ] }) ],
             
             /* vi root motion by 5th */
-            [ match(VI), match(II, { inversions: [0, 1] }) ],
+            [ match(VI), match(II, { inversions: [ 0, 1 ] }) ],
 
             /* vi-V */
             [ match(VI), matchAsIs(V) ],
-            [ match(IV, { inversions: [1] }), matchAsIs(V) ],
+            [ match(IV, { inversions: [ 1 ] }), matchAsIs(V) ],
             // 12-5?
         ].map(ruleOf);
 
         export const subdominantSevenths = [
-            [ match(II, { inversions: [3], hasSeventh: true }), matchAsIs(V, { inversions: [1], hasSeventh: false }) ],
-            [ match(II, { inversions: [3], hasSeventh: true }), matchAsIs(V, { inversions: [1], hasSeventh: true }) ],
+            [ match(II, { inversions: [ 3 ], hasSeventh: true }), matchAsIs(V, { inversions: [ 1 ], hasSeventh: false }) ],
+            [ match(II, { inversions: [ 3 ], hasSeventh: true }), matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }) ],
         ].map(ruleOf);
 
         export const tonicSubstitutes = [
             [ matchAsIs(V), match(VI) ],
-            [ matchAsIs(V), match(IV, { inversions: [1] }) ],
+            [ matchAsIs(V), match(IV, { inversions: [ 1 ] }) ],
             [ matchAsIs(V, { hasSeventh: true }), match(VI) ],
-            [ matchAsIs(V, { hasSeventh: true }), match(IV, { inversions: [1] }) ],
+            [ matchAsIs(V, { hasSeventh: true }), match(IV, { inversions: [ 1 ] }) ],
         ].map(ruleOf);
 
         export const mediant = [
             [ match(I), match(III) ],
-            [ match(III), matchAsIs(V, { inversions: [0, 1] }) ],
+            [ match(III), matchAsIs(V, { inversions: [ 0, 1 ] }) ],
             [ match(I), match(VI) ],
-            [ match(I), match(IV, { inversions: [0, 1] }) ],
-            [ match(I), match(II, { inversions: [0, 1] }) ],
+            [ match(I), match(IV, { inversions: [ 0, 1 ] }) ],
+            [ match(I), match(II, { inversions: [ 0, 1 ] }) ],
 
-            [ match(I), matchAsIs(VII, { inversions: [0, 1] }) ],
-            [ matchAsIs(VII, { inversions: [0, 1] }), matchAsIs(III) ],
+            [ match(I), matchAsIs(VII, { inversions: [ 0, 1 ] }) ],
+            [ matchAsIs(VII, { inversions: [ 0, 1 ] }), matchAsIs(III) ],
             // TODO scale type?
 
-            [ matchAsIs(VII, { inversions: [0, 1] }), matchAsIs(V, { inversions: [0, 1] }) ],
+            [ matchAsIs(VII, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 0, 1 ] }) ],
         ].map(ruleOf);
     }
 
-    export const defaultProgressions = [...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant];
+    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant ];
 
     export function * matchingProgressions(scale: Scale, previous: RomanNumeral, progressions: ProgressionRule[] = defaultProgressions): Generator<RomanNumeral> {
         yield previous;
-        for(const {source, target} of progressions) {
+        for(const { source, target } of progressions) {
             if(checkAgainstRule(previous, source)) {
                 yield * yieldChordsFromRule(target, scale);
             }

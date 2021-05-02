@@ -42,7 +42,7 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
                                 break;
                             }
                             arr[j] = next.value;
-                            return {value: arr[j]};
+                            return { value: arr[j] };
                         }
                     }
                 };
@@ -60,7 +60,7 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
             }
             // @ts-ignore
             return Reflect.get(...arguments);
-        }
+        },
     };
 
     // @ts-ignore

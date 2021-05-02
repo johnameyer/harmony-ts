@@ -1,6 +1,6 @@
 type ArrayItem<T> = T extends (infer S)[] ? S : never; 
 
-type MappedCartesian<T> =  {
+type MappedCartesian<T> = {
     [K in keyof T]: ArrayItem<T[K]>
 }
 
@@ -11,10 +11,9 @@ type MappedCartesian<T> =  {
  */
 export function product<T extends any[][]>(...args: T): MappedCartesian<T>[] {
     return args.reduce(
-        (results, entries) =>
-            results
-                .map(result => entries.map(entry => result.concat([entry])))
-                .reduce((subResults, result) => subResults.concat(result), []),
-        [[]]
+        (results, entries) => results
+            .map(result => entries.map(entry => result.concat([ entry ])))
+            .reduce((subResults, result) => subResults.concat(result), []),
+        [[]],
     );
 }

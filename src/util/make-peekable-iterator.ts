@@ -31,7 +31,7 @@ export function makePeekableIterator<S>(generator: IterableIterator<S>) {
             }
             // @ts-ignore
             return Reflect.get(...arguments);
-        }
+        },
     };
 
     return new Proxy({}, proxyHandler) as PeekableIterator<S>;

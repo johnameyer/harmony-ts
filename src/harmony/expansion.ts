@@ -1,4 +1,4 @@
-//TODO figure out whether should be chords : IncompleteChord[] or chord: IncompleteChord and how to handle
+// TODO figure out whether should be chords : IncompleteChord[] or chord: IncompleteChord and how to handle
 
 import { RomanNumeral } from './roman-numeral';
 import { Scale } from '../scale';
@@ -46,7 +46,7 @@ const {
     IV,
     V,
     VI,
-    VII
+    VII,
 } = ScaleDegree.ALIASED;
 
 const MAJOR = ChordQuality.MAJOR;
@@ -61,22 +61,26 @@ const DIMINISHED = ChordQuality.DIMINISHED;
  * TODO chainable? - e.g. (V6/V - (I64 - V))
  */
 export namespace Expansion {
-    // export const identity = [
-    //     (_: Scale, chords: IncompleteChord[]) => chords.map(chord => new IncompleteChord({flags: chord.flags, romanNumeral: chord.romanNumeral}))
-    // ]
+    /*
+     * export const identity = [
+     *     (_: Scale, chords: IncompleteChord[]) => chords.map(chord => new IncompleteChord({flags: chord.flags, romanNumeral: chord.romanNumeral}))
+     * ]
+     */
 
-    // export const basic = [
-    //     startingWithAsIs('V', insertAsIs('V7')),
-    //     startingWithAsIs('V', replaceWithAsIs('V7')),
-    // ];
+    /*
+     * export const basic = [
+     *     startingWithAsIs('V', insertAsIs('V7')),
+     *     startingWithAsIs('V', replaceWithAsIs('V7')),
+     * ];
+     */
 
     export const basicInversions = [
         // I viio6 I passing/neighbor
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [0, 1] }),
-            target: match(I, { inversions: [0, 1] }),
-            expansion: [matchAsIs(VII, { inversions: [1], chordQuality: DIMINISHED })]
+            source: match(I, { inversions: [ 0, 1 ] }),
+            target: match(I, { inversions: [ 0, 1 ] }),
+            expansion: [ matchAsIs(VII, { inversions: [ 1 ], chordQuality: DIMINISHED }) ],
         },
 
         // V6 I
@@ -84,7 +88,7 @@ export namespace Expansion {
             type: ExpansionType.PREFIX,
             priority: CLOSER_PRIORITY,
             target: match(I),
-            expansion: [matchAsIs(V, { inversions: [1] })]
+            expansion: [ matchAsIs(V, { inversions: [ 1 ] }) ],
         },
     ] as ExpansionRule[];
 
@@ -92,14 +96,14 @@ export namespace Expansion {
         // Ix V43 Ix passing
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [0, 1] }),
-            target: match(I, { inversions: [0, 1] }),
-            expansion: [matchAsIs(V, { inversions: [2], hasSeventh: true })]
+            source: match(I, { inversions: [ 0, 1 ] }),
+            target: match(I, { inversions: [ 0, 1 ] }),
+            expansion: [ matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }) ],
         },
         {
             type: ExpansionType.FULL,
-            target: match(I, { inversions: [1] }),
-            expansion: [matchAsIs(V, { inversions: [3], hasSeventh: true })]
+            target: match(I, { inversions: [ 1 ] }),
+            expansion: [ matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }) ],
         },
 
         // I V43 V65 I double neighbor
@@ -108,46 +112,46 @@ export namespace Expansion {
             source: match(I),
             target: match(I),
             expansion: [
-                matchAsIs(V, { inversions: [1], hasSeventh: true }),
-                matchAsIs(V, { inversions: [2], hasSeventh: true })
-            ]
+                matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }),
+            ],
         },
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [0, 1] }),
+            source: match(I, { inversions: [ 0, 1 ] }),
             target: match(I),
             expansion: [
-                matchAsIs(V, { inversions: [2], hasSeventh: true }),
-                matchAsIs(V, { inversions: [1], hasSeventh: true })
-            ]
+                matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+            ],
         },
 
         // I6 V42 V43 I6 double neighbor
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [1] }),
-            target: match(I, { inversions: [1] }),
+            source: match(I, { inversions: [ 1 ] }),
+            target: match(I, { inversions: [ 1 ] }),
             expansion: [
-                matchAsIs(V, { inversions: [3], hasSeventh: true }),
-                matchAsIs(V, { inversions: [2], hasSeventh: true })
-            ]
+                matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }),
+            ],
         },
 
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [1] }),
-            target: match(I, { inversions: [1] }),
+            source: match(I, { inversions: [ 1 ] }),
+            target: match(I, { inversions: [ 1 ] }),
             expansion: [
-                matchAsIs(V, { inversions: [2], hasSeventh: true }),
-                matchAsIs(V, { inversions: [3], hasSeventh: true })
-            ]
+                matchAsIs(V, { inversions: [ 2 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }),
+            ],
         },
 
         // I6 V42 V43 I6 double neighbor
         {
             type: ExpansionType.PREFIX,
-            target: match(I, { inversions: [1] }),
-            expansion: [ matchAsIs(V, { inversions: [3], hasSeventh: true }) ]
+            target: match(I, { inversions: [ 1 ] }),
+            expansion: [ matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }) ],
         },
 
         // I6 V42 V43 I6 double neighbor
@@ -155,7 +159,7 @@ export namespace Expansion {
             type: ExpansionType.PREFIX,
             priority: CLOSEST_PRIORITY,
             target: match(I),
-            expansion: [ matchAsIs(V, { inversions: [1], hasSeventh: true }) ]
+            expansion: [ matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }) ],
         },
     ];
 
@@ -163,62 +167,68 @@ export namespace Expansion {
         // iix I6 iix passing
         {
             type: ExpansionType.FULL,
-            source: match(II, { inversions: [0, 1] }), // TODO this also allows neighbor motion?
-            target: match(II, { inversions: [0, 1] }),
-            expansion: [ match(I, { inversions: [1] }) ]
+            source: match(II, { inversions: [ 0, 1 ] }), // TODO this also allows neighbor motion?
+            target: match(II, { inversions: [ 0, 1 ] }),
+            expansion: [ match(I, { inversions: [ 1 ] }) ],
         },
     ];
 
     export const cadential64 = [
-        // TODO not preceded by V or vii ??
-        // notStartingWith('V', notStartingWith('viio', movingToAsIs('V', replaceWithAsIs('V42', insert('I64')))))
+        /*
+         * TODO not preceded by V or vii ??
+         * notStartingWith('V', notStartingWith('viio', movingToAsIs('V', replaceWithAsIs('V42', insert('I64')))))
+         */
 
         // I64 V cadential 64
         {
             type: ExpansionType.PREFIX,
             priority: CLOSEST_PRIORITY,
             target: matchAsIs(V),
-            expansion: [ match(I, { inversions: [2] }) ]
+            expansion: [ match(I, { inversions: [ 2 ] }) ],
         },
     ];
 
     export const submediant = [
-        // not in minor
-        // vi V6 I
+        /*
+         * not in minor
+         * vi V6 I
+         */
         {
             type: ExpansionType.FULL,
             source: matchAsIs(VI, { chordQuality: MINOR }),
             expansion: [
-                matchAsIs(V, { inversions: [1] }),
-                matchAsIs(I)
-            ]
+                matchAsIs(V, { inversions: [ 1 ] }),
+                matchAsIs(I),
+            ],
         },
         {
             type: ExpansionType.FULL,
             source: matchAsIs(VI, { chordQuality: MINOR }),
             expansion: [
-                matchAsIs(V, { inversions: [1], hasSeventh: true }),
-                matchAsIs(I)
-            ]
+                matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+                matchAsIs(I),
+            ],
         },
 
-        // use major IV6 in minor
-        // IV6 V6 I
+        /*
+         * use major IV6 in minor
+         * IV6 V6 I
+         */
         {
             type: ExpansionType.FULL,
-            source: matchAsIs(IV, { inversions: [1] }),
+            source: matchAsIs(IV, { inversions: [ 1 ] }),
             expansion: [
-                matchAsIs(V, { inversions: [1] }),
-                match(I)
-            ]
+                matchAsIs(V, { inversions: [ 1 ] }),
+                match(I),
+            ],
         },
         {
             type: ExpansionType.FULL,
-            source: matchAsIs(IV, { inversions: [1] }),
+            source: matchAsIs(IV, { inversions: [ 1 ] }),
             expansion: [
-                matchAsIs(V, { inversions: [1], hasSeventh: true }),
-                match(I)
-            ]
+                matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+                match(I),
+            ],
         },
     ];
 
@@ -229,18 +239,18 @@ export namespace Expansion {
             source: match(I),
             target: match(I),
             expansion: [
-                match(II, { inversions: [3], hasSeventh: true }),
-                matchAsIs(V, { inversions: [1] }),
-            ]
+                match(II, { inversions: [ 3 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 1 ] }),
+            ],
         },
         {
             type: ExpansionType.FULL,
             source: match(I),
             target: match(I),
             expansion: [
-                match(II, { inversions: [3], hasSeventh: true }),
-                matchAsIs(V, { inversions: [1], hasSeventh: true }),
-            ]
+                match(II, { inversions: [ 3 ], hasSeventh: true }),
+                matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+            ],
         },
     ];
 
@@ -248,33 +258,33 @@ export namespace Expansion {
         // Ix IV Ix
         {
             type: ExpansionType.FULL,
-            source: match(I, { inversions: [0, 1] }),
-            target: match(I, { inversions: [0, 1] }),
-            expansion: [ match(IV) ]
+            source: match(I, { inversions: [ 0, 1 ] }),
+            target: match(I, { inversions: [ 0, 1 ] }),
+            expansion: [ match(IV) ],
         },
 
         // I vi I6
         {
             type: ExpansionType.FULL,
             source: match(I),
-            target: match(I, { inversions: [1] }),
-            expansion: [ match(VI) ] // TODO add flag and rule
+            target: match(I, { inversions: [ 1 ] }),
+            expansion: [ match(VI) ], // TODO add flag and rule
         },
 
         // I IV6 I6
         {
             type: ExpansionType.FULL,
             source: match(I),
-            target: match(I, { inversions: [1] }),
-            expansion: [ match(IV, { inversions: [1] }) ]
+            target: match(I, { inversions: [ 1 ] }),
+            expansion: [ match(IV, { inversions: [ 1 ] }) ],
         },
         
         // V IV6 V6
         {
             type: ExpansionType.FULL,
             source: matchAsIs(V),
-            target: matchAsIs(V, { inversions: [1] }),
-            expansion: [ match(IV, { inversions: [1] }) ]
+            target: matchAsIs(V, { inversions: [ 1 ] }),
+            expansion: [ match(IV, { inversions: [ 1 ] }) ],
         },
     ];
 
@@ -284,25 +294,25 @@ export namespace Expansion {
             type: ExpansionType.PREFIX,
             priority: CLOSE_PRIORITY,
             target: match(V),
-            expansion: [ matchAsIs(V, { inversions: [0, 1], applied: V }) ]
+            expansion: [ matchAsIs(V, { inversions: [ 0, 1 ], applied: V }) ],
         },
         {
             type: ExpansionType.FULL,
             priority: CLOSE_PRIORITY,
             target: match(V),
-            expansion: [ matchAsIs(V, { inversions: [0, 1, 2], applied: V, hasSeventh: true }) ]
+            expansion: [ matchAsIs(V, { inversions: [ 0, 1, 2 ], applied: V, hasSeventh: true }) ],
         },
         {
             type: ExpansionType.FULL,
             priority: CLOSE_PRIORITY,
-            target: match(V, { inversions: [1] }),
-            expansion: [ matchAsIs(V, { inversions: [2, 3], applied: V, hasSeventh: true }) ]
+            target: match(V, { inversions: [ 1 ] }),
+            expansion: [ matchAsIs(V, { inversions: [ 2, 3 ], applied: V, hasSeventh: true }) ],
         },
         {
             type: ExpansionType.FULL,
             priority: CLOSE_PRIORITY,
-            target: match(V, { inversions: [0, 1] }),
-            expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [1], applied: V }) ]
+            target: match(V, { inversions: [ 0, 1 ] }),
+            expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [ 1 ], applied: V }) ],
         },
     ];
 
@@ -312,14 +322,14 @@ export namespace Expansion {
             type: ExpansionType.FULL,
             source: matchAsIs(VII),
             target: matchAsIs(V),
-            expansion: [ matchAsIs(IV, { inversions: [1], chordQuality: MINOR }) ]
+            expansion: [ matchAsIs(IV, { inversions: [ 1 ], chordQuality: MINOR }) ],
         },
     ];
 
     // TODO write out more compactly
     export const sequences = [
         // TODO how to make the target also part of the sequence?
-        [IV, VII, III, VI, II, V, I].flatMap((target, index, array) => {
+        [ IV, VII, III, VI, II, V, I ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
                     // descending fifths, root position
@@ -327,24 +337,22 @@ export namespace Expansion {
                         type: ExpansionType.FULL,
                         source: match(I),
                         target: match(target),
-                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true }})),
                     }, 
                     // descending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
-                        expansion: array.slice(0, index).map((expansion, index) => 
-                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
-                        )
-                    }
+                        target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
+                        ),
+                    },
                 ];
-            } else {
-                return [];
-            }
+            } 
+            return [];
         }),
 
-        [VI, II, VII, III, I, IV, II, V].flatMap((target, index, array) => {
+        [ VI, II, VII, III, I, IV, II, V ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
                     // ascending 5-6, root position
@@ -352,24 +360,22 @@ export namespace Expansion {
                         type: ExpansionType.FULL,
                         source: match(I),
                         target: match(target),
-                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true }})),
                     }, 
                     // ascending 5-6s, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
-                        expansion: array.slice(0, index).map((expansion, index) => 
-                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
-                        )
-                    }
+                        target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
+                        ),
+                    },
                 ];
-            } else {
-                return [];
-            }
+            } 
+            return [];
         }),
 
-        [V, II, VI, III, VII, IV, I].flatMap((target, index, array) => {
+        [ V, II, VI, III, VII, IV, I ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
                     // ascending fifths, root position
@@ -377,25 +383,23 @@ export namespace Expansion {
                         type: ExpansionType.FULL,
                         source: match(I),
                         target: match(target),
-                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true }})),
                     }, 
                     // ascending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
-                        expansion: array.slice(0, index).map((expansion, index) => 
-                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
-                        )
-                    }
+                        target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
+                        ),
+                    },
                 ];
-            } else {
-                return [];
-            }
+            } 
+            return [];
         }),
 
         // skipping over iii - viio
-        [V, II, VI, IV, I].flatMap((target, index, array) => {
+        [ V, II, VI, IV, I ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
                     // ascending fifths, root position
@@ -403,25 +407,23 @@ export namespace Expansion {
                         type: ExpansionType.FULL,
                         source: match(I),
                         target: match(target),
-                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true }})),
                     }, 
                     // ascending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
-                        expansion: array.slice(0, index).map((expansion, index) => 
-                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
-                        )
-                    }
+                        target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
+                        ),
+                    },
                 ];
-            } else {
-                return [];
-            }
+            } 
+            return [];
         }),
 
         // descending 5-6
-        [V, VI, III, IV, I, II].flatMap((target, index, array) => {
+        [ V, VI, III, IV, I, II ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [    
                     // descending 5-6, root position
@@ -429,21 +431,19 @@ export namespace Expansion {
                         type: ExpansionType.FULL,
                         source: match(I),
                         target: match(target),
-                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true } }))
+                        expansion: array.slice(0, index).map(expansion => match(expansion, { flags: { sequence: true }})),
                     }, 
                     // descending 5-6, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
                         source: match(I),
-                        target: match(target, { inversions: [index % 2 == 0 ? 1 : 0] }),
-                        expansion: array.slice(0, index).map((expansion, index) => 
-                            match(expansion, { inversions: [index % 2 == 0 ? 1 : 0], flags: { sequence: true } })
-                        )
-                    }
+                        target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
+                        ),
+                    },
                 ];
-            } else {
-                return [];
-            }
+            } 
+            return [];
         }),
     ].flat();
 
@@ -452,120 +452,121 @@ export namespace Expansion {
             type: ExpansionType.PREFIX,
             priority: CLOSE_PRIORITY,
             target: matchAsIs(I),
-            expansion: [ match(VII, { chordQuality: DIMINISHED, hasSeventh: true }) ]
+            expansion: [ match(VII, { chordQuality: DIMINISHED, hasSeventh: true }) ],
         },
         {
             type: ExpansionType.PREFIX,
             priority: CLOSE_PRIORITY,
-            target: matchAsIs(I, { inversions: [1] }),
-            expansion: [ match(VII, { chordQuality: DIMINISHED, inversions: [1], hasSeventh: true }) ]
+            target: matchAsIs(I, { inversions: [ 1 ] }),
+            expansion: [ match(VII, { chordQuality: DIMINISHED, inversions: [ 1 ], hasSeventh: true }) ],
         },
     ];
 
-    //TODO fix problem of vii0 instead of viio
+    // TODO fix problem of vii0 instead of viio
     export const otherSeventhChords = [
         [
-            {primaryInversion: 0, secondaryInversion: 0, hasSeventh: true},
-            {primaryInversion: 0, secondaryInversion: 0, hasSeventh: false},
-            {primaryInversion: 1, secondaryInversion: 0, hasSeventh: false},
-            {primaryInversion: 2, secondaryInversion: 0, hasSeventh: false},
-            {primaryInversion: 2, secondaryInversion: 0, hasSeventh: true},
-            {primaryInversion: 3, secondaryInversion: 1, hasSeventh: true},
-            {primaryInversion: 3, secondaryInversion: 1, hasSeventh: false}
-        ].flatMap(({ primaryInversion, secondaryInversion, hasSeventh }) =>
-            [IV, VII, III, VI, II, V, I].flatMap((target, index, array) => {
-                if(index >= 2) {
-                    return [
-                        // descending fifths with seventh chords, e.g. I IV43 viio iii43 vi ii43 V
-                        {
-                            type: ExpansionType.FULL,
-                            source: match(I),
-                            target: match(target, {
-                                hasSeventh: index % 2 === 1 ? hasSeventh : true,
-                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion]
-                            }),
-                            expansion: array.slice(0, index).map((expansion, index) => match(expansion, {
-                                hasSeventh: index % 2 === 1 ? hasSeventh : true,
-                                inversions: index % 2 === 1 ? [secondaryInversion] : [primaryInversion],
-                                flags: { sequence: true }
-                            }))
-                        },
-                    ];
-                } else {
-                    return [];
-                }
-            }),
-        )
+            { primaryInversion: 0, secondaryInversion: 0, hasSeventh: true },
+            { primaryInversion: 0, secondaryInversion: 0, hasSeventh: false },
+            { primaryInversion: 1, secondaryInversion: 0, hasSeventh: false },
+            { primaryInversion: 2, secondaryInversion: 0, hasSeventh: false },
+            { primaryInversion: 2, secondaryInversion: 0, hasSeventh: true },
+            { primaryInversion: 3, secondaryInversion: 1, hasSeventh: true },
+            { primaryInversion: 3, secondaryInversion: 1, hasSeventh: false },
+        ].flatMap(({ primaryInversion, secondaryInversion, hasSeventh }) => [ IV, VII, III, VI, II, V, I ].flatMap((target, index, array) => {
+            if(index >= 2) {
+                return [
+                    // descending fifths with seventh chords, e.g. I IV43 viio iii43 vi ii43 V
+                    {
+                        type: ExpansionType.FULL,
+                        source: match(I),
+                        target: match(target, {
+                            hasSeventh: index % 2 === 1 ? hasSeventh : true,
+                            inversions: index % 2 === 1 ? [ secondaryInversion ] : [ primaryInversion ],
+                        }),
+                        expansion: array.slice(0, index).map((expansion, index) => match(expansion, {
+                            hasSeventh: index % 2 === 1 ? hasSeventh : true,
+                            inversions: index % 2 === 1 ? [ secondaryInversion ] : [ primaryInversion ],
+                            flags: { sequence: true },
+                        })),
+                    },
+                ];
+            } 
+            return [];
+            
+        }),
+        ),
     ].flat();
 
     export const secondaryDominants = [
-        ...[II, III, IV, V, VI, VII].flatMap(root => [
-            // TODO prevent applied to diminished?
-            // TODO should we allow inversioning?
+        ...[ II, III, IV, V, VI, VII ].flatMap(root => [
+            /*
+             * TODO prevent applied to diminished?
+             * TODO should we allow inversioning?
+             */
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
                 target: match(root),
-                expansion: [ matchAsIs(V, { inversions: [0, 1], applied: root }) ]
-            },
-            {
-                type: ExpansionType.PREFIX,
-                priority: CLOSE_PRIORITY,
-                target: match(root),
-                expansion: [ matchAsIs(V, { inversions: [0, 1, 2], applied: root, hasSeventh: true }) ]
-            },
-            {
-                type: ExpansionType.PREFIX,
-                priority: CLOSE_PRIORITY,
-                target: match(root, { inversions: [1] }),
-                expansion: [ matchAsIs(V, { inversions: [2, 3], applied: root, hasSeventh: true }) ]
-            },
-            {
-                type: ExpansionType.PREFIX,
-                priority: CLOSE_PRIORITY,
-                target: match(root, { inversions: [0, 1] }),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [1], applied: root }) ]
+                expansion: [ matchAsIs(V, { inversions: [ 0, 1 ], applied: root }) ],
             },
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
                 target: match(root),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [0], applied: root }) ]
+                expansion: [ matchAsIs(V, { inversions: [ 0, 1, 2 ], applied: root, hasSeventh: true }) ],
             },
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
-                target: match(root, { inversions: [1] }),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [1, 2], applied: root }) ]
+                target: match(root, { inversions: [ 1 ] }),
+                expansion: [ matchAsIs(V, { inversions: [ 2, 3 ], applied: root, hasSeventh: true }) ],
             },
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
-                target: match(root, { inversions: [2] }),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [3], applied: root }) ]
+                target: match(root, { inversions: [ 0, 1 ] }),
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, inversions: [ 1 ], applied: root }) ],
+            },
+            {
+                type: ExpansionType.PREFIX,
+                priority: CLOSE_PRIORITY,
+                target: match(root),
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [ 0 ], applied: root }) ],
+            },
+            {
+                type: ExpansionType.PREFIX,
+                priority: CLOSE_PRIORITY,
+                target: match(root, { inversions: [ 1 ] }),
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [ 1, 2 ], applied: root }) ],
+            },
+            {
+                type: ExpansionType.PREFIX,
+                priority: CLOSE_PRIORITY,
+                target: match(root, { inversions: [ 2 ] }),
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: true, inversions: [ 3 ], applied: root }) ],
             },
         ]),
         // TODO move into above array and add check for diatonicized quality
-        ...[III, IV, V, VI, VII].flatMap(root => [
+        ...[ III, IV, V, VI, VII ].flatMap(root => [
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
                 target: matchAsIs(root),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: false, inversions: [0], applied: root }) ]
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: false, inversions: [ 0 ], applied: root }) ],
             },
             {
                 type: ExpansionType.PREFIX,
                 priority: CLOSE_PRIORITY,
-                target: matchAsIs(root, { inversions: [1] }),
-                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: false, inversions: [1], applied: root }) ]
+                target: matchAsIs(root, { inversions: [ 1 ] }),
+                expansion: [ matchAsIs(VII, { chordQuality: DIMINISHED, hasSeventh: true, fullyDiminishedSeventh: false, inversions: [ 1 ], applied: root }) ],
             },
         ]),
     ];
 
-    export const defaultExpansions = [...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant] as ExpansionRule[];
+    export const defaultExpansions = [ ...Expansion.basicInversions, ...Expansion.dominantInversions, ...Expansion.subdominant, ...Expansion.cadential64, ...Expansion.submediant, ...Expansion.subdominantSevenths, ...Expansion.tonicSubstitutes, ...Expansion.secondaryDominant, ...Expansion.secondaryDominants, ...Expansion.sequences, ...Expansion.leadingToneSevenths, ...Expansion.otherSeventhChords, ...Expansion.mediant ] as ExpansionRule[];
 
     export function * matchingExpansions(scale: Scale, previous: RomanNumeral, option: RomanNumeral, expansions: ExpansionRule[] = defaultExpansions): Generator<RomanNumeral[]> {
-        yield [option];
+        yield [ option ];
         const expansionsByType = expansions
             .filter(expansion => {
                 if(expansion.source && !checkAgainstRule(previous, expansion.source)) {
@@ -577,27 +578,27 @@ export namespace Expansion {
                 return true;
             })
             .reduce(
-                (byType, expansion) => ({...byType, [expansion.type]: [...(byType[expansion.type] || []), expansion]}),
-                {} as {[type: number]: ExpansionRule[]}
+                (byType, expansion) => ({ ...byType, [expansion.type]: [ ...(byType[expansion.type] || []), expansion ] }),
+                {} as {[type: number]: ExpansionRule[]},
             );
 
         for(const expansion of (expansionsByType[ExpansionType.FULL] || [])) {
-            const options: RomanNumeral[][] = product(...expansion.expansion.map(expansion => Array.from(yieldChordsFromRule(expansion, scale))), [option]);
-            for(const option of options){
+            const options: RomanNumeral[][] = product(...expansion.expansion.map(expansion => Array.from(yieldChordsFromRule(expansion, scale))), [ option ]);
+            for(const option of options) {
                 yield option as RomanNumeral[];
             }
         }
 
         const prefixExpansionsByPriority = ((expansionsByType[ExpansionType.PREFIX] || []) as (ExpansionRule & { type: ExpansionType.PREFIX})[])
             .reduce(
-                (byPriority, expansion) => ({...byPriority, [expansion.priority]: [...(byPriority[expansion.priority] || []), expansion]}),
-                {} as {[priority: number]: ExpansionRule[]}
+                (byPriority, expansion) => ({ ...byPriority, [expansion.priority]: [ ...(byPriority[expansion.priority] || []), expansion ] }),
+                {} as {[priority: number]: ExpansionRule[]},
             );
 
         const priorities = Object.keys(prefixExpansionsByPriority).sort();
         
-        const prefixedOptions: (RomanNumeral | undefined)[][] = product(...priorities.map(priority => prefixExpansionsByPriority[priority as any]).map((expansions) => [undefined, ...expansions.flatMap(expansion => expansion.expansion.flatMap(expansion => Array.from(yieldChordsFromRule(expansion, scale))))]), [option]);
-        for(const option of prefixedOptions){
+        const prefixedOptions: (RomanNumeral | undefined)[][] = product(...priorities.map(priority => prefixExpansionsByPriority[priority as any]).map((expansions) => [ undefined, ...expansions.flatMap(expansion => expansion.expansion.flatMap(expansion => Array.from(yieldChordsFromRule(expansion, scale)))) ]), [ option ]);
+        for(const option of prefixedOptions) {
             yield option.filter(isDefined) as RomanNumeral[];
         }
     }

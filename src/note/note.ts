@@ -1,8 +1,8 @@
 import { Accidental } from '../accidental';
 
 // TODO again fix for circular dependencies
-const notes: string[] = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
-const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
+const notes: string[] = [ 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C' ];
+const semitones = [ 0, 2, 4, 5, 7, 9, 11, 12 ];
 
 export class Note {
     constructor(protected _letter: string, protected _accidental: Accidental) {
@@ -45,7 +45,7 @@ export class Note {
         if(match == null) {
             throw note + ' is invalid';
         }
-        const [letter, accidentalString] = match.slice(1);
+        const [ letter, accidentalString ] = match.slice(1);
         const accidental = Accidental.fromString(accidentalString || '');
 
         return new Note(letter, accidental);

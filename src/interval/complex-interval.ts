@@ -15,11 +15,11 @@ export class ComplexInterval extends Interval {
 
         if(Scale.Major.notes.indexOf(one.letterName) <= Scale.Major.notes.indexOf(two.letterName)) {
             for(let i = one.octavePosition; i < two.octavePosition; i++) {
-                this._complexSize = this._complexSize + 7;
+                this._complexSize += 7;
             }
         } else {
             for(let i = one.octavePosition + 1; i < two.octavePosition; i++) {
-                this._complexSize = this._complexSize + 7;
+                this._complexSize += 7;
             }
         }
     }
@@ -38,16 +38,16 @@ export class ComplexInterval extends Interval {
     transposeUp(note: AbsoluteNote): AbsoluteNote {
         const transposed = super.transposeUp(note);
         const result = new AbsoluteNote(transposed.letterName, transposed.accidental, note.octavePosition);
-        const octaveDisplacement = (this._complexSize - this._simpleSize) / 7 +
-            (Scale.Major.notes.indexOf(note.letterName) > Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
+        const octaveDisplacement = (this._complexSize - this._simpleSize) / 7
+            + (Scale.Major.notes.indexOf(note.letterName) > Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
         return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition + octaveDisplacement);
     }
 
     transposeDown(note: AbsoluteNote): AbsoluteNote {
         const transposed = super.transposeDown(note);
         const result = new AbsoluteNote(transposed.letterName, transposed.accidental, note.octavePosition);
-        const octaveDisplacement = (this._complexSize - this._simpleSize) / 7 +
-            (Scale.Major.notes.indexOf(note.letterName) < Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
+        const octaveDisplacement = (this._complexSize - this._simpleSize) / 7
+            + (Scale.Major.notes.indexOf(note.letterName) < Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
         return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition - octaveDisplacement);
     }
 }

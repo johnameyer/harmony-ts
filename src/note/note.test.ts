@@ -3,13 +3,13 @@ import { Note } from './note';
 describe('Note', () => {
     describe('valid', () => {
         describe.each([
-            ['C', 0],
-            ['A', 9],
-            ['G', 7],
-            ['Ab', 8],
-            ['G#', 8],
-            ['Cb', 11],
-            ['B#', 0]
+            [ 'C', 0 ],
+            [ 'A', 9 ],
+            [ 'G', 7 ],
+            [ 'Ab', 8 ],
+            [ 'G#', 8 ],
+            [ 'Cb', 11 ],
+            [ 'B#', 0 ],
         ])('"%s"', (value, chromaticPosition) => {
             test('constructor', () => {
                 const note = Note.fromString(value);
