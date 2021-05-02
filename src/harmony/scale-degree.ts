@@ -22,4 +22,6 @@ export namespace ScaleDegree {
         }
         return index + 1;
     }
+
+    export const ALIASED = Object.freeze(Object.fromEntries(romanNumerals.map((romanNumeral, index) => [romanNumeral, index + 1 as ScaleDegree])));
 }

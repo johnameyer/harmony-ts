@@ -42,7 +42,7 @@ export namespace Key {
         return Note.fromString(toString(key));
     }
 
-    export function getScaleInKey(scale: string[], key: Key) {
+    export function getScaleInKey(scale: string[], key: Key): string[] {
         const transposition = new Interval(new Note('C', Accidental.NATURAL), Key.toNote(key));
         return scale.map(note => transposition.transposeUp(Note.fromString(note)).letterName);
     }

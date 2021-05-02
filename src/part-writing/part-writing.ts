@@ -9,10 +9,9 @@ import { ScaleDegree } from "../harmony/scale-degree";
 import { Scale } from "../scale";
 import { isDefined } from "../util";
 import { IChord } from "../chord/ichord";
-import { minGenerator } from "../util/min-generator";
 import { CompleteChord } from "../chord/complete-chord";
-import { NestedIterable } from "../util/nested-iterable";
-import { arrayComparator } from "../util/array-comparator";
+import { ChordQuality } from "../chord/chord-quality";
+import { RomanNumeral } from "../harmony/roman-numeral";
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -83,6 +82,7 @@ export namespace PartWriting {
         newSingularPreferences?: (keyof U)[];
         newPreferencesOrdering?: (keyof PreferencesUnion<U>)[];
     } = {}) {
+        // TODO revisit
         return {
             rules: {...defaultPartWritingParameters.rules, ...(newRules || {})},
             singularRules: [...defaultPartWritingParameters.singularRules, ...(newSingularRules || [])],
@@ -90,7 +90,7 @@ export namespace PartWriting {
             preferences: {...defaultPartWritingParameters.preferences, ...(newPreferences || {})},
             singularPreferences: [...defaultPartWritingParameters.singularPreferences, ...(newSingularPreferences || [])],
             preferencesOrdering: [...(newPreferencesOrdering || defaultPartWritingParameters.preferencesOrdering)],
-        } as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
+        } as unknown as PartWritingParameters<T & typeof defaultPartWritingRules, U & typeof defaultPartWritingPreferences>;
     }
 
     export namespace Rules {
@@ -141,8 +141,8 @@ export namespace PartWriting {
              * Checks that the chord does not double the leading tone
              * @param chord the chord to check
              */
-            export function leadingToneDoubling(_: undefined, {romanNumeral, intervals, flags}: IChord) {
-                if(flags?.sequence) {
+            export function leadingToneDoubling(_: undefined, {romanNumeral, romanNumeralFinalized, intervals, flags}: IChord) {
+                if(!romanNumeralFinalized || romanNumeral?.flags.sequence) {
                     return true;
                 }
                 if(!romanNumeral || !intervals) {
@@ -210,7 +210,7 @@ export namespace PartWriting {
                             return true;
                         }
                         // @ts-ignore
-                        if(!prev || prev.romanNumeral.symbol != 'V' || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
+                        if(!prev || !prev.romanNumeral.name.startsWith('V') || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
                             return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
                     } else {
@@ -372,15 +372,17 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral, flags}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
-                if(flags?.sequence) {
+            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, {voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized}: IChord, {voices: prevVoices, romanNumeral: prevRomanNumeral, intervals}: IChord) {
+                if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence) {
                     return true;
                 }
                 //TODO delayed resolution
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                if (prevRomanNumeral.symbol == 'V' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
+                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
+                if (isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -409,7 +411,7 @@ export namespace PartWriting {
                             return false;
                         }
                     }
-                } else if(prevRomanNumeral.symbol == 'viio' && !(currRomanNumeral.symbol == 'V' || currRomanNumeral.symbol == 'viio')) {
+                } else if(isViio(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('U'));
                     const prevVoice = prevVoices[index];
                     const currVoice = currVoices[index];
@@ -437,7 +439,7 @@ export namespace PartWriting {
                 if(prevRomanNumeral.root === currRomanNumeral.root && prevRomanNumeral.hasSeventh) {
                     return true;
                 }
-                if (currRomanNumeral.symbol == 'V') {
+                if (currRomanNumeral.name.startsWith('V')) {
                     return true;
                 }
                 if(!intervals) {
@@ -477,12 +479,13 @@ export namespace PartWriting {
             export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
                 //V42 can support 3 4 5
                 if (before[0]
-                    && before[0].romanNumeral?.symbol.toLowerCase() == 'i'
+                    && before[0].romanNumeral?.scaleDegree == ScaleDegree.TONIC
                     && before[0].romanNumeral?.inversionInterval.simpleSize == 'U'
-                    && prev.romanNumeral?.symbol == 'V'
+                    && prev.romanNumeral?.scaleDegree == ScaleDegree.DOMINANT
+                    && prev.romanNumeral?.quality == ChordQuality.MAJOR
                     && prev.romanNumeral?.inversionInterval.simpleSize == '5'
                     && prev.romanNumeral?.hasSeventh
-                    && chord.romanNumeral?.symbol.toLowerCase() == 'i'
+                    && chord.romanNumeral?.scaleDegree == ScaleDegree.TONIC
                     && chord.romanNumeral?.inversionInterval.simpleSize == '3'
                 ) {
                     const index = prev.intervals?.findIndex(Interval.ofSize('7'));
@@ -729,12 +732,12 @@ export namespace PartWriting {
              * @param chord
              * @param prev 
              */
-            export function sequence(_: undefined, {flags: currFlags, voices: currVoices, romanNumeral: currRomanNumeral}: IChord, _middle: IChord, prev: IChord) {
+            export function sequence(_: undefined, {voices: currVoices, romanNumeral: currRomanNumeral}: IChord, {romanNumeral: middleRomanNumeral}: IChord, prev: IChord) {
                 if(!prev) {
                     return true;
                 }
-                const {flags: prevFlags, romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
-                if(currFlags.sequence && (prevFlags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                const {romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
+                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
                     for(let index = 0; index < currVoices.length; index++) {
                         if(!currRomanNumeral || !prevRomanNumeral) {
                             continue;
@@ -756,7 +759,6 @@ export namespace PartWriting {
                 }
                 return true;
             }
-
 
             //TODO better way?
             export function rapidKeyChange({scope}: {scope: number}, chord: IChord, ...prev: IChord[]) {
@@ -918,7 +920,7 @@ export namespace PartWriting {
              * @param chord the chord to look at
              */
             export function checkSequence(chord: CompleteChord) {
-                if(chord.flags?.sequence) {
+                if(chord.romanNumeral?.flags.sequence) {
                     return 1;
                 }
                 return 0;
@@ -987,6 +989,34 @@ export namespace PartWriting {
                 return 0;
             }
 
+            export function checkSequenceTarget({voices: currVoices, romanNumeral: currRomanNumeral}: CompleteChord, {romanNumeral: middleRomanNumeral}: CompleteChord, prev: CompleteChord) {
+                if(!prev) {
+                    return 0;
+                }
+                const {romanNumeral: prevRomanNumeral, voices: prevVoices} = prev;
+                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                    for(let index = 0; index < currVoices.length; index++) {
+                        if(!currRomanNumeral || !prevRomanNumeral) {
+                            continue;
+                        }
+                        const oldVoice = prevVoices[index];
+                        const voice = currVoices[index];
+                        if(!oldVoice || !voice) {
+                            return 0;
+                        }
+                        const voiceChange = new Interval(voice, oldVoice);
+                        if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== voiceChange.simpleSize) {
+                            return -1;
+                        }
+                        if(Math.abs(voice.midi - oldVoice.midi) > 7) {
+                            // the inversion would be smaller
+                            return -1;
+                        }
+                    }
+                }
+                return 0;
+            }
+
             /**
              * Prefer proper succession of chromatic tones, as might result in ii - V/V
              * @param chord the chord under consideration
@@ -1021,7 +1051,7 @@ export namespace PartWriting {
              * Prefers that a pivot chord has a predominant function in the new key
              */
             export function modulationToPredominant(chord: CompleteChord){
-                if(!chord.flags.pivot) {
+                if(!chord.romanNumeral.flags.pivot) {
                     return 0;
                 }
                 if(chord.romanNumeral.scaleDegree === ScaleDegree.TONIC || chord.romanNumeral.scaleDegree === ScaleDegree.DOMINANT) {
@@ -1034,7 +1064,7 @@ export namespace PartWriting {
              * Prefers that there are fewer modulations
              */
             export function fewerModulations(chord: CompleteChord){
-                if(chord.flags.pivot) {
+                if(chord.romanNumeral.flags.pivot) {
                     return -1;
                 }
                 return 0;
@@ -1140,6 +1170,7 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'fewerModulations',
         'modulationToPredominant',
         'checkSequence',
+        'checkSequenceTarget',
         'checkRepetition',
         'checkRange',
         'checkDoubling',

@@ -18,6 +18,8 @@ import { makePeekableIterator } from "../util/make-peekable-iterator";
 import { lazyArrayMerge } from "../util/lazy-array-merge";
 import { minValueGenerator } from "../util/min-value-generator";
 import { defaultChainedIterator } from "../util/default-chained-iterator";
+import { ScaleDegree } from "../harmony/scale-degree";
+import { ChordQuality } from "../chord/chord-quality";
 
 function swap<T>(arr: T[], first: number, second: number) {
     [arr[first], arr[second]] = [arr[second], arr[first]];
@@ -111,7 +113,7 @@ function reconcileConstraints(one: IncompleteChord, two: IncompleteChord) {
         }
     }
     
-    const romanNumeral = one.romanNumeral || two.romanNumeral;
+    const romanNumeral = (one.romanNumeral || two.romanNumeral)?.with({...one.romanNumeral?.flags, ...two.romanNumeral?.flags});
     const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
     const flags = {...(one.flags || {}), ...(two.flags || {})};
     return new IncompleteChord({romanNumeral, voices, flags});
@@ -181,7 +183,7 @@ export class PartWriter {
             }
         }
         //TODO harmonize tonic or come up with options
-        const start = new RomanNumeral(constraints[0]?.romanNumeral?.name || (scale[1] === Scale.Quality.MINOR ? 'i' : 'I'),  scale);
+        const start = constraints[0].romanNumeral || new RomanNumeral({scaleDegree: ScaleDegree.TONIC, quality: scale[1] === Scale.Quality.MAJOR ? ChordQuality.MAJOR : ChordQuality.MINOR}, scale);
         const reconciledConstraint = reconcileConstraints(constraints[0], new IncompleteChord({romanNumeral: start}));
         if(!reconciledConstraint) {
             throw 'Failed to reconcile first constraint';

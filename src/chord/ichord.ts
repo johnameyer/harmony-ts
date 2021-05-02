@@ -6,6 +6,8 @@ export interface IChord {
     voices: (AbsoluteNote | undefined)[];
 
     romanNumeral: RomanNumeral | undefined;
+    
+    romanNumeralFinalized: boolean;
 
     flags: {[key: string]: boolean};
 

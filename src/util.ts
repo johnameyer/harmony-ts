@@ -1,8 +1,8 @@
-export function isString(value: any): value is string {
+export function isString(value: unknown): value is string {
     return typeof value === 'string';
 }
 
-export function isNumber(value: any): value is number {
+export function isNumber(value: unknown): value is number {
     return Number.isFinite(value);
 }
 
