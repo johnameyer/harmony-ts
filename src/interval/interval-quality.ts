@@ -7,7 +7,7 @@ export enum IntervalQuality {
 }
 
 export namespace IntervalQuality {
-    export const names = ['d', 'm', 'P', 'M', 'A'];
+    export const names = [ 'd', 'm', 'P', 'M', 'A' ];
 
     export function toString(intervalQuality: IntervalQuality): string {
         return names[intervalQuality + 2];

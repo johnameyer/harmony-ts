@@ -1,13 +1,13 @@
-import { AbsoluteNote } from "./absolute-note";
+import { AbsoluteNote } from './absolute-note';
 
 describe('AbsoluteNote', () => {
     describe('valid', () => {
         describe.each([
-            ['C0', 0],
-            ['A4', 9],
-            ['G5', 7],
-            ['Ab5', 8],
-            ['G#5', 8]
+            [ 'C0', 0 ],
+            [ 'A4', 9 ],
+            [ 'G5', 7 ],
+            [ 'Ab5', 8 ],
+            [ 'G#5', 8 ],
         ])('"%s"', (value, chromaticPosition) => {
             test('constructor', () => {
                 const note = AbsoluteNote.fromString(value);

@@ -1,24 +1,22 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { IncompleteChord } from "../chord/incomplete-chord";
-import { Progression, ProgressionRule } from "./progression";
-import { RomanNumeral } from "./roman-numeral";
-import { Scale } from "../scale";
-import { isDefined } from "../util";
-import { Expansion, ExpansionRule } from "./expansion";
-import { Interval } from "../interval/interval";
-import { Key } from "../key";
-import { makePeekableIterator } from "../util/make-peekable-iterator";
-import { convertToMultiIterator, NestedIterable, NestedLazyMultiIterable } from "../util/nested-iterable";
-import { ScaleDegree } from "./scale-degree";
-import { Chord } from "../chord/chord";
-import { ChordQuality } from "../chord/chord-quality";
-import { Substitution, SubstitutionRule } from "./substitution";
-import { product } from "../util/product";
-import { iteratorMap } from "../util/iterator-map";
-import { makeLazyMultiIterable } from "../util/make-lazy-iterator";
+import { HarmonizedChord } from '../chord/harmonized-chord';
+import { IncompleteChord } from '../chord/incomplete-chord';
+import { Progression, ProgressionRule } from './progression';
+import { RomanNumeral } from './roman-numeral';
+import { Scale } from '../scale';
+import { isDefined } from '../util';
+import { Expansion, ExpansionRule } from './expansion';
+import { Interval } from '../interval/interval';
+import { Key } from '../key';
+import { makePeekableIterator } from '../util/make-peekable-iterator';
+import { convertToMultiIterator, NestedIterable, NestedLazyMultiIterable } from '../util/nested-iterable';
+import { ScaleDegree } from './scale-degree';
+import { ChordQuality } from '../chord/chord-quality';
+import { Substitution, SubstitutionRule } from './substitution';
+import { product } from '../util/product';
+import { iteratorMap } from '../util/iterator-map';
 
 function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
-    for(let voicePart in one.voices) {
+    for(const voicePart in one.voices) {
         if(one.voices[voicePart]?.name !== two.voices[voicePart]?.name) {
             return false;
         }
@@ -59,12 +57,12 @@ function constraintsEqual(one: HarmonizedChord, two: HarmonizedChord) {
 }
 
 /**
-* 
-* TODO does not need to be symmetric
-*/
+ * 
+ * TODO does not need to be symmetric
+ */
 function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
     const compatible = <T>(one: T | undefined, two: T | undefined) => !one || !two || one == two;
-    for(let voicePart in one.voices) {
+    for(const voicePart in one.voices) {
         if(!compatible(one.voices[voicePart]?.name, two.voices[voicePart]?.name)) {
             return null;
         }
@@ -99,20 +97,20 @@ function reconcileConstraints(one: HarmonizedChord, two: IncompleteChord) {
     if(one.romanNumeral) {
         const romanNumeral = one.romanNumeral;
         const oneNotes = romanNumeral?.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
-        if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))){
+        if(!two.voices.filter(isDefined).every(note => oneNotes.includes(note.simpleName))) {
             return null;
         }
     } else if(two.romanNumeral) {
         const romanNumeral = two.romanNumeral;
         const twoNotes = romanNumeral.intervals.map(interval => romanNumeral.root ? interval.transposeUp(romanNumeral.root).simpleName : undefined);
-        if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))){
+        if(!one.voices.filter(isDefined).every(note => twoNotes.includes(note.simpleName))) {
             return null;
         }
     }
-    const romanNumeral = (one.romanNumeral || two.romanNumeral)?.with({...one.romanNumeral.flags, ...two.romanNumeral?.flags});
-    const voices = [...new Array(Math.max(one.voices.length, two.voices.length))].map((_, index) => one.voices[index] || two.voices[index]);
-    const flags = {...(one.flags || {}), ...(two.flags || {})};
-    return new HarmonizedChord({romanNumeral, voices, flags});
+    const romanNumeral = (one.romanNumeral || two.romanNumeral)?.with({ ...one.romanNumeral.flags, ...two.romanNumeral?.flags });
+    const voices = [ ...new Array(Math.max(one.voices.length, two.voices.length)) ].map((_, index) => one.voices[index] || two.voices[index]);
+    const flags = { ...(one.flags || {}), ...(two.flags || {}) };
+    return new HarmonizedChord({ romanNumeral, voices, flags });
 }
 
 class HarmonizerContext {
@@ -151,9 +149,9 @@ export interface HarmonizerParameters {
     enabledSubstitutions?: SubstitutionRule[];
 
     /*
-    * If not greedy, the depth at which to sum through for comparisons
-    * TODO?
-    */
+     * If not greedy, the depth at which to sum through for comparisons
+     * TODO?
+     */
     // depth?: boolean;
 
     /**
@@ -215,7 +213,7 @@ export type CompleteHarmonyGenerator = NestedIterable<HarmonizedChord[]>;
  * Class that yields harmonies for a given set of constraints
  */
 export class Harmonizer {
-    constructor(public params: HarmonizerParameters){ }
+    constructor(public params: HarmonizerParameters) { }
 
     /**
      * Find the next possible chord to progress to (with modulations and expansions between) without looking at the constraints
@@ -233,16 +231,18 @@ export class Harmonizer {
         // Get options available to us from current chord
         const progressions = this.params.enabledProgressions || Progression.defaultProgressions;
         const scale = constraint.romanNumeral?.scale || previous.scale;
-        let options = [...Progression.matchingProgressions(scale, previous, progressions)];
-        // console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
-        // console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
+        const options = [ ...Progression.matchingProgressions(scale, previous, progressions) ];
+        /*
+         * console.log('Previous are', previous.slice().reverse().map(chord => chord.romanNumeral.name).join(' '));
+         * console.log('Options are', options.map(option => option.romanNumeral.name).join(', '));
+         */
 
         // TODO rethink modulation again
         if(this.params.canModulate && !constraint.romanNumeral?.scale) {
             const oldScale = previous.scale;
-            let modulationsAllowed = this.params.modulationsAllowed;
+            const modulationsAllowed = this.params.modulationsAllowed;
 
-            const majorAndMinor = (key: Key) => [[key, Scale.Quality.MAJOR], [key, Scale.Quality.MINOR]] as Scale[];
+            const majorAndMinor = (key: Key) => [[ key, Scale.Quality.MAJOR ], [ key, Scale.Quality.MINOR ]] as Scale[];
             const possibleScales = modulationsAllowed ? modulationsAllowed.map(modulation => Key.fromString(modulation.transposeUp(Key.toNote(oldScale[0])).name)).flatMap(majorAndMinor) : Key.names.map(Key.fromString).flatMap(majorAndMinor);
 
             options.push(...options
@@ -252,35 +252,39 @@ export class Harmonizer {
                     }
                     const romanNumeral = option.relativeToScale(scale);
                     if(romanNumeral) {
-                        const flags = {...option.flags};
+                        const flags = { ...option.flags };
                         flags.pivot = true;
                         return romanNumeral.with({ flags });
                     }
                     return undefined;
                 }))
                 .filter(isDefined));
-                // console.log('Pivoted options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
+            // console.log('Pivoted options are', options.map(option => '[' + option.map(chord => chord.romanNumeral.name).join(' ') + ']').join(' '));
         }
 
         for(const terminal of options) {
-            //use expansions
+            // use expansions
             const expansions = this.params.enabledExpansions || Expansion.defaultExpansions;
-            const expanded = [...Expansion.matchingExpansions(scale, previous, terminal, expansions)];
+            const expanded = [ ...Expansion.matchingExpansions(scale, previous, terminal, expansions) ];
             // TODO option chaining
             expanded.sort((a, b) => b.length - a.length);
-            // TODO remove duplicates
-            // console.log('Applied options are', expanded.map(option => '[' + option.map(chord => chord.name).join(' ') + ']').join(', '));
+            /*
+             * TODO remove duplicates
+             * console.log('Applied options are', expanded.map(option => '[' + option.map(chord => chord.name).join(' ') + ']').join(', '));
+             */
 
             const substitutions = this.params.enabledSubstitutions || Substitution.defaultSubstitutions;
-            const substituted = [...Substitution.matchingSubstitutions(scale, terminal, substitutions)];
+            const substituted = [ ...Substitution.matchingSubstitutions(scale, terminal, substitutions) ];
 
-            const productOptions = iteratorMap(product(expanded, substituted), ([expansion, substitution]) => [...expansion.slice(0, expansion.length - 1), substitution]);
+            const productOptions = iteratorMap(product(expanded, substituted), ([ expansion, substitution ]) => [ ...expansion.slice(0, expansion.length - 1), substitution ]);
 
-            for(let option of productOptions) {
+            for(const option of productOptions) {
                 if(position + option.length <= constraints.length) {
                     if(option.some(chord => !chord)) {
-                        // console.log(option);
-                        // TODO why is this?
+                        /*
+                         * console.log(option);
+                         * TODO why is this?
+                         */
                         continue;
                     }
                     if(shouldYieldAsIs) {
@@ -290,7 +294,7 @@ export class Harmonizer {
     
                             const { romanNumeral, voices, flags } = constraints[i + position];
                             if(!romanNumeral || !constraintsEqual(
-                                new HarmonizedChord({romanNumeral: option[i] }),
+                                new HarmonizedChord({ romanNumeral: option[i] }),
                                 new HarmonizedChord({ romanNumeral, voices, flags }))
                             ) {
                                 shouldYieldAsIs = true;
@@ -298,14 +302,14 @@ export class Harmonizer {
                             }
                         }
                     }
-                    yield [option, terminal];
+                    yield [ option, terminal ];
                 }
             }
         }
 
         if(constraint.romanNumeral && shouldYieldAsIs) {
             const { romanNumeral } = constraint;
-            yield [[romanNumeral], romanNumeral];
+            yield [[ romanNumeral ], romanNumeral ];
         }
     }
 
@@ -318,11 +322,11 @@ export class Harmonizer {
         if(position >= constraints.length) {
             return;
         }
-        for(const [option, next] of this.nextHarmony(constraints, position, previous)) {
+        for(const [ option, next ] of this.nextHarmony(constraints, position, previous)) {
             let index = 0;
             const reconciledOption = Array(option.length) as HarmonizedChord[];
             for(; index < option.length; index++) {
-                const reconciled = reconcileConstraints(new HarmonizedChord({romanNumeral: option[index] }), constraints[position + index]);
+                const reconciled = reconcileConstraints(new HarmonizedChord({ romanNumeral: option[index] }), constraints[position + index]);
                 if(reconciled === null) {
                     break;
                 }
@@ -330,7 +334,7 @@ export class Harmonizer {
             }
             if(index === option.length) {
                 // console.log('Yielded ', option.map(chord => chord.romanNumeral?.name).join(' '));
-                yield [reconciledOption, next];
+                yield [ reconciledOption, next ];
             }
         }
     }
@@ -338,7 +342,7 @@ export class Harmonizer {
     private * checkCache(constraints: IncompleteChord[], position: number, previous: RomanNumeral, context?: HarmonizerContext) {
         // TODO consider caching only if the solution is dead-end
         if(!this.params.disableCaching && context) {
-            yield * context.getOrSet(position, previous, () => convertToMultiIterator(this.matchingCompleteHarmonyWithContext(constraints, position, previous, context)))
+            yield * context.getOrSet(position, previous, () => convertToMultiIterator(this.matchingCompleteHarmonyWithContext(constraints, position, previous, context)));
         } else {
             yield * this.matchingCompleteHarmonyWithContext(constraints, position, previous);
         }
@@ -354,13 +358,13 @@ export class Harmonizer {
         if(position >= constraints.length) {
             return;
         }
-        for(const [match, next] of this.matchingHarmony(constraints, position, previous)){
+        for(const [ match, next ] of this.matchingHarmony(constraints, position, previous)) {
             // TODO consider doing something to prevent re-evaluation of first item
             const recurse = makePeekableIterator(this.checkCache(constraints, position + match.length, next, context));
             
             // TODO move to resultsOfLength approach
             if(recurse.hasItems || match.length + position === constraints.length) {
-                yield [match, recurse[Symbol.iterator]()];
+                yield [ match, recurse[Symbol.iterator]() ];
             }
         }
     }
@@ -373,15 +377,15 @@ export class Harmonizer {
         if(constraints.length === 0) {
             return;
         }
-        const start = constraints[0].romanNumeral || new RomanNumeral({scaleDegree: ScaleDegree.TONIC, quality: scale[1] === Scale.Quality.MAJOR ? ChordQuality.MAJOR : ChordQuality.MINOR}, scale);
+        const start = constraints[0].romanNumeral || new RomanNumeral({ scaleDegree: ScaleDegree.TONIC, quality: scale[1] === Scale.Quality.MAJOR ? ChordQuality.MAJOR : ChordQuality.MINOR }, scale);
 
-        const chord = reconcileConstraints(new HarmonizedChord({romanNumeral: start}), constraints[0]);
+        const chord = reconcileConstraints(new HarmonizedChord({ romanNumeral: start }), constraints[0]);
         if(chord === null) {
             return;
         }
         const recurse = makePeekableIterator(this.matchingCompleteHarmonyWithContext(constraints, 1, chord.romanNumeral, new HarmonizerContext()));
         if(recurse.hasItems || constraints.length === 1) {
-            yield [[chord], recurse[Symbol.iterator]()];
+            yield [[ chord ], recurse[Symbol.iterator]() ];
         }
     }
 }

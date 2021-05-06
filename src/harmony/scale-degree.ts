@@ -9,13 +9,13 @@ export enum ScaleDegree {
 }
 
 export namespace ScaleDegree {
-    export const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+    export const romanNumerals = [ 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII' ];
     
-    export function toRomanNumeral(scaleDegree: ScaleDegree){
+    export function toRomanNumeral(scaleDegree: ScaleDegree) {
         return romanNumerals[scaleDegree - 1];
     }
 
-    export function fromRomanNumeral(romanNumeral: string){
+    export function fromRomanNumeral(romanNumeral: string) {
         const index = romanNumerals.indexOf(romanNumeral.toUpperCase());
         if(index < 0) {
             throw 'Invalid scale degree ' + romanNumeral;
@@ -23,5 +23,5 @@ export namespace ScaleDegree {
         return index + 1;
     }
 
-    export const ALIASED = Object.freeze(Object.fromEntries(romanNumerals.map((romanNumeral, index) => [romanNumeral, index + 1 as ScaleDegree])));
+    export const ALIASED = Object.freeze(Object.fromEntries(romanNumerals.map((romanNumeral, index) => [ romanNumeral, index + 1 as ScaleDegree ])));
 }

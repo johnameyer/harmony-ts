@@ -5,11 +5,14 @@ import { IChord } from './ichord';
 
 export class IncompleteChord implements IChord {
     protected _voices: (AbsoluteNote | undefined)[];
+
     protected _romanNumeral: RomanNumeral | undefined;
+
     protected _flags: {[key: string]: boolean};
+
     protected _intervals: (Interval | undefined)[] | undefined;
 
-    constructor({ voices, romanNumeral, flags}: { voices?: (AbsoluteNote | undefined)[]; romanNumeral?: RomanNumeral; flags?: {[key: string]: boolean} }) {
+    constructor({ voices, romanNumeral, flags }: { voices?: (AbsoluteNote | undefined)[]; romanNumeral?: RomanNumeral; flags?: {[key: string]: boolean} }) {
         if(voices) {
             this._voices = voices;
         } else {

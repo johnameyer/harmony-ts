@@ -1,13 +1,13 @@
-import { Accidental } from "../accidental";
+import { Accidental } from '../accidental';
 
 // TODO again fix for circular dependencies
-const notes: string[] = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
-const semitones = [0, 2, 4, 5, 7, 9, 11, 12];
+const notes: string[] = [ 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C' ];
+const semitones = [ 0, 2, 4, 5, 7, 9, 11, 12 ];
 
 export class Note {
     constructor(protected _letter: string, protected _accidental: Accidental) {
         // TODO move to letter enum
-        if(_letter.length !== 1 || _letter.toLowerCase() < "a" || _letter.toLowerCase() > "g") {
+        if(_letter.length !== 1 || _letter.toLowerCase() < 'a' || _letter.toLowerCase() > 'g') {
             throw _letter + ' is not [A-Ga-g]';
         }
     }
@@ -45,7 +45,7 @@ export class Note {
         if(match == null) {
             throw note + ' is invalid';
         }
-        const [letter, accidentalString] = match.slice(1);
+        const [ letter, accidentalString ] = match.slice(1);
         const accidental = Accidental.fromString(accidentalString || '');
 
         return new Note(letter, accidental);

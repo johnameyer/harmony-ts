@@ -1,5 +1,5 @@
-import { AbsoluteNote } from "../note/absolute-note";
-import { Interval } from "../interval/interval";
+import { AbsoluteNote } from '../note/absolute-note';
+import { Interval } from '../interval/interval';
 
 /**
  * Describes the motion between two voices
@@ -23,7 +23,7 @@ export enum Motion {
     CONTRARY,
 }
 export namespace Motion {
-    export const names = ['PARALLEL', 'SIMILAR', 'OBLIQUE', 'CONTRARY'];
+    export const names = [ 'PARALLEL', 'SIMILAR', 'OBLIQUE', 'CONTRARY' ];
 
     export function toString(motion: Motion) {
         return names[motion];

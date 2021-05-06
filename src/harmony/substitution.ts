@@ -1,9 +1,7 @@
-import { HarmonizedChord } from "../chord/harmonized-chord";
-import { Scale } from "../scale";
-import { iteratorMap } from "../util/iterator-map";
-import { RomanNumeral } from "./roman-numeral";
-import { checkAgainstRule, match, matchAsIs, MatchingRule, yieldChordsFromRule } from "./rule";
-import { ScaleDegree } from "./scale-degree";
+import { Scale } from '../scale';
+import { RomanNumeral } from './roman-numeral';
+import { checkAgainstRule, match, matchAsIs, MatchingRule, yieldChordsFromRule } from './rule';
+import { ScaleDegree } from './scale-degree';
 
 export type SubstitutionRule = {
     target: MatchingRule,
@@ -17,7 +15,7 @@ const {
     IV,
     V,
     VI,
-    VII
+    VII,
 } = ScaleDegree.ALIASED;
 
 /**
@@ -30,34 +28,34 @@ export namespace Substitution {
     export const basic = [
         {
             target: matchAsIs(V),
-            substitute: matchAsIs(V, { hasSeventh: true })
-        }
+            substitute: matchAsIs(V, { hasSeventh: true }),
+        },
     ] as SubstitutionRule[];
 
     
     export const dominantInversions = [
         {
-            target: matchAsIs(V, { inversions: [1] }),
-            substitute: matchAsIs(V, { inversions: [1], hasSeventh: true })
-        }
+            target: matchAsIs(V, { inversions: [ 1 ] }),
+            substitute: matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }),
+        },
     ] as SubstitutionRule[];
 
     export const subdominantSevenths = [
         {
             target: match(II),
-            substitute: match(II, { hasSeventh: true })
+            substitute: match(II, { hasSeventh: true }),
         },
         {
-            target: match(II, { inversions: [1] }),
-            substitute: match(II, { inversions: [1], hasSeventh: true })
+            target: match(II, { inversions: [ 1 ] }),
+            substitute: match(II, { inversions: [ 1 ], hasSeventh: true }),
         },
         {
             target: match(IV),
-            substitute: match(IV, { hasSeventh: true })
-        }
+            substitute: match(IV, { hasSeventh: true }),
+        },
     ] as SubstitutionRule[];
 
-    export const defaultSubstitutions = [...Substitution.basic, ...Substitution.dominantInversions, ...Substitution.subdominantSevenths] as SubstitutionRule[];
+    export const defaultSubstitutions = [ ...Substitution.basic, ...Substitution.dominantInversions, ...Substitution.subdominantSevenths ] as SubstitutionRule[];
 
     export function * matchingSubstitutions(scale: Scale, target: RomanNumeral, substitutions: SubstitutionRule[] = defaultSubstitutions): Generator<RomanNumeral> {
         yield target;

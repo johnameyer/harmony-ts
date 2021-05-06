@@ -1,5 +1,3 @@
-
-
 export function makeLazyArray<S>(producers: (() => S)[]) {
     const arr: (S | undefined)[] = new Array(producers.length);
 
@@ -19,8 +17,8 @@ export function makeLazyArray<S>(producers: (() => S)[]) {
             }
             // @ts-ignore
             return Reflect.get(...arguments);
-        }
-    }
+        },
+    };
 
     return new Proxy(arr, proxyHandler) as S[];
 }

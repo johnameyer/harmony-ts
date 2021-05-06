@@ -9,7 +9,9 @@ export class Chord {
     protected _notes: Note[];
 
     protected _root!: Note;
+
     protected _quality: ChordQuality | undefined;
+
     protected _seventhQuality!: IntervalQuality | null;
 
     constructor(notes: Note[]) {
@@ -22,7 +24,7 @@ export class Chord {
     }
 
     protected _update = () => {
-        const notes: Note[] = [... new Set(this._notes)].filter(isDefined);
+        const notes: Note[] = [ ... new Set(this._notes) ].filter(isDefined);
         // TODO support nonharmonic notes
         const root = notes.find(note => {
             const modified = new AbsoluteNote(note.letterName, note.accidental, 0);
@@ -52,18 +54,20 @@ export class Chord {
                 this._quality = ChordQuality.MINOR;
             }
         }
-        // if(this._bass.letterName == root.letterName) {
-        //     this._inversion = 0;
-        // } else {
-        //     const bassInterval = new Interval(new Note(root.letterName), this._bass);
-        //     if(bassInterval.simpleSize == '3') {
-        //         this._inversion = 1;
-        //     } else if(bassInterval.simpleSize == '5') {
-        //         this._inversion = 2;
-        //     } else if(bassInterval.simpleSize == '7') {
-        //         this._inversion = 3;
-        //     }
-        // }
+        /*
+         * if(this._bass.letterName == root.letterName) {
+         *     this._inversion = 0;
+         * } else {
+         *     const bassInterval = new Interval(new Note(root.letterName), this._bass);
+         *     if(bassInterval.simpleSize == '3') {
+         *         this._inversion = 1;
+         *     } else if(bassInterval.simpleSize == '5') {
+         *         this._inversion = 2;
+         *     } else if(bassInterval.simpleSize == '7') {
+         *         this._inversion = 3;
+         *     }
+         * }
+         */
         const seventh = intervals.find(Interval.ofSize('7'));
         if(seventh) {
             this._seventhQuality = seventh.quality;
