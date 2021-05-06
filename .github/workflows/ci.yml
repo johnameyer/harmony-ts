@@ -1,0 +1,156 @@
+# This adapted from https://coryrylan.com/blog/building-angular-cli-projects-with-github-actions
+name: ci
+on: [push]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+    
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Check Circular Dependencies
+        run: npx madge --circular --extensions ts ./src
+
+      - name: Lint
+        run: npm run lint -- --no-fix
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: dist/
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+          path: dist/
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Unit Tests
+        run: npm run test -- --verbose
+
+  package-tests:
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      matrix:
+        node-version: [12.x]
+        progression:
+          - I IV viio iii vi ii V I IV6 viio iii6 vi ii6 V
+          - I6 viio6 I vi IV6 V43/V V viio7/V V vi IV6 V43/V V
+        script:
+          - success
+          - failure
+        ordering:
+          - depth
+          - default
+        key:
+          - Db
+          - B
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+          path: dist/
+
+      - name: Install Dependencies For Test Script
+        run: npm ci
+        working-directory: ./test/
+
+      - name: Build Test Script
+        run: tsc
+        working-directory: ./test/
+
+      - name: Run Test
+        run: node dist/${{ matrix.script }}.test.js -o ${{ matrix.ordering }} -k ${{ matrix.key }} ${{ matrix.progression }}
+        working-directory: ./test/
+        timeout-minutes: 10
