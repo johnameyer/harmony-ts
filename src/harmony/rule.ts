@@ -1,3 +1,4 @@
+import { Accidental } from '../accidental';
 import { ChordQuality } from '../chord/chord-quality';
 import { Scale } from '../scale';
 import { RomanNumeral } from './roman-numeral';
@@ -19,17 +20,19 @@ export interface MatchingRule {
 
     fullyDiminishedSeventh?: boolean;
 
+    accidental?: Accidental;
+
     flags: {[key: string]: boolean};
 }
 
-type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags'>>;
+type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags' | 'accidental'>>;
 
-export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: false } as MatchingRule;
+export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, accidental, flags }: MatchParams = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, accidental, flags, matchingQuality: false } as MatchingRule;
 }
 
-export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, flags }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, flags, matchingQuality: true } as MatchingRule;
+export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, accidental, flags }: MatchParams = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, accidental, flags, matchingQuality: true } as MatchingRule;
 }
 
 export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boolean {
@@ -50,6 +53,9 @@ export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boole
     if(chord.applied != rule.applied && (!chord.applied && !rule.applied)) {
         return false;
     }
+    if(chord.accidental !== rule.accidental && rule.accidental !== undefined) {
+        return false;
+    }
     if(rule.fullyDiminishedSeventh !== undefined && rule.fullyDiminishedSeventh != rule.fullyDiminishedSeventh) {
         return false;
     }
@@ -65,6 +71,7 @@ export function * yieldChordsFromRule(rule: MatchingRule, scale: Scale): Generat
             inversion: inversion,
             hasSeventh: rule.hasSeventh,
             applied: rule.applied,
+            accidental: rule.accidental,
             fullyDiminishedSeventh: rule.fullyDiminishedSeventh,
             flags: rule.flags,
         }, scale);

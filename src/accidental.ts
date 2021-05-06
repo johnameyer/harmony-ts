@@ -16,10 +16,10 @@ export namespace Accidental {
         return names[accidental + 2];
     }
 
-    export function fromString(accidental: string): Accidental {
+    export function fromString(accidental: string): Accidental | undefined {
         const index = names.indexOf(accidental);
         if(index == -1) {
-            throw 'Invalid accidental ' + accidental;
+            return undefined;
         }
         return index - 2;
     }
