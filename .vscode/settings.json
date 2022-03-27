@@ -1,0 +1,11 @@
+{
+    "files.watcherExclude": {
+        "**/dist/**": true,
+        "**/node_modules/**": true,
+        "pnpm-lock.yaml": true
+    },
+    "typescript.tsserver.watchOptions": {
+        // https://www.typescriptlang.org/docs/handbook/configuring-watch.html
+        "excludeDirectories": ["**/node_modules", "**/dist"]
+    }
+}
