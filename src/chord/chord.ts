@@ -74,7 +74,7 @@ export class Chord {
         } else {
             this._seventhQuality = null;
         }
-    }
+    };
 
     get quality() {
         return this._quality;
