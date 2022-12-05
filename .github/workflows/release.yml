@@ -28,43 +28,14 @@ jobs:
       - name: Build
         run: pnpm run build
         
-      - name: Get Version
-        run: echo "version=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
-
-      - name: Get Changelog
-        run: |
-          echo "changelog<<EOF" >> $GITHUB_ENV
-          git log $(git describe --tags --abbrev=0)..HEAD --format=%B >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-      - name: NPM Publish
-        id: publish
-        uses: JS-DevTools/npm-publish@v1
+      - name: Changesets PR / Publish
+        id: changesets
+        uses: changesets/action@v1
         with:
-          token: ${{ secrets.NPM_PUBLISH_TOKEN }}
-
-      - name: Create Release
-        id: release
-        uses: actions/create-release@v1
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          title: Version packages
+          commit: Publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.version }}
-          release_name: Release v${{ env.version }}
-          body: ${{ env.changelog }}
-          draft: false
-          prerelease: false
-      
-      - name: Create TAR
-        run: tar -C dist/ -vcf dist.tar ./
-
-      - name: Upload Build
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./dist.tar
-          asset_name: v${{ env.version }}.tar
-          asset_content_type: application/tar
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
