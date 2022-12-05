@@ -7,29 +7,27 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v1
-
-      - name: Cache Node Modules
-        uses: actions/cache@v1
+      - uses: actions/checkout@v3
+      
+      - uses: pnpm/action-setup@v2
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          version: 'latest'
 
-      - name: Setup Node ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 'latest'
+          check-latest: true
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Check Circular Dependencies
-        run: npx madge --circular --extensions ts ./src
+        run: pnpm dlx madge --circular --extensions ts ./src
 
       - name: Lint
-        run: npm run lint -- --no-fix
+        run: pnpm run lint --no-fix
 
   build:
     runs-on: ubuntu-latest
@@ -90,7 +88,7 @@ jobs:
         run: pnpm i
 
       - name: Unit Tests
-        run: pnpm run test -- --verbose
+        run: pnpm run test --verbose
 
   package-tests:
     runs-on: ubuntu-latest
@@ -133,11 +131,11 @@ jobs:
           path: dist/
 
       - name: Install Dependencies For Test Script
-        run: pnpm ci
+        run: pnpm install
         working-directory: ./test/
 
       - name: Build Test Script
-        run: pnpm dlx tsc
+        run: pnpm run tsc
         working-directory: ./test/
 
       - name: Run Test
