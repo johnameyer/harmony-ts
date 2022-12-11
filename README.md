@@ -2,11 +2,10 @@
 <div align="center">
 
 [![Documentation](https://img.shields.io/static/v1?label=docs&message=hosted&color=informational&logo=typescript)](https://johnameyer.github.io/harmony-ts)
-[![Github CI](https://img.shields.io/github/workflow/status/johnameyer/harmony-ts/CI?logo=github)](https://github.com/johnameyer/harmony-ts/actions)
+[![Github CI](https://img.shields.io/github/workflow/status/johnameyer/harmony-ts/ci?logo=github)](https://github.com/johnameyer/harmony-ts/actions)
 [![npm version](https://img.shields.io/npm/v/harmony-ts?logo=npm)](https://badge.fury.io/js/harmony-ts)
 ![GitHub Last Commit](https://img.shields.io/github/last-commit/johnameyer/harmony-ts?logo=github)
 ![Typescript](https://img.shields.io/github/languages/top/johnameyer/harmony-ts?logo=typescript)
-![Dependencies](https://img.shields.io/david/johnameyer/harmony-ts?logo=npm)
 </div>
 
 This project is an engine for generating and analyzing four-part textures (and eventually other forms) in the style of Bach and the classical era. Currently, it allows one to pass a series of constraints, such as chord/type/inversion and voice parts, and it will produce the complete texture using the settings provided. It also gives many useful basic music theory functions like intervals and chords.
