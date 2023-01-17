@@ -136,16 +136,22 @@ export namespace Progression {
         
         export const neopolitan = [
             [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+            [ match(III), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+            [ match(VI), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
             [ match(IV), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
-            [ match(II, { inversions: [ 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
+            // [ match(II, { inversions: [ 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
 
-            [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
-            [ match(II), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
-            [ match(IV), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+            /*
+             * [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+             * [ match(II), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+             * [ match(IV), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }) ],
+             */
             
             [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }), matchAsIs(V) ],
+            [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }), matchAsIs(V, { chordQuality: MAJOR, hasSeventh: true, inversions: [ 3 ] }) ],
+            [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }), match(VII, { chordQuality: DIMINISHED, hasSeventh: true, inversions: [ 2 ] }) ],
 
-            [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }), matchAsIs(V, { inversions: [ 1 ] }) ],
+            // [ matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR }), matchAsIs(V, { inversions: [ 1 ] }) ],
         ].map(ruleOf);
     }
 
