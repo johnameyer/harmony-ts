@@ -52,7 +52,7 @@ export class AbsoluteNote extends Note {
             throw note + ' is invalid';
         }
         const [ letter, accidentalString, octaveString ] = match.slice(1);
-        const accidental = Accidental.fromString(accidentalString || '');
+        const accidental = Accidental.fromString(accidentalString || '') || Accidental.NATURAL;
         const octave = Number(octaveString);
         return new AbsoluteNote(letter, accidental, octave);
     }

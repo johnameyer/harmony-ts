@@ -12,10 +12,16 @@ import { IChord } from '../chord/ichord';
 import { CompleteChord } from '../chord/complete-chord';
 import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
+import { Accidental } from '../accidental';
+import { findIndices, groupIndices } from '../util/array-extensions';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
+
+const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
+const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
+const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
 
 export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
 export type PartWritingPreference = (...chords: CompleteChord[]) => number;
@@ -378,8 +384,6 @@ export namespace PartWriting {
                 if(!prevRomanNumeral || !currRomanNumeral || !intervals) {
                     return true;
                 }
-                const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR;
-                const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED;
                 if(isV(prevRomanNumeral) && !(isV(currRomanNumeral) || isViio(currRomanNumeral))) {
                     const index = intervals.findIndex(Interval.ofSize('3'));
                     const prevVoice = prevVoices[index];
@@ -420,6 +424,18 @@ export namespace PartWriting {
                         return false;
                     }
                 }
+                if(isbII(prevRomanNumeral) && !isbII(currRomanNumeral)) {
+                    // Note that the top-most flattened two should resolve (i.e. starting from 0)
+                    const index = intervals.findIndex(Interval.ofSize('U'));
+                    const prevVoice = prevVoices[index];
+                    const currVoice = currVoices[index];
+                    if(!prevVoice || !currVoice) {
+                        return true;
+                    }
+                    if(index === -1 || ![ 'm2', 'd3' ].includes(new Interval(currVoice, prevVoice).name)) {
+                        return false;
+                    }
+                }
                 return true;
             }
 
@@ -453,13 +469,13 @@ export namespace PartWriting {
                     return true;
                 }
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(oldVoice, voice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
                 } catch {}
                 try {
-                    const interval = new Interval(oldVoice, voice).simpleSize;
+                    const interval = new ComplexInterval(voice, oldVoice).complexSize;
                     if(interval === 'U' || interval === '2') {
                         return true;
                     }
@@ -534,34 +550,34 @@ export namespace PartWriting {
                 return true;
             }
 
-            /**
+            /*
              * Checks that diminished fifths resolve inwards
              * @todo implement
              * @todo is this necessary
+             * export function diminishedFifthResolution(_: undefined) {
+             *    // check that a d5 or A4 involving the bass resolves normally
+             *
+             *    // TODO allow for exceptions as on page 415
+             *    
+             *    /*
+             *     * check that tritone as d5 resolves inwards (A4 can go to P4) not to P5 unless 10ths with soprano bass (can be only the two chords)
+             *     * for(let lowerVoice = 0; lowerVoice < prev.voices.length - 1; lowerVoice++) {
+             *     *     for(let upperVoice = 0; upperVoice < prev.voices.length; upperVoice++) {
+             *     *         try {
+             *     *             if(new Interval(prev.voices[lowerVoice], prev.voices[upperVoice]).name == 'd5') {
+             *     *                 if(new Interval(prev.voices[lowerVoice], chord.voices[lowerVoice]).simpleSize == '2' && 
+             *     *                 new Interval(prev.voices[lowerVoice], prev.voices[upperVoice]).name == 'd5') {
+             *     *                     return false;
+             *     *                 }
+             *     *             }
+             *     *         }
+             *     *     }
+             *     * }
+             *     
+             *    return true;
+             *}
              */
-            export function diminishedFifthResolution(_: undefined) {
-                // check that a d5 or A4 involving the bass resolves normally
-
-                // TODO allow for exceptions as on page 415
-                
-                /*
-                 * check that tritone as d5 resolves inwards (A4 can go to P4) not to P5 unless 10ths with soprano bass (can be only the two chords)
-                 * for(let lowerVoice = 0; lowerVoice < prev.voices.length - 1; lowerVoice++) {
-                 *     for(let upperVoice = 0; upperVoice < prev.voices.length; upperVoice++) {
-                 *         try {
-                 *             if(new Interval(prev.voices[lowerVoice], prev.voices[upperVoice]).name == 'd5') {
-                 *                 if(new Interval(prev.voices[lowerVoice], chord.voices[lowerVoice]).simpleSize == '2' && 
-                 *                 new Interval(prev.voices[lowerVoice], prev.voices[upperVoice]).name == 'd5') {
-                 *                     return false;
-                 *                 }
-                 *             }
-                 *         }
-                 *     }
-                 * }
-                 */
-                return true;
-            }
-
+            
             /**
              * Checks if there is a melodic A2 or too large of intervals
              * @param chord 
@@ -1022,30 +1038,50 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            /*
-             * export function checkCrossRelations(chord: HarmonizedChord, prev: HarmonizedChord) {
-             *     //TODO
-             *     // single voice best
-             */
+            export function checkCrossRelations({ voices: currVoices, romanNumeral }: CompleteChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals: prevInterval }: CompleteChord) {
+                // TODO more complicated textures
 
-            /*
-             *     // applied leading tone in bass
-             *     // where cross relation in inner voice
-             *     // avoid leaps in upper voices
-             */
+                // TODO write more efficiently than MVP, also handle multiple instances better
 
-            //     // same register, different voice
+                // doubling fine as long as one resolves properly
 
-            /*
-             *     // chromaticized voice exchange
-             *     // addtl make new voice exchange rule to promote exchange through passing chords?
-             */
+                const prevNotes = groupIndices(prevVoices, note => note.simpleName);
+                const indicesOfInterest = findIndices(currVoices, (note, index) => prevNotes[note.simpleName]?.length > 0 && !(isbII(prevRomanNumeral) && prevInterval[index].simpleSize === 'U'));
+                
+                // single voice best
+                if(indicesOfInterest.every(index => prevVoices[index].letterName === currVoices[index].letterName && prevVoices[index].octavePosition === currVoices[index].octavePosition)) {
+                    return 10;
+                }
 
-            /*
-             *     // outer voices avoided, except where soprano moves by step
-             *     return true;
-             * }
-             */
+                // same register, different voice also not bad
+                if(indicesOfInterest.every(index => prevNotes[currVoices[index].letterName]?.some(prevIndex => prevVoices[prevIndex].octavePosition === currVoices[index].octavePosition) || true)) {
+                    return 9;
+                }
+
+                /*
+                 * applied leading tone in bass
+                 * where cross relation in inner voice
+                 * avoid leaps in upper voices
+                 */
+                if(romanNumeral.applied !== null) {
+                    if(new Interval(currVoices[currVoices.length - 1], Scale.getNotesOfScale(romanNumeral.scale)[romanNumeral.applied]).name == 'm2') {
+                        if(indicesOfInterest.length === 1 && prevNotes[currVoices[indicesOfInterest[0]].letterName].every(index => index > 0)) {
+                            // TODO avoid leaps
+                            return 5;
+                        }
+                    }
+                }
+
+                /*
+                 * TODO
+                 * chromaticized voice exchange
+                 * addtl make new voice exchange rule to promote exchange through passing chords?
+                 */
+            
+                // TODO outer voices avoided, except where soprano moves by step
+                return 0;
+            }
+            
 
             /**
              * Prefer using a chord that is different from the previous

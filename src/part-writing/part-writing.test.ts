@@ -67,6 +67,27 @@ describe('PartWriting', () => {
             expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
         });
 
+        test.each([ ...pair([
+            [ 'IV', 'A4', 'F4', 'C4', 'F3' ],
+            [ 'iv', 'Ab4', 'F4', 'C4', 'F3' ],
+        ]), ...pair([
+            [ 'ii', 'A4', 'F4', 'D4', 'D3' ],
+            [ 'V7/V', 'A4', 'F#4', 'C4', 'D3' ],
+            [ 'V7', 'G4', 'F4', 'B3', 'G3' ],
+        ]), ...pair([
+            [ 'IV', 'A4', 'F4', 'C4', 'F3' ],
+            [ 'bII6', 'Ab4', 'F4', 'Db4', 'F3' ],
+            // [ 'viio7/V', 'Ab4', 'F4', 'D4', 'F#3' ],
+            [ 'V7', 'G4', 'F4', 'B3', 'G3' ],
+        ]) ])('%s to %s', (prev: any, chord: any) => {
+            chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
+            prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+        });
+
         // I IV viio iii vi ii V I
         test('sequence', () => {
             let chords: any[] = [

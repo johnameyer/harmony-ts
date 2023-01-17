@@ -1,5 +1,3 @@
-// TODO figure out whether should be chords : IncompleteChord[] or chord: IncompleteChord and how to handle
-
 import { RomanNumeral } from './roman-numeral';
 import { Scale } from '../scale';
 import { MatchingRule, match, matchAsIs, checkAgainstRule, yieldChordsFromRule, Rule } from './rule';
