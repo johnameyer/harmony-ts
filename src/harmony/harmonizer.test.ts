@@ -86,7 +86,7 @@ describe('Harmony', () => {
             [[ 'I', 'ii6', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicPredominant ]],
             [[ 'I', 'vi', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.submediant ]],
             [[ 'I', 'V65', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.dominantSevenths ]],
-            [[ 'I', 'bII6', 'V7', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.neopolitan ]],
+            [[ 'I', 'bII6', 'V7', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.neapolitan ]],
             [[ 'I', 'ii65', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicPredominant ]],
             [[ 'I', 'I64', 'V7', 'I' ], [ ...Progression.Shared.basic ]],
             [[ 'I', 'vi', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes ]],

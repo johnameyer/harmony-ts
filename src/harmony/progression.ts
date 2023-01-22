@@ -134,7 +134,7 @@ export namespace Progression {
             [ matchAsIs(VII, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 0, 1 ] }) ],
         ].map(ruleOf);
         
-        export const neopolitan = [
+        export const neapolitan = [
             [ match(I, { inversions: [ 0, 1 ] }), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
             [ match(III), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
             [ match(VI), matchAsIs(II, { accidental: Accidental.FLAT, chordQuality: MAJOR, inversions: [ 1 ] }) ],
@@ -155,7 +155,7 @@ export namespace Progression {
         ].map(ruleOf);
     }
 
-    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant, ...Progression.Shared.neopolitan ];
+    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant, ...Progression.Shared.neapolitan ];
 
     export function * matchingProgressions(scale: Scale, previous: RomanNumeral, progressions: ProgressionRule[] = defaultProgressions): Generator<RomanNumeral> {
         yield previous;

@@ -14,6 +14,7 @@ import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
 import { Accidental } from '../accidental';
 import { findIndices, groupIndices } from '../util/array-extensions';
+import { TimeSignature, TimeSignatureContext } from '../rhythm/time-signature';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -23,8 +24,8 @@ const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDe
 const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
 const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
 
-export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
-export type PartWritingPreference = (...chords: CompleteChord[]) => number;
+export type PartWritingRule = (settings: any, timeSignatureContext: TimeSignatureContext, ...chords: IChord[]) => boolean;
+export type PartWritingPreference = (timeSignatureContext: TimeSignatureContext, ...chords: CompleteChord[]) => number;
 
 const sopranoRange = [ 'B3', 'C4', 'G5', 'A5' ].map(absoluteNote);
 const altoRange = [ 'G3', 'G3', 'C5', 'D5' ].map(absoluteNote);
@@ -109,7 +110,7 @@ export namespace PartWriting {
              * Checks that the chord maintains proper vocal ranges
              * @param chord the chord to check
              */
-            export function range(settings: {ranges: AbsoluteNote[][]}, { voices }: IChord) {
+            export function range(settings: {ranges: AbsoluteNote[][]}, _timeSignatureContext: TimeSignatureContext, { voices }: IChord) {
                 for(const [ range, toCheck ] of zip(settings.ranges || voiceRange, voices) as [AbsoluteNote[], AbsoluteNote | undefined][]) {
                     if(!toCheck) {
                         continue;
@@ -129,7 +130,7 @@ export namespace PartWriting {
              * @param settings
              * @param chord the chord under consideration
              */
-            export function spelling(_: undefined, { romanNumeral, intervals, voices }: IChord) {
+            export function spelling(_: undefined, _timeSignatureContext: TimeSignatureContext, { romanNumeral, intervals, voices }: IChord) {
                 if(!romanNumeral || !intervals) {
                     return true;
                 }
@@ -147,7 +148,7 @@ export namespace PartWriting {
              * Checks that the chord does not double the leading tone
              * @param chord the chord to check
              */
-            export function leadingToneDoubling(_: undefined, { romanNumeral, romanNumeralFinalized, intervals, flags }: IChord) {
+            export function leadingToneDoubling(_: undefined, _timeSignatureContext: TimeSignatureContext, { romanNumeral, romanNumeralFinalized, intervals, flags }: IChord) {
                 if(!romanNumeralFinalized || romanNumeral?.flags.sequence) {
                     return true;
                 }
@@ -170,7 +171,7 @@ export namespace PartWriting {
              * Checks that the chord does not double the seventh
              * @param chord the chord to check
              */
-            export function seventhDoubling(_: undefined, { romanNumeral, intervals }: IChord) {
+            export function seventhDoubling(_: undefined, _timeSignatureContext: TimeSignatureContext, { romanNumeral, intervals }: IChord) {
                 if(!intervals) {
                     return true;
                 }
@@ -187,7 +188,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function completeness(_: undefined, chord: IChord, prev?: IChord) {
+            export function completeness(_: undefined, _timeSignatureContext: TimeSignatureContext, chord: IChord, prev?: IChord) {
                 if(!chord.romanNumeral || !chord.intervals) {
                     return true;
                 }
@@ -230,7 +231,7 @@ export namespace PartWriting {
              * Checks that the chord does not have too much space between the voice parts or that one voice is above another
              * @param chord the chord to check
              */
-            export function spacingAndCrossing(_: undefined, { voices }: IChord) {
+            export function spacingAndCrossing(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices }: IChord) {
                 let i = 0;
                 for(i = 0; i < voices.length - 2; i++) {
                     const higherVoice = voices[i];
@@ -260,7 +261,7 @@ export namespace PartWriting {
              * Checks that a accented (cadential) 64 does not double the tonic
              * @param chord 
              */
-            export function accented64Doubling(_: undefined, { romanNumeral, intervals }: IChord) {
+            export function accented64Doubling(_: undefined, _timeSignatureContext: TimeSignatureContext, { romanNumeral, intervals }: IChord) {
                 if(!romanNumeral || !intervals) {
                     return true;
                 }
@@ -277,12 +278,65 @@ export namespace PartWriting {
          * Rules about how a chord should be in relation to the previous chords
          */
         export namespace HorizontalRules {
+
+            export function checkHarmonyOverBarlines(_: undefined, timeSignatureContext: TimeSignatureContext, chord: IChord, ...prev: IChord[]) {
+                const currentPosition = prev.length;
+                const isStronger = TimeSignature.getBeatStrength(currentPosition, timeSignatureContext.timeSignature) < TimeSignature.getBeatStrength(currentPosition - 1, timeSignatureContext.timeSignature);
+                if(isStronger) {
+                    if(chord.romanNumeral !== undefined && chord.romanNumeral?.root?.simpleName === prev[0].romanNumeral?.root?.simpleName) {
+                        for(let i = 1; i < prev.length; i++) {
+                            if(chord.romanNumeral?.root?.simpleName !== prev[i].romanNumeral?.root?.simpleName) {
+                                break;
+                            }
+                            const isStronger = TimeSignature.getBeatStrength(currentPosition, timeSignatureContext.timeSignature) < TimeSignature.getBeatStrength(currentPosition - 1 - i, timeSignatureContext.timeSignature);
+                            
+                            if(!isStronger) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            export function checkBassOverBarlines(_: undefined, timeSignatureContext: TimeSignatureContext, chord: IChord, ...prev: IChord[]) {
+                const currentPosition = prev.length;
+                const isStronger = TimeSignature.getBeatStrength(currentPosition, timeSignatureContext.timeSignature) < TimeSignature.getBeatStrength(currentPosition - 1, timeSignatureContext.timeSignature);
+                /*
+                 * TODO convert voices array to something easier to access - e.g. .bassNote, .sopranoNote|.melodyNote
+                 * TODO allow checking voices[voices.length - 1] so can catch ahead of time
+                 */
+                if(isStronger) {
+                    if(chord.romanNumeral?.inversionNote !== undefined && chord.romanNumeral?.inversionNote?.simpleName === prev[0]?.romanNumeral?.inversionNote?.simpleName) {
+                        if(chord.romanNumeral.inversion === 3) {
+                            // 42 chord acts as a suspension
+                            return true;
+                        }
+                        for(let i = 1; i < prev.length; i++) {
+                            if(chord.romanNumeral?.inversionNote?.simpleName !== prev[i].romanNumeral?.inversionNote?.simpleName) {
+                                break;
+                            }
+                            const isStronger = TimeSignature.getBeatStrength(currentPosition, timeSignatureContext.timeSignature) < TimeSignature.getBeatStrength(currentPosition - 1 - i, timeSignatureContext.timeSignature);
+                            
+                            if(!isStronger) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             /**
              * Checks that the chord has no parallel unisons, fifths, or octaves from the previous
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function parallels(_: undefined, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
+            export function parallels(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
                 const pairings = [
                     [ 0, 1 ],
                     [ 0, 2 ],
@@ -309,7 +363,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function contraryFifths(_: undefined, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
+            export function contraryFifths(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
                 const pairings = currVoices.flatMap((_, outerIndex) => currVoices.map((_, innerIndex) => [ outerIndex, innerIndex ])).filter(([ one, two ]) => one < two);
                 return !((pairings
                     .map(([ upper, lower ]) => [ prevVoices[upper], prevVoices[lower], currVoices[upper], currVoices[lower] ])
@@ -329,7 +383,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-             export function voiceOverlap(_: undefined, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
+             export function voiceOverlap(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
                  for(let i = 0; i < currVoices.length - 1; i++) {
                      const lower = currVoices[i + 1];
                      const upper = currVoices[i];
@@ -351,7 +405,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function hiddenFifths(_: undefined, { voices: currVoices }: IChord, { voices: prevVoices, romanNumeral }: IChord) {
+            export function hiddenFifths(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices }: IChord, { voices: prevVoices, romanNumeral }: IChord) {
                 const bassVoice = currVoices[currVoices.length - 1];
                 const sopranoVoice = currVoices[0];
                 const oldBassVoice = prevVoices[prevVoices.length - 1];
@@ -376,7 +430,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, { voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized }: IChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals }: IChord) {
+            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, _timeSignatureContext: TimeSignatureContext, { voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized }: IChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals }: IChord) {
                 if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence) {
                     return true;
                 }
@@ -446,7 +500,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function seventhPreparation(_: undefined, { intervals, romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral, voices: prevVoices }: IChord) {
+            export function seventhPreparation(_: undefined, _timeSignatureContext: TimeSignatureContext, { intervals, romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral, voices: prevVoices }: IChord) {
                 if(!prevRomanNumeral || !currRomanNumeral?.hasSeventh) {
                     return true;
                 }
@@ -490,7 +544,7 @@ export namespace PartWriting {
              * @param prev the chord before `chord`
              * @param before the chord before `prev`
              */
-            export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
+            export function seventhResolution(settings: { scope: number }, _timeSignatureContext: TimeSignatureContext, chord: IChord, prev: IChord, ...before: IChord[]) {
                 // V42 can support 3 4 5
                 if(before[0]
                     && before[0].romanNumeral?.scaleDegree == ScaleDegree.TONIC
@@ -584,7 +638,7 @@ export namespace PartWriting {
              * @param prev 
              * @todo A2 is sometimes acceptable
              */
-            export function invalidIntervals(_: undefined, { voices: currVoices, romanNumeral }: IChord, { voices: prevVoices }: IChord) {
+            export function invalidIntervals(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices, romanNumeral }: IChord, { voices: prevVoices }: IChord) {
                 for(let index = 0; index < prevVoices.length; index++) {
                     const oldVoice = prevVoices[index];
                     const voice = currVoices[index];
@@ -612,7 +666,7 @@ export namespace PartWriting {
              * @param chord 
              * @param prev 
              */
-            export function accented64Preparation(_: undefined, { romanNumeral, voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
+            export function accented64Preparation(_: undefined, _timeSignatureContext: TimeSignatureContext, { romanNumeral, voices: currVoices }: IChord, { voices: prevVoices }: IChord) {
                 if(romanNumeral && romanNumeral.inversion === 2 && romanNumeral.hasSeventh === false) {
                     const fourthVoice = currVoices.findIndex(note => note && new Interval(romanNumeral.root, note).simpleSize === 'U');
                     if(fourthVoice === -1) {
@@ -645,10 +699,15 @@ export namespace PartWriting {
              * @param chord 
              * @param prev 
              */
-            export function accented64Resolution(_: undefined, { romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral, voices: prevVoices }: IChord) {
+            export function accented64Resolution(_: undefined, timeSignatureContext: TimeSignatureContext, { romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral, voices: prevVoices }: IChord, ...prev: IChord[]) {
                 if(prevRomanNumeral && prevRomanNumeral.inversion === 2 && prevRomanNumeral.hasSeventh === false) {
                     if(currRomanNumeral && currRomanNumeral.root.simpleName !== prevRomanNumeral.inversionInterval.transposeUp(prevRomanNumeral.root).simpleName) {
                         return true;
+                    }
+                    const currentPosition = prev.length + 1;
+                    const isStronger = TimeSignature.getBeatStrength(currentPosition, timeSignatureContext.timeSignature) < TimeSignature.getBeatStrength(currentPosition - 1, timeSignatureContext.timeSignature);
+                    if(isStronger) {
+                        return false;
                     }
                     const fourthVoice = prevVoices.findIndex(note => note && new Interval(prevRomanNumeral.root, note).simpleSize === 'U');
                     if(fourthVoice === -1) {
@@ -695,7 +754,7 @@ export namespace PartWriting {
                 return true;
             }
 
-            export function cadenceType(_: undefined, { flags, romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral }: IChord) {
+            export function cadenceType(_: undefined, _timeSignatureContext: TimeSignatureContext, { flags, romanNumeral: currRomanNumeral, voices: currVoices }: IChord, { romanNumeral: prevRomanNumeral }: IChord) {
                 if(!currRomanNumeral || !prevRomanNumeral) {
                     return true;
                 }
@@ -750,7 +809,7 @@ export namespace PartWriting {
              * @param chord
              * @param prev 
              */
-            export function sequence(_: undefined, { voices: currVoices, romanNumeral: currRomanNumeral }: IChord, { romanNumeral: middleRomanNumeral }: IChord, prev: IChord) {
+            export function sequence(_: undefined, _timeSignatureContext: TimeSignatureContext, { voices: currVoices, romanNumeral: currRomanNumeral }: IChord, { romanNumeral: middleRomanNumeral }: IChord, prev: IChord) {
                 if(!prev) {
                     return true;
                 }
@@ -779,7 +838,7 @@ export namespace PartWriting {
             }
 
             // TODO better way?
-            export function rapidKeyChange({ scope }: {scope: number}, chord: IChord, ...prev: IChord[]) {
+            export function rapidKeyChange({ scope }: {scope: number}, _timeSignatureContext: TimeSignatureContext, chord: IChord, ...prev: IChord[]) {
                 if(chord.flags.pivot) {
                     for(let i = 0; i < prev.length && i < scope; i++) {
                         if(prev[i].flags.pivot) {
@@ -796,12 +855,12 @@ export namespace PartWriting {
          * @param parameters 
          * @param chords 
          */
-        export function * checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: IChord[]): Generator<keyof T> {
+        export function * checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chords: IChord[]): Generator<keyof T> {
             // TODO make combined version of previous
             for(const key of Object.keys(parameters.rules) as (keyof T)[]) {
                 // @ts-ignore
                 const ruleParams = parameters.ruleParameters[key];
-                if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, ...chords ])) {
+                if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, timeSignatureContext, ...chords ])) {
                     yield key;
                 }
             }
@@ -812,8 +871,8 @@ export namespace PartWriting {
          * @param parameters 
          * @param chords 
          */
-        export function testAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: IChord[]) {
-            return checkAll(parameters, chords).next().value === undefined;
+        export function testAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chords: IChord[]) {
+            return checkAll(parameters, timeSignatureContext, chords).next().value === undefined;
         }
 
         /**
@@ -821,13 +880,13 @@ export namespace PartWriting {
          * @param parameters 
          * @param chordToCheck 
          */
-        export function * checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: IChord): Generator<keyof T> {
+        export function * checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: IChord): Generator<keyof T> {
             // TODO make combined version of previous
             for(const key of parameters.singularRules) {
                 // @ts-ignore
                 const ruleParams = parameters.ruleParameters[key];
                 // TS can't determine that the keys are preserved
-                if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, chordToCheck ])) {
+                if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, timeSignatureContext, chordToCheck ])) {
                     yield key;
                 }
             }
@@ -838,8 +897,8 @@ export namespace PartWriting {
          * @param parameters 
          * @param chordToCheck 
          */
-        export function testSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: IChord) {
-            return checkSingular(parameters, chordToCheck).next().value === undefined;
+        export function testSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: IChord) {
+            return checkSingular(parameters, timeSignatureContext, chordToCheck).next().value === undefined;
         }
     }
 
@@ -851,7 +910,7 @@ export namespace PartWriting {
              * Prefer that chords have certain doublings over others
              * @param chord the chord under consideration
              */
-            export function checkDoubling(chord: CompleteChord) {
+            export function checkDoubling(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 if(chord.romanNumeral.hasSeventh) {
                     if(numVoicesWithInterval(chord.intervals, '5') == 0) {
                         // prefer root doubled if no fifth
@@ -887,7 +946,7 @@ export namespace PartWriting {
              * Prefer that voices do not cross
              * @param chord the chord under consideration
              */
-            export function checkVoiceCrossing(chord: CompleteChord) {
+            export function checkVoiceCrossing(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < chord.voices[i + 1].midi) {
@@ -901,7 +960,7 @@ export namespace PartWriting {
              * Prefer that voices remain within their core range
              * @param chord the chord under consideration
              */
-            export function checkRange(chord: CompleteChord) {
+            export function checkRange(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 let result = 0;
                 for(const [ range, toCheck ] of [
                     [ sopranoRange, chord.voices[0] ],
@@ -923,7 +982,7 @@ export namespace PartWriting {
              * Prefer that voices do not share the same pitch
              * @param chord the chord under consideration
              */
-            export function checkSharedPitch(chord: CompleteChord) {
+            export function checkSharedPitch(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 1; i++) {
                     if(chord.voices[i].midi === chord.voices[i + 1].midi) {
@@ -937,7 +996,7 @@ export namespace PartWriting {
              * Prefer chord progressions using sequences
              * @param chord the chord to look at
              */
-            export function checkSequence(chord: CompleteChord) {
+            export function checkSequence(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 if(chord.romanNumeral?.flags.sequence) {
                     return 1;
                 }
@@ -954,7 +1013,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkVoiceOverlap(chord: CompleteChord, prev: CompleteChord) {
+            export function checkVoiceOverlap(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord, prev: CompleteChord) {
                 let count = 0;
                 for(let i = 1; i < chord.voices.length - 2; i++) {
                     if(chord.voices[i].midi < prev.voices[i + 1].midi || prev.voices[i].midi < chord.voices[i + 1].midi) {
@@ -970,7 +1029,7 @@ export namespace PartWriting {
              * @param prev the previous chord
              * @todo implement restorative and soprano special rules
              */
-            export function checkVoiceDisjunction(chord: CompleteChord, prev: CompleteChord) {
+            export function checkVoiceDisjunction(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord, prev: CompleteChord) {
                 // TODO prefer restorative
                 let count = 0;
                 for(let i = 0; i < chord.voices.length - 1; i++) {
@@ -984,7 +1043,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkBassOctaveJump(chord: CompleteChord, prev: CompleteChord) {
+            export function checkBassOctaveJump(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord, prev: CompleteChord) {
                 if(
                     (prev.romanNumeral.name.toLowerCase() === 'i64' && chord.romanNumeral.name === 'V')
                     || (prev.romanNumeral.name.toLowerCase() === 'i64' && chord.romanNumeral.name === 'V7')
@@ -1005,7 +1064,7 @@ export namespace PartWriting {
                 return 0;
             }
 
-            export function checkSequenceTarget({ voices: currVoices, romanNumeral: currRomanNumeral }: CompleteChord, { romanNumeral: middleRomanNumeral }: CompleteChord, prev: CompleteChord) {
+            export function checkSequenceTarget(_timeSignatureContext: TimeSignatureContext, { voices: currVoices, romanNumeral: currRomanNumeral }: CompleteChord, { romanNumeral: middleRomanNumeral }: CompleteChord, prev: CompleteChord) {
                 if(!prev) {
                     return 0;
                 }
@@ -1038,7 +1097,7 @@ export namespace PartWriting {
              * @param chord the chord under consideration
              * @param prev the previous chord
              */
-            export function checkCrossRelations({ voices: currVoices, romanNumeral }: CompleteChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals: prevInterval }: CompleteChord) {
+            export function checkCrossRelations(_timeSignatureContext: TimeSignatureContext, { voices: currVoices, romanNumeral }: CompleteChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals: prevInterval }: CompleteChord) {
                 // TODO more complicated textures
 
                 // TODO write more efficiently than MVP, also handle multiple instances better
@@ -1086,7 +1145,7 @@ export namespace PartWriting {
             /**
              * Prefer using a chord that is different from the previous
              */
-            export function checkRepetition(chord: CompleteChord, previous: CompleteChord) {
+            export function checkRepetition(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord, previous: CompleteChord) {
                 // TODO remove
                 return chord.romanNumeral.name === previous.romanNumeral.name ? 0 : 1;
             }
@@ -1094,7 +1153,7 @@ export namespace PartWriting {
             /**
              * Prefers that a pivot chord has a predominant function in the new key
              */
-            export function modulationToPredominant(chord: CompleteChord) {
+            export function modulationToPredominant(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 if(!chord.romanNumeral.flags.pivot) {
                     return 0;
                 }
@@ -1107,7 +1166,7 @@ export namespace PartWriting {
             /**
              * Prefers that there are fewer modulations
              */
-            export function fewerModulations(chord: CompleteChord) {
+            export function fewerModulations(_timeSignatureContext: TimeSignatureContext, chord: CompleteChord) {
                 if(chord.romanNumeral.flags.pivot) {
                     return -1;
                 }
@@ -1120,11 +1179,11 @@ export namespace PartWriting {
          * Evaluate the chord on all the preferences
          * @param chordToCheck the chord to evaluate
          */
-        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
+        export function evaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: CompleteChord): number[] {
             // TODO make combined version of previous
             const checks = parameters.preferencesOrdering
                 .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
-                .map(func => func.apply(null, [ chordToCheck ]));
+                .map(func => func.apply(null, [ timeSignatureContext, chordToCheck ]));
             return checks;
         }
 
@@ -1133,11 +1192,11 @@ export namespace PartWriting {
          * The checks will only be run if the index is called and the value is not already calculated
          * @param chordToCheck the chord to run the rules
          */
-        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord): number[] {
+        export function lazyEvaluateSingle<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: CompleteChord): number[] {
             // TODO make combined version of previous
             const checks = makeLazyArray(parameters.preferencesOrdering
                 .map(preference => parameters.singularPreferences.includes(preference) ? parameters.preferences[preference] : (_: any) => 0)
-                .map(func => () => func.apply(null, [ chordToCheck ])),
+                .map(func => () => func.apply(null, [ timeSignatureContext, chordToCheck ])),
             );
             return checks;
         }
@@ -1147,14 +1206,14 @@ export namespace PartWriting {
          * @param chordToCheck the chord to check
          * @param prev the chord before the chord under consideration
          */
-        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
+        export function evaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             /*
              * TODO make combined version of previous
              * TODO need V7 VI/vi prefer double 3rd?
              */
             const checks = parameters.preferencesOrdering
                 .map(preference => parameters.preferences[preference])
-                .map(func => func.apply(null, [ chordToCheck, prev ]));
+                .map(func => func.apply(null, [ timeSignatureContext, chordToCheck, prev ]));
             return checks;
         }
 
@@ -1164,14 +1223,14 @@ export namespace PartWriting {
          * @param chordToCheck the chord to run the rules on
          * @param prev the chord before the one under consideration
          */
-        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
+        export function lazyEvaluateAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, timeSignatureContext: TimeSignatureContext, chordToCheck: CompleteChord, prev: CompleteChord): number[] {
             /*
              * TODO make combined version of previous
              * TODO need V7 VI/vi prefer double 3rd?
              */
             const checks = makeLazyArray(parameters.preferencesOrdering
                 .map(preference => parameters.preferences[preference])
-                .map(func => () => func.apply(null, [ chordToCheck, prev ])),
+                .map(func => () => func.apply(null, [ timeSignatureContext, chordToCheck, prev ])),
             );
             return checks;
         }
