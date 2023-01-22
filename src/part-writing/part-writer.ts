@@ -19,6 +19,7 @@ import { minValueGenerator } from '../util/min-value-generator';
 import { defaultChainedIterator } from '../util/default-chained-iterator';
 import { ScaleDegree } from '../harmony/scale-degree';
 import { ChordQuality } from '../chord/chord-quality';
+import { TimeSignature, TimeSignatureContext } from '../rhythm/time-signature';
 
 function swap<T>(arr: T[], first: number, second: number) {
     [ arr[first], arr[second] ] = [ arr[second], arr[first] ];
@@ -133,6 +134,8 @@ export interface PartWriterParameters {
      * Allows for a variety of functionality like: greedy, local best, deep best
      */
     yieldOrdering: (iterator: NestedIterable<CompleteChord>, previous: CompleteChord[], partWriter: PartWriter) => NestedIterable<CompleteChord>,
+
+    timeSignatureContext: TimeSignatureContext,
 }
 
 /**
@@ -151,9 +154,9 @@ export namespace PartWriterParameters {
      * @param previous the previous chords in the harmonization for this context
      * @param partWriter the part writing instance
      */
-    export const defaultOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), arrayComparator);
+    export const defaultOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => minGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, partWriter.partWriterParams.timeSignatureContext, result[0], previous[0]), arrayComparator);
 
-    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => nestedMinGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, result[0], previous[0]), result => minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, nested[0], result[0]), arrayComparator).next().value || []);
+    export const depthOrdering: PartWriterParameters['yieldOrdering'] = (iterator, previous, partWriter) => nestedMinGenerator(iterator, result => (previous.length ? PartWriting.Preferences.lazyEvaluateAll : PartWriting.Preferences.lazyEvaluateSingle)(partWriter.partWritingParams, partWriter.partWriterParams.timeSignatureContext, result[0], previous[0]), result => minValueGenerator(result[1], nested => PartWriting.Preferences.lazyEvaluateAll(partWriter.partWritingParams, partWriter.partWriterParams.timeSignatureContext, nested[0], result[0]), arrayComparator).next().value || []);
 }
 
 /**
@@ -167,7 +170,7 @@ export class PartWriter {
      * @param partWritingParams the parameters for shaping and part-writing the results generated
      * @param harmonizer the harmonizer to use
      */
-    constructor(public partWriterParams: PartWriterParameters = { yieldOrdering: PartWriterParameters.defaultOrdering }, public partWritingParams: PartWritingParameters = defaultPartWritingParameters, public harmonizer: Harmonizer = new Harmonizer({})) { }
+    constructor(public partWriterParams: PartWriterParameters = { yieldOrdering: PartWriterParameters.defaultOrdering, timeSignatureContext: { timeSignature: TimeSignature.COMMON_TIME }}, public partWritingParams: PartWritingParameters = defaultPartWritingParameters, public harmonizer: Harmonizer = new Harmonizer({})) { }
 
     /**
      * Voices the given constraints completely
@@ -176,7 +179,7 @@ export class PartWriter {
      */
     * voiceAll(constraints: IncompleteChord[], scale: Scale): NestedIterable<CompleteChord> {
         for(let i = 1; i < constraints.length; i++) {
-            const failed = PartWriting.Rules.checkAll(this.partWritingParams, constraints.slice(0, i + 1).reverse()).next().value;
+            const failed = PartWriting.Rules.checkAll(this.partWritingParams, this.partWriterParams.timeSignatureContext, constraints.slice(0, i + 1).reverse()).next().value;
             if(failed) {
                 throw 'Failed rule ' + failed + ' on constraint ' + i;
             }
@@ -188,7 +191,7 @@ export class PartWriter {
             throw 'Failed to reconcile first constraint';
         }
         {
-            const failed = PartWriting.Rules.checkSingular(this.partWritingParams, reconciledConstraint).next().value;
+            const failed = PartWriting.Rules.checkSingular(this.partWritingParams, this.partWriterParams.timeSignatureContext, reconciledConstraint).next().value;
             if(failed) {
                 throw 'First reconciled constraint failed rule ' + failed;
             }
@@ -305,11 +308,11 @@ export class PartWriter {
         const check = (voices: (AbsoluteNote | undefined)[]) => {
             const voicing = new IncompleteChord({ ...reconciledConstraint, voices });
             if(previous.length) {
-                if(!PartWriting.Rules.testAll(this.partWritingParams, [ voicing, ...previous ])) {
+                if(!PartWriting.Rules.testAll(this.partWritingParams, this.partWriterParams.timeSignatureContext, [ voicing, ...previous ])) {
                     return false;
                 }
             } else {
-                if(!PartWriting.Rules.testSingular(this.partWritingParams, voicing)) {
+                if(!PartWriting.Rules.testSingular(this.partWritingParams, this.partWriterParams.timeSignatureContext, voicing)) {
                     return false;
                 }
             }
@@ -329,11 +332,11 @@ export class PartWriter {
                     for(const tenor of tenorNotes) {
                         const voicing = new CompleteChord([ soprano, alto, tenor, bass ], reconciledConstraint.romanNumeral, reconciledConstraint.flags);
                         if(previous.length) {
-                            if(!PartWriting.Rules.testAll(this.partWritingParams, [ voicing, ...previous ])) {
+                            if(!PartWriting.Rules.testAll(this.partWritingParams, this.partWriterParams.timeSignatureContext, [ voicing, ...previous ])) {
                                 continue;
                             }
                         } else {
-                            if(!PartWriting.Rules.testSingular(this.partWritingParams, voicing)) {
+                            if(!PartWriting.Rules.testSingular(this.partWritingParams, this.partWriterParams.timeSignatureContext, voicing)) {
                                 continue;
                             }
                         }

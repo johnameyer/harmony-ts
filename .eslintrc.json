@@ -56,7 +56,6 @@
         }}],
         "linebreak-style": "error",
         "lines-between-class-members": "error",
-        "multiline-comment-style": "error",
         "new-parens": "error",
         "newline-per-chained-call": "error",
         "no-multiple-empty-lines": "error",

@@ -4,8 +4,11 @@ import { CompleteChord } from '../chord/complete-chord';
 import { RomanNumeral } from '../harmony/roman-numeral';
 import { Scale } from '../scale';
 import { Key } from '../key';
+import { TimeSignatureContext, TimeSignature } from '../rhythm/time-signature';
 
 const CMajor = [ Key.C, Scale.Quality.MAJOR ] as Scale;
+
+const timeSignatureContext: TimeSignatureContext = { timeSignature: TimeSignature.COMMON_TIME };
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -37,8 +40,8 @@ describe('PartWriting', () => {
         ]))('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ])).toBe(true);
         });
 
         test.each(pair([
@@ -48,10 +51,10 @@ describe('PartWriting', () => {
         ]))('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
-            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ])).toBe(true);
         });
 
         test.each(pair([
@@ -61,10 +64,10 @@ describe('PartWriting', () => {
         ]))('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
-            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ])).toBe(true);
         });
 
         test.each([ ...pair([
@@ -82,10 +85,10 @@ describe('PartWriting', () => {
         ]) ])('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
-            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ])).toBe(true);
         });
 
         // I IV viio iii vi ii V I
@@ -103,10 +106,10 @@ describe('PartWriting', () => {
             chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor).with({ flags: { sequence: true }})));
             
             for(let i = 1; i < chords.length; i++) {
-                expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chords[i]).next().value).toBe(undefined);
-                expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chords[i])).toBe(true);
-                expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
-                expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse())).toBe(true);
+                expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chords[i]).next().value).toBe(undefined);
+                expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chords[i])).toBe(true);
+                expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
+                expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, chords.slice(0, i + 1).reverse())).toBe(true);
             }
         }); 
 
@@ -118,10 +121,10 @@ describe('PartWriting', () => {
         ]))('%s to %s', (prev: any, chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
             prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
-            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
-            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, [ chord, prev ])).toBe(true);
         });
 
         test('invalid sequence progression', () => {
@@ -134,8 +137,8 @@ describe('PartWriting', () => {
             ];
             chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor).with({ flags: { sequence: true }})));
             for(const i of [ 3, 4, 5 ]) {
-                expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
-                expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i).reverse())).toBe(false);
+                expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, timeSignatureContext, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
+                expect(PartWriting.Rules.testAll(defaultPartWritingParameters, timeSignatureContext, chords.slice(0, i).reverse())).toBe(false);
             }
         });
     });
@@ -145,22 +148,22 @@ describe('PartWriting', () => {
             [[ 'I', 'C5', 'E4', 'G3', 'C4' ]],
         ])('%s should fail', (chord: any) => {
             chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
-            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).not.toBe(undefined);
-            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(false);
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, chord).next().value).not.toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, chord)).toBe(false);
         });
     });
     
     test('new rule should be used', function() {
         const validChord = new CompleteChord([ 'E5', 'G4', 'C4', 'C3' ].map(absoluteNote), RomanNumeral.fromString('I', CMajor));
 
-        expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, validChord).next().value).toBe(undefined);
-        expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, validChord)).toBe(true);
+        expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, timeSignatureContext, validChord).next().value).toBe(undefined);
+        expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, timeSignatureContext, validChord)).toBe(true);
 
         const newRule = () => false;
 
         const customRules = PartWriting.extendDefaultParameters({ newRules: { newRule }, newSingularRules: [ 'newRule' ] });
 
-        expect(PartWriting.Rules.checkSingular(customRules, validChord).next().value).toBe('newRule');
-        expect(PartWriting.Rules.testSingular(customRules, validChord)).toBe(false);
+        expect(PartWriting.Rules.checkSingular(customRules, timeSignatureContext, validChord).next().value).toBe('newRule');
+        expect(PartWriting.Rules.testSingular(customRules, timeSignatureContext, validChord)).toBe(false);
     });
 });

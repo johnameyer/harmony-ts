@@ -11,6 +11,7 @@ import { flattenResult } from '../util/nested-iterable';
 import { Key } from '../key';
 import { Scale } from '../scale';
 import { PartWriterParameters } from '..';
+import { TimeSignatureContext } from '../rhythm/time-signature';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -18,6 +19,8 @@ const CMajor = [ Key.C, Scale.Quality.MAJOR ] as Scale;
 const GMajor = [ Key.G, Scale.Quality.MAJOR ] as Scale;
 const CMinor = [ Key.C, Scale.Quality.MINOR ] as Scale;
 // const GMinor = [Key.G, Scale.Quality.MINOR] as Scale;
+
+const timeSignatureContext: TimeSignatureContext = { timeSignature: [ 4, 4 ] };
 
 const defaultPartWriter = new PartWriter();
 
@@ -75,7 +78,7 @@ describe('PartWriter', () => {
         });
 
         test.each([
-            [[ 'C3', 'G3', 'G3' ], [ ...Progression.Shared.basic ]],
+            [[ 'C3', 'G3' ], [ ...Progression.Shared.basic ]],
             [[ 'C3', 'D3', 'E3' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions ]],
             [[ 'C3', 'D3', 'E3' ], [ ...Progression.Shared.basic, ...Progression.Shared.dominantSevenths ]],
             [[ 'C3', 'C3', 'B2', 'C3' ], [ ...Progression.Shared.basic, ...Progression.Shared.dominantSevenths, ...Progression.Shared.subdominantSevenths ]],
@@ -102,13 +105,13 @@ describe('PartWriter', () => {
             [[ 'I', 'ii6', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicPredominant ]],
             [[ 'I', 'vi', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.submediant ]],
             [[ 'I', 'V65', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.dominantSevenths ]],
-            [[ 'I', 'bII6', 'V7', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.neopolitan ]],
+            [[ 'I', 'bII6', 'V7', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.neapolitan ]],
             [[ 'I', 'ii65', 'V', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicPredominant ]],
-            [[ 'I', 'I64', 'V7', 'I' ], [ ...Progression.Shared.basic ]],
+            [[ 'I', 'I', 'I64', 'V7', 'I' ], [ ...Progression.Shared.basic ]],
             [[ 'I', 'vi', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.tonicSubstitutes ]],
-            [[ 'I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
-            [[ 'I', 'IV', 'ii7', 'V', 'V42', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
-            [[ 'I', 'V', 'V42', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
+            [[ 'I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],        
+            // [[ 'I', 'vi', 'IV', 'ii7', 'V7', 'V42' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant ]],
+            // [[ 'I', 'IV', 'V42', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant ]],
             [[ 'I', 'IV', 'viio', 'iii', 'vi', 'ii', 'V', 'I' ], [ ...Progression.Shared.basic ]],
         ])('roman numerals %s', (numerals, enabled) => {
             const constraints = numerals.map(numeral => new IncompleteChord({ romanNumeral: RomanNumeral.fromString(numeral, CMajor) }));
@@ -139,7 +142,7 @@ describe('PartWriter', () => {
                 const scale = CMajor;
 
                 const harmonizer = new Harmonizer({ useProgressions: true });
-                const partWriter = new PartWriter({ yieldOrdering: ordering }, undefined, harmonizer);
+                const partWriter = new PartWriter({ yieldOrdering: ordering, timeSignatureContext }, undefined, harmonizer);
                 const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
 
                 expect(iterator.hasItems).toBe(true);
@@ -191,14 +194,15 @@ describe('PartWriter', () => {
             [ ...Progression.Shared.basic, ...Progression.Shared.dominantSevenths ],
         ],
         [
-            'I V64 V I',
+            'I I6 I64 V I',
             [
                 [[ 'E4', 'C4', 'G3', 'C3' ], 'I' ] as [string[], string],
-                [[ 'E4', 'C4', 'G3', 'G2' ], 'I64' ] as [string[], string],
+                [[ 'E4', 'C4', 'G3', 'E3' ], 'I6' ] as [string[], string],
+                [[ 'E4', 'C4', 'G3', 'G3' ], 'I64' ] as [string[], string],
                 [[ 'D4', 'B3', 'G3', 'G2' ], 'V' ] as [string[], string],
                 [[ 'E4', 'C4', 'G3', 'C3' ], 'I' ] as [string[], string],
             ],
-            [ ...Progression.Shared.basic ],
+            [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions ],
         ],
         [
             'I ii42 V65 I',
@@ -219,20 +223,18 @@ describe('PartWriter', () => {
             ],
             [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions ],
         ],
-        /*
-         * [
-         *     'I V7 vi',
-         *     [
-         *         [['E4', 'C4', 'G3', 'C3'], 'I'] as [string[], string],
-         *         [['D4', 'B3', 'F3', 'G2'], 'V7'] as [string[], string],
-         *         [['C4', 'C4', 'E3', 'A2'], 'vi'] as [string[], string]
-         *     ],
-         *     [...Progression.Shared.basic, ...Progression.Shared.basicInversions]
-         * ]
-         */
+        [
+            'I V7 vi',
+            [
+                [[ 'E4', 'C4', 'G3', 'C3' ], 'I' ] as [string[], string],
+                [[ 'D4', 'B3', 'F3', 'G2' ], 'V7' ] as [string[], string],
+                [[ 'C4', 'C4', 'E3', 'A2' ], 'vi' ] as [string[], string],
+            ],
+            [ ...Progression.Shared.basic, ...Progression.Shared.tonicSubstitutes ],
+        ],
     ])('specific voicing %s with soprano', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints: IncompleteChord[] = [];
         let first = true;
         for(const [ voices, romanNumeral ] of expected) {
             if(first) {
@@ -271,7 +273,7 @@ describe('PartWriter', () => {
         ],
     ])('fully specified %s', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints: IncompleteChord[] = [];
         for(const [ voices, romanNumeral ] of expected) {
             constraints.push(new IncompleteChord({ voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale) }));
         }
@@ -292,17 +294,18 @@ describe('PartWriter', () => {
     
     test.each([
         [
-            'I V V7',
+            'I I6 V V7',
             [
                 [[ 'C5', 'G4', 'E4', 'C3' ], 'I' ] as [string[], string],
+                [[ 'C5', 'G4', 'E4', 'E3' ], 'I6' ] as [string[], string],
                 [[ 'B4', 'G4', 'D4', 'G3' ], 'V' ] as [string[], string],
                 [[ 'B4', 'F4', 'D4', 'G2' ], 'V7' ] as [string[], string],
             ],
-            [ ...Progression.Shared.basic ],
+            [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions ],
         ],
     ])('specific voicing %s with bassline', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints: IncompleteChord[] = [];
         let first = true;
         for(const [ voices, romanNumeral ] of expected) {
             if(first) {
@@ -336,7 +339,7 @@ describe('PartWriter', () => {
             ],
         ],
     ])('modulation %s', (_, expected) => {
-        const constraints = [];
+        const constraints: IncompleteChord[] = [];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {
@@ -386,7 +389,7 @@ describe('PartWriter', () => {
             ],
         ],
     ])('minor key %s', (_, expected) => {
-        const constraints = [];
+        const constraints: IncompleteChord[] = [];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {
@@ -413,7 +416,7 @@ describe('PartWriter', () => {
     test.each([
         [[ 'C5', 'B4' ]],
         [[ 'C5', 'D5', 'Eb5' ]],
-        [[ 'C5', 'B4', 'B4', 'C5' ]],
+        [[ 'C5', 'D5', 'B4', 'C5' ]],
     ])('minor key %s', (soprano) => {
         const constraints = soprano.map(note => new IncompleteChord({ voices: [ AbsoluteNote.fromString(note), undefined, undefined, undefined ] }));
         

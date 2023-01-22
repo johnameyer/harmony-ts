@@ -249,6 +249,10 @@ export class RomanNumeral {
         return this._inversionInterval;
     }
 
+    get inversionNote(): Note {
+        return this._inversionInterval.transposeUp(this.root);
+    }
+
     get inversionSymbol(): string[] {
         // TODO handle flats and sharps
         if(this.hasSeventh) {
