@@ -966,19 +966,52 @@ export namespace PartWriting {
             }
 
             /**
-             * Prefer smaller movements in soprano and inner voices
+             * Prefer restorative motion (i.e. follow jumps with steps in opposite direction)
              * @param chord the chord under consideration
              * @param prev the previous chord
-             * @todo implement restorative and soprano special rules
+             * @todo consider arpeggiation logic
+             * @todo consider if there are cases where we might hold a note before stepping down
+             * @todo consider the logic on the leading side of preferring the step as well
              */
-            export function checkVoiceDisjunction(chord: CompleteChord, prev: CompleteChord) {
-                // TODO prefer restorative
+            export function checkVoiceJumpStepsOpposite({ voices: currVoices }: CompleteChord, { voices: middleVoices }: CompleteChord, { voices: firstVoices }: CompleteChord = {} as CompleteChord) {
+                // TODO figure out how to type last parameter so we properly do null checks
                 let count = 0;
-                for(let i = 0; i < chord.voices.length - 1; i++) {
-                    count -= Math.abs(chord.voices[i].midi - prev.voices[i].midi);
+                if(!firstVoices) {
+                    return 0; 
+                }
+                for(let i = 0; i < currVoices.length - 1; i++) {
+                    if(!firstVoices[i]) {
+                        continue; 
+                    }
+                    const interval = new ComplexInterval(firstVoices[i], middleVoices[i]);
+                    if(interval.complexSize != 'U' && interval.complexSize != '2') {
+                        const resultantInterval = new Interval(middleVoices[i], currVoices[i]);
+                        if(resultantInterval.simpleSize != '2') {
+                            if(interval.complexSize == '3') {
+                                // skips are less serious so penalize less
+                                count += 1;
+                            } else {
+                                count += currVoices.length;
+                            }
+                        }
+                    }
                 }
                 return count;
             }
+
+            /**
+             * Prefer smaller movements in soprano and inner voices
+             * @param chord the chord under consideration
+             * @param prev the previous chord
+             */
+             export function checkVoiceDisjunction({ voices: currVoices }: CompleteChord, { voices: middleVoices }: CompleteChord) {
+                 // TODO are there special soprano rules we need to consider?
+                 let count = 0;
+                 for(let i = 0; i < currVoices.length - 1; i++) {
+                     count -= Math.abs(currVoices[i].midi - middleVoices[i].midi);
+                 }
+                 return count;
+             }
 
             /**
              * Prefer that the bass jumps down by an octave in cadential V progressions (e.g. V - V7)
@@ -1226,6 +1259,7 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
         'checkVoiceCrossing',
         'checkVoiceOverlap',
         'checkBassOctaveJump',
+        'checkVoiceJumpStepsOpposite',
         'checkVoiceDisjunction',
         'checkSharedPitch',
     ],
