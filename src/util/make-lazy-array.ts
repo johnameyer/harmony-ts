@@ -6,16 +6,16 @@ export function makeLazyArray<S>(producers: (() => S)[]) {
             if(prop == 'length') {
                 return arr.length;
             }
-            // @ts-ignore
+            // @ts-expect-error
             if(arr[prop] === undefined) {
-                // @ts-ignore
+                // @ts-expect-error
                 const producer = producers[prop];
                 if(producer) {
-                    // @ts-ignore
+                    // @ts-expect-error
                     arr[prop] = producer();
                 }
             }
-            // @ts-ignore
+            // @ts-expect-error
             return Reflect.get(...arguments);
         },
     };

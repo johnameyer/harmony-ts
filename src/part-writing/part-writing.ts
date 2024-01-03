@@ -215,7 +215,7 @@ export namespace PartWriting {
                         if(prev && !prev.romanNumeral) {
                             return true;
                         }
-                        // @ts-ignore
+                        // @ts-expect-error
                         if(!prev || !prev.romanNumeral.name.startsWith('V') || !prev.romanNumeral.hasSeventh || numVoicesWithInterval(prev.intervals.filter(isDefined), '5') == 0) {
                             return chord.intervals.filter(Interval.ofSize('5')).length >= 1;
                         }
@@ -491,7 +491,7 @@ export namespace PartWriting {
              * @param before the chord before `prev`
              */
             export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
-                // V42 can support 3 4 5
+                // V43 can support 3 4 5
                 if(before[0]
                     && before[0].romanNumeral?.scaleDegree == ScaleDegree.TONIC
                     && before[0].romanNumeral?.inversionInterval.simpleSize == 'U'
@@ -503,14 +503,14 @@ export namespace PartWriting {
                     && chord.romanNumeral?.inversionInterval.simpleSize == '3'
                 ) {
                     const index = prev.intervals?.findIndex(Interval.ofSize('7'));
-                    if(index
+                    if(index !== undefined
                         && index !== -1
                         && before[0].intervals
                         && prev.intervals
                         && chord.intervals
                         && before[0].intervals[index]?.simpleSize === '3'
-                        && prev.intervals[index]?.simpleSize === '3'
-                        && chord.intervals[index]?.simpleSize === '3'
+                        && prev.intervals[index]?.simpleSize === '7'
+                        && chord.intervals[index]?.simpleSize === '5'
                     ) {
                         return true;
                     }
@@ -755,7 +755,8 @@ export namespace PartWriting {
                     return true;
                 }
                 const { romanNumeral: prevRomanNumeral, voices: prevVoices } = prev;
-                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence || prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
+                // console.log([currRomanNumeral, middleRomanNumeral, prev?.romanNumeral].map(x => x?.inversionString));
+                if(currRomanNumeral?.flags.sequence && middleRomanNumeral?.flags.sequence && (prevRomanNumeral?.flags.sequence && prevRomanNumeral?.inversionString === currRomanNumeral?.inversionString)) {
                     for(let index = 0; index < currVoices.length; index++) {
                         if(!currRomanNumeral || !prevRomanNumeral) {
                             continue;
@@ -799,7 +800,7 @@ export namespace PartWriting {
         export function * checkAll<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chords: IChord[]): Generator<keyof T> {
             // TODO make combined version of previous
             for(const key of Object.keys(parameters.rules) as (keyof T)[]) {
-                // @ts-ignore
+                // @ts-expect-error
                 const ruleParams = parameters.ruleParameters[key];
                 if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, ...chords ])) {
                     yield key;
@@ -824,7 +825,7 @@ export namespace PartWriting {
         export function * checkSingular<T extends PartWritingRules, U extends PartWritingPreferences>(parameters: PartWritingParameters<T, U>, chordToCheck: IChord): Generator<keyof T> {
             // TODO make combined version of previous
             for(const key of parameters.singularRules) {
-                // @ts-ignore
+                // @ts-expect-error
                 const ruleParams = parameters.ruleParameters[key];
                 // TS can't determine that the keys are preserved
                 if(ruleParams !== false && !parameters.rules[key].apply(null, [ ruleParams, chordToCheck ])) {

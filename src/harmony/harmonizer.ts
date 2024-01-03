@@ -225,7 +225,6 @@ export class Harmonizer {
             return;
         }
         const constraint = constraints[position];
-        // @ts-ignore
         let shouldYieldAsIs = !this.params.useProgressions;
 
         // Get options available to us from current chord

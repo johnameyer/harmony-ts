@@ -6,6 +6,7 @@ import { Scale } from '../scale';
 import { Key } from '../key';
 
 const CMajor = [ Key.C, Scale.Quality.MAJOR ] as Scale;
+const CMinor = [ Key.C, Scale.Quality.MINOR ] as Scale;
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -108,7 +109,27 @@ describe('PartWriting', () => {
                 expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
                 expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse())).toBe(true);
             }
-        }); 
+        });
+
+        test('sequence sevenths', () => {
+            let chords: any[] = [
+                [ 'i6', 'C5', 'Eb4', 'G3', 'Eb3' ],
+                [ 'iv42', 'C5', 'F4', 'Ab3', 'Eb3' ],
+                [ 'VII65', 'Bb4', 'F4', 'Ab3', 'D3' ],
+                [ 'III42', 'Bb4', 'Eb4', 'G3', 'D3' ],
+                [ 'VI65', 'Ab4', 'Eb4', 'G3', 'C3' ],
+                [ 'ii042', 'Ab4', 'D4', 'F3', 'C3' ],
+                [ 'V65', 'G4', 'D4', 'F3', 'B2' ],
+            ];
+            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMinor).with({ flags: { sequence: true }})));
+            
+            for(let i = 1; i < chords.length; i++) {
+                expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chords[i]).next().value).toBe(undefined);
+                expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chords[i])).toBe(true);
+                expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse()).next().value).toBe(undefined);
+                expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i + 1).reverse())).toBe(true);
+            }
+        });
 
         test.each(pair([
             [ 'I', 'E5', 'G4', 'C4', 'C3' ],
@@ -137,6 +158,17 @@ describe('PartWriting', () => {
                 expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice(0, i).reverse()).next().value).not.toBe(undefined);
                 expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice(0, i).reverse())).toBe(false);
             }
+        });
+
+        test('I V43 I6', () => {
+            let chords: any[] = [
+                [ 'I', 'E4', 'C4', 'G3', 'C3' ],
+                [ 'V43', 'F4', 'B3', 'G3', 'D3' ],
+                [ 'I6', 'G4', 'C4', 'G3', 'E3' ],
+            ];
+            chords = chords.map(chord => new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)));
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, chords.slice().reverse()).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, chords.slice().reverse())).toBe(true);
         });
     });
 

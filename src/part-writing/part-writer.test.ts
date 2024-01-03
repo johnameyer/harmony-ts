@@ -14,6 +14,8 @@ import { PartWriterParameters } from '..';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
+type Flags = ConstructorParameters<typeof IncompleteChord>[0]['flags'];
+
 const CMajor = [ Key.C, Scale.Quality.MAJOR ] as Scale;
 const GMajor = [ Key.G, Scale.Quality.MAJOR ] as Scale;
 const CMinor = [ Key.C, Scale.Quality.MINOR ] as Scale;
@@ -92,7 +94,6 @@ describe('PartWriter', () => {
             expect(iterator.hasItems).toBe(true);
             
             const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
-            // @ts-ignore
             expect(result.map(chords => chords.voices[3].name)).toEqual(notes);
         });
         
@@ -121,7 +122,6 @@ describe('PartWriter', () => {
             expect(iterator.hasItems).toBe(true);
             
             const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
-            // @ts-ignore
             expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
         });
 
@@ -145,7 +145,6 @@ describe('PartWriter', () => {
                 expect(iterator.hasItems).toBe(true);
                 
                 const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
-                // @ts-ignore
                 expect(result.map(chords => chords.romanNumeral.name)).toEqual(numerals);
             });
         });
@@ -232,7 +231,7 @@ describe('PartWriter', () => {
          */
     ])('specific voicing %s with soprano', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral ] of expected) {
             if(first) {
@@ -271,7 +270,7 @@ describe('PartWriter', () => {
         ],
     ])('fully specified %s', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         for(const [ voices, romanNumeral ] of expected) {
             constraints.push(new IncompleteChord({ voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale) }));
         }
@@ -302,7 +301,7 @@ describe('PartWriter', () => {
         ],
     ])('specific voicing %s with bassline', (_, expected, enabled) => {
         const scale = CMajor;
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral ] of expected) {
             if(first) {
@@ -329,14 +328,14 @@ describe('PartWriter', () => {
         [
             'I vi/ii V I',
             [
-                [[ 'E4', 'C4', 'G3', 'C3' ], 'I', CMajor, {}] as [string[], string, Scale, {}],
-                [[ 'E4', 'C4', 'A3', 'A2' ], 'ii', GMajor, { pivot: true }] as [string[], string, Scale, {}],
-                [[ 'F#4', 'D4', 'A3', 'D3' ], 'V', GMajor, {}] as [string[], string, Scale, {}],
-                [[ 'G4', 'D4', 'B3', 'G3' ], 'I', GMajor, { pac: true }] as [string[], string, Scale, {}],
+                [[ 'E4', 'C4', 'G3', 'C3' ], 'I', CMajor, {}] as [string[], string, Scale, Flags],
+                [[ 'E4', 'C4', 'A3', 'A2' ], 'ii', GMajor, { pivot: true }] as [string[], string, Scale, Flags],
+                [[ 'F#4', 'D4', 'A3', 'D3' ], 'V', GMajor, {}] as [string[], string, Scale, Flags],
+                [[ 'G4', 'D4', 'B3', 'G3' ], 'I', GMajor, { pac: true }] as [string[], string, Scale, Flags],
             ],
         ],
     ])('modulation %s', (_, expected) => {
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {
@@ -364,29 +363,29 @@ describe('PartWriter', () => {
         [
             'i V',
             [
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, {}],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, Flags],
             ],
         ],
         [
             'i V i',
             [
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, { iac: true }] as [string[], string, Scale, {}],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, { iac: true }] as [string[], string, Scale, Flags],
             ],
         ],
         [
             'i VII iv6 V',
             [
-                [[ 'C5', 'Eb4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D5', 'F4', 'Bb3', 'Bb2' ], 'VII', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'C5', 'F4', 'C4', 'Ab2' ], 'iv6', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'B4', 'G4', 'D4', 'G2' ], 'V', CMinor, { hc: true }] as [string[], string, Scale, {}],
+                [[ 'C5', 'Eb4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D5', 'F4', 'Bb3', 'Bb2' ], 'VII', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'C5', 'F4', 'C4', 'Ab2' ], 'iv6', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'B4', 'G4', 'D4', 'G2' ], 'V', CMinor, { hc: true }] as [string[], string, Scale, Flags],
             ],
         ],
     ])('minor key %s', (_, expected) => {
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {

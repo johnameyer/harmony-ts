@@ -1,7 +1,7 @@
 import { AbsoluteNote } from '../note/absolute-note';
 import { Interval } from './interval';
 import { IntervalQuality } from './interval-quality';
-import { Scale } from '../scale';
+import { scalePosition } from '../util/scale-position';
 
 export class ComplexInterval extends Interval {
     protected _complexSize!: number;
@@ -13,14 +13,10 @@ export class ComplexInterval extends Interval {
         super(one, two);
         this._complexSize = this._simpleSize;
 
-        if(Scale.Major.notes.indexOf(one.letterName) <= Scale.Major.notes.indexOf(two.letterName)) {
-            for(let i = one.octavePosition; i < two.octavePosition; i++) {
-                this._complexSize += 7;
-            }
+        if(scalePosition(one.letterName) <= scalePosition(two.letterName)) {
+            this._complexSize += 7 * (two.octavePosition - one.octavePosition);
         } else {
-            for(let i = one.octavePosition + 1; i < two.octavePosition; i++) {
-                this._complexSize += 7;
-            }
+            this._complexSize += 7 * Math.max(two.octavePosition - one.octavePosition - 1, 0);
         }
     }
 
@@ -39,7 +35,7 @@ export class ComplexInterval extends Interval {
         const transposed = super.transposeUp(note);
         const result = new AbsoluteNote(transposed.letterName, transposed.accidental, note.octavePosition);
         const octaveDisplacement = (this._complexSize - this._simpleSize) / 7
-            + (Scale.Major.notes.indexOf(note.letterName) > Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
+            + (scalePosition(note.letterName) > scalePosition(result.letterName) ? 1 : 0);
         return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition + octaveDisplacement);
     }
 
@@ -47,7 +43,7 @@ export class ComplexInterval extends Interval {
         const transposed = super.transposeDown(note);
         const result = new AbsoluteNote(transposed.letterName, transposed.accidental, note.octavePosition);
         const octaveDisplacement = (this._complexSize - this._simpleSize) / 7
-            + (Scale.Major.notes.indexOf(note.letterName) < Scale.Major.notes.indexOf(result.letterName) ? 1 : 0);
+            + (scalePosition(note.letterName) < scalePosition(result.letterName) ? 1 : 0);
         return new AbsoluteNote(result.letterName, result.accidental, result.octavePosition - octaveDisplacement);
     }
 }

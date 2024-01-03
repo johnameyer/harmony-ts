@@ -29,7 +29,7 @@ export function makePeekableIterator<S>(generator: IterableIterator<S>) {
                 }
                 return top !== undefined;
             }
-            // @ts-ignore
+            // @ts-expect-error
             return Reflect.get(...arguments);
         },
     };

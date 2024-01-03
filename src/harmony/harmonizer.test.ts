@@ -14,6 +14,8 @@ const CMajor: Scale = [ Key.C, Scale.Quality.MAJOR ];
 const CMinor: Scale = [ Key.C, Scale.Quality.MINOR ];
 const GMajor: Scale = [ Key.G, Scale.Quality.MAJOR ];
 
+type Flags = ConstructorParameters<typeof IncompleteChord>[0]['flags'];
+
 const setUpHarmonizer = (params: HarmonizerParameters) => new Harmonizer(params);
 
 describe('Harmony', () => {
@@ -93,6 +95,7 @@ describe('Harmony', () => {
             [[ 'I', 'vi', 'I6', 'viio6', 'I', 'ii42', 'V65', 'I', 'ii6', 'I64', 'V' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
             [[ 'I', 'IV', 'ii7', 'V', 'V42', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
             [[ 'I', 'V', 'V42', 'I6' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.tonicSubstitutes ]],
+            [[ 'I', 'viio7/IV', 'IV' ], [ ...Progression.Shared.basic, ...Progression.Shared.basicPredominant ]],
         ])('roman numerals %s', (numerals, enabled) => {
             const constraints = numerals.map(numeral => new IncompleteChord({ romanNumeral: RomanNumeral.fromString(numeral, CMajor) }));
             const scale = CMajor;
@@ -102,6 +105,20 @@ describe('Harmony', () => {
             expect(result.value).toBeTruthy();
             expect(result.value.length).toBe(numerals.length);
             expect(result.value.map(chords => chords.romanNumeral.name)).toEqual(numerals);
+        });
+
+        test.each([
+            [ 'i6 iv42 VII65 III42 VI65 ii042 V65 i', [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions ]],
+        ])('roman numerals (minor) %s', (numerals, enabled) => {
+            const split = numerals.split(' ');
+            const constraints = split.map(numeral => new IncompleteChord({ romanNumeral: RomanNumeral.fromString(numeral, CMinor) }));
+            const scale = CMajor;
+            const harmonizer = setUpHarmonizer({ enabledProgressions: enabled, useProgressions });
+            const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, scale));
+            const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
+            expect(result.value).toBeTruthy();
+            expect(result.value.length).toBe(numerals.split(' ').length);
+            expect(result.value.map(chords => chords.romanNumeral.name)).toEqual(split);
         });
         
         test.each([
@@ -126,14 +143,14 @@ describe('Harmony', () => {
         [
             'I vi/ii V I',
             [
-                [[ 'E4', 'C4', 'G3', 'C3' ], 'I', CMajor, {}] as [string[], string, Scale, {}],
-                [[ 'E4', 'C4', 'A3', 'A2' ], 'ii', GMajor, { pivot: true }] as [string[], string, Scale, {}],
-                [[ 'F#4', 'D4', 'A3', 'D3' ], 'V', GMajor, {}] as [string[], string, Scale, {}],
-                [[ 'G4', 'D4', 'B3', 'G3' ], 'I', GMajor, { pac: true }] as [string[], string, Scale, {}],
+                [[ 'E4', 'C4', 'G3', 'C3' ], 'I', CMajor, {}] as [string[], string, Scale, Flags],
+                [[ 'E4', 'C4', 'A3', 'A2' ], 'ii', GMajor, { pivot: true }] as [string[], string, Scale, Flags],
+                [[ 'F#4', 'D4', 'A3', 'D3' ], 'V', GMajor, {}] as [string[], string, Scale, Flags],
+                [[ 'G4', 'D4', 'B3', 'G3' ], 'I', GMajor, { pac: true }] as [string[], string, Scale, Flags],
             ],
         ],
     ])('modulation %s', (_, expected) => {
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {
@@ -158,29 +175,29 @@ describe('Harmony', () => {
         [
             'i V',
             [
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, {}],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, Flags],
             ],
         ],
         [
             'i V i',
             [
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, { iac: true }] as [string[], string, Scale, {}],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D4', 'B3', 'G3', 'G2' ], 'V', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'Eb4', 'C4', 'G3', 'C3' ], 'i', CMinor, { iac: true }] as [string[], string, Scale, Flags],
             ],
         ],
         [
             'i VII iv6 V',
             [
-                [[ 'C5', 'Eb4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'D5', 'F4', 'Bb3', 'Bb2' ], 'VII', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'C5', 'F4', 'C4', 'Ab2' ], 'iv6', CMinor, {}] as [string[], string, Scale, {}],
-                [[ 'B4', 'G4', 'D4', 'G2' ], 'V', CMinor, { hc: true }] as [string[], string, Scale, {}],
+                [[ 'C5', 'Eb4', 'G3', 'C3' ], 'i', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'D5', 'F4', 'Bb3', 'Bb2' ], 'VII', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'C5', 'F4', 'C4', 'Ab2' ], 'iv6', CMinor, {}] as [string[], string, Scale, Flags],
+                [[ 'B4', 'G4', 'D4', 'G2' ], 'V', CMinor, { hc: true }] as [string[], string, Scale, Flags],
             ],
         ],
     ])('minor key %s', (_, expected) => {
-        const constraints = [];
+        const constraints = [] as IncompleteChord[];
         let first = true;
         for(const [ voices, romanNumeral, scale, flags ] of expected) {
             if(first) {
@@ -216,5 +233,15 @@ describe('Harmony', () => {
             expect(result.value[i].voices[0]?.name).toEqual(soprano[i]);
             expect(result.value[i].romanNumeral.scale).toEqual(CMinor);
         }
+    });
+
+    test.each([
+        [[ 'bII6', 'ii065' ]],
+    ])('impossible minor key %s', (numerals) => {
+        const constraints = numerals.map(numeral => new IncompleteChord({ romanNumeral: RomanNumeral.fromString(numeral, CMinor) }));
+        const harmonizer = setUpHarmonizer({ canModulate: true, useProgressions });
+        const iterator = flattenResults(harmonizer.matchingCompleteHarmony(constraints, CMinor));
+        const result = iterator.next() as IteratorResult<HarmonizedChord[], never>;
+        expect(result.value).toBeFalsy();
     });
 });

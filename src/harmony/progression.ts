@@ -25,8 +25,6 @@ const {
 } = ScaleDegree.ALIASED;
 
 const MAJOR = ChordQuality.MAJOR;
-const MINOR = ChordQuality.MINOR;
-const AUGMENTED = ChordQuality.AUGMENTED;
 const DIMINISHED = ChordQuality.DIMINISHED;
 
 export namespace Progression {

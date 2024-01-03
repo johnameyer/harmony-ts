@@ -1,6 +1,7 @@
 import { Note } from './note';
 import { Accidental } from '../accidental';
 import { Scale } from '../scale';
+import { scalePosition } from '../util/scale-position';
 
 export class AbsoluteNote extends Note {
     private _midi!: number;
@@ -11,7 +12,7 @@ export class AbsoluteNote extends Note {
 
     constructor(_letter: string, _accidental: Accidental, protected _octave: number) {
         super(_letter, _accidental);
-        this._midi = Scale.Major.semitones[Scale.Major.notes.indexOf(this._letter)] + this._accidental + 12 * Number(this._octave) + 12;
+        this._midi = Scale.Major.semitones[scalePosition(this._letter)] + this._accidental + 12 * Number(this._octave) + 12;
     }
 
     get midi(): number {
@@ -29,7 +30,7 @@ export class AbsoluteNote extends Note {
 
     static getClosest(noteToFind: Note, close: AbsoluteNote) {
         // TODO more sophisticated math
-        if(Scale.Major.notes.indexOf(close.letterName) > Scale.Major.notes.length / 2) {
+        if(scalePosition(close.letterName) > Scale.Major.notes.length / 2) {
             const one = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, close.octavePosition);
             const two = new AbsoluteNote(noteToFind.letterName, noteToFind.accidental, (close.octavePosition + 1));
             if(Math.abs(one.midi - close.midi) < Math.abs(two.midi - close.midi)) {
