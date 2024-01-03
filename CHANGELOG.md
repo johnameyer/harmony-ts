@@ -1,5 +1,11 @@
 # harmony-ts
 
+## 0.14.4
+
+### Patch Changes
+
+- ad2299c: Dependency updates and minor part writing fixes
+
 ## 0.14.3
 
 ### Patch Changes
