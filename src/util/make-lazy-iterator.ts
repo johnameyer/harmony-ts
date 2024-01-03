@@ -35,7 +35,7 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
                 return () => {
                     i++;
                     if(arr[i] === undefined) {
-                        // @ts-ignore
+                        // @ts-expect-error
                         for(let j = i; j < prop; j++) {
                             const next = generator.next();
                             if(next.done) {
@@ -47,9 +47,9 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
                     }
                 };
             }
-            // @ts-ignore
+            // @ts-expect-error
             if(arr[prop] === undefined) {
-                // @ts-ignore
+                // @ts-expect-error
                 for(let j = i; j < prop; j++) {
                     const next = generator.next();
                     if(next.done) {
@@ -58,11 +58,11 @@ export function makeLazyMultiIterable<S>(generator: Iterator<S>) {
                     arr[j] = next.value;
                 }
             }
-            // @ts-ignore
+            // @ts-expect-error
             return Reflect.get(...arguments);
         },
     };
 
-    // @ts-ignore
+    // @ts-expect-error
     return new Proxy(arr, proxyHandler) as LazyMultiIterable<S>;
 }

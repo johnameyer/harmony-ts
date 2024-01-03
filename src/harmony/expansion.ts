@@ -49,7 +49,6 @@ const {
 
 const MAJOR = ChordQuality.MAJOR;
 const MINOR = ChordQuality.MINOR;
-const AUGMENTED = ChordQuality.AUGMENTED;
 const DIMINISHED = ChordQuality.DIMINISHED;
 
 /**
@@ -340,7 +339,7 @@ export namespace Expansion {
                     // descending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
                         ),
@@ -363,7 +362,7 @@ export namespace Expansion {
                     // ascending 5-6s, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
                         ),
@@ -386,7 +385,7 @@ export namespace Expansion {
                     // ascending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
                         ),
@@ -410,7 +409,7 @@ export namespace Expansion {
                     // ascending fifths, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
                         ),
@@ -434,7 +433,7 @@ export namespace Expansion {
                     // descending 5-6, alternating first inversion and root
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, { inversions: [ index % 2 == 0 ? 1 : 0 ] }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, { inversions: [ index % 2 == 0 ? 1 : 0 ], flags: { sequence: true }}),
                         ),
@@ -473,15 +472,17 @@ export namespace Expansion {
         ].flatMap(({ primaryInversion, secondaryInversion, hasSeventh }) => [ IV, VII, III, VI, II, V, I ].flatMap((target, index, array) => {
             if(index >= 2) {
                 return [
-                    // descending fifths with seventh chords, e.g. I IV43 viio iii43 vi ii43 V
+                    // descending fifths with seventh chords, e.g. I IV43 viio iii43 vi ii43 V, i iv65 VII III65 VI ii065 V i
                     {
                         type: ExpansionType.FULL,
-                        source: match(I),
+                        source: match(I, { inversions: [ 0, 1 ] }),
                         target: match(target, {
-                            hasSeventh: index % 2 === 1 ? hasSeventh : true,
-                            inversions: index % 2 === 1 ? [ secondaryInversion ] : [ primaryInversion ],
+                            hasSeventh: target == I ? false : index % 2 === 1 ? hasSeventh : true,
+                            inversions: target == I ? [ 0 ] : index % 2 === 1 ? [ secondaryInversion ] : [ primaryInversion ],
                         }),
                         expansion: array.slice(0, index).map((expansion, index) => match(expansion, {
+                            chordQuality: expansion == V ? MAJOR : undefined,
+                            matchingQuality: expansion == V,
                             hasSeventh: index % 2 === 1 ? hasSeventh : true,
                             inversions: index % 2 === 1 ? [ secondaryInversion ] : [ primaryInversion ],
                             flags: { sequence: true },

@@ -27,12 +27,12 @@ export interface MatchingRule {
 
 type MatchParams = Partial<Pick<MatchingRule, 'chordQuality' | 'inversions' | 'hasSeventh' | 'applied' | 'fullyDiminishedSeventh' | 'flags' | 'accidental'>>;
 
-export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, accidental, flags }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, accidental, flags, matchingQuality: false } as MatchingRule;
+export function match(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, fullyDiminishedSeventh, accidental = Accidental.NATURAL, flags, matchingQuality = false }: MatchParams & { matchingQuality?: boolean } = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, fullyDiminishedSeventh, accidental, flags, matchingQuality } as MatchingRule;
 }
 
-export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, accidental, flags }: MatchParams = {}): MatchingRule {
-    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, accidental, flags, matchingQuality: true } as MatchingRule;
+export function matchAsIs(scaleDegree: ScaleDegree, { chordQuality = ChordQuality.MAJOR, inversions = [ 0 ], hasSeventh = false, applied, fullyDiminishedSeventh, accidental = Accidental.NATURAL, flags }: MatchParams = {}): MatchingRule {
+    return { scaleDegree, chordQuality, inversions, hasSeventh, applied, fullyDiminishedSeventh, accidental, flags, matchingQuality: true } as MatchingRule;
 }
 
 export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boolean {

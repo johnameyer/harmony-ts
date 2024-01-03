@@ -2,6 +2,7 @@ import { Note } from '../note/note';
 import { IntervalQuality } from './interval-quality';
 import { Accidental } from '../accidental';
 import { isNumber } from '../util';
+import { scalePosition } from '../util/scale-position';
 
 // TODO possible to have in only one place a la circular dependency
 const notes = [ 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C' ];
@@ -42,7 +43,7 @@ export class Interval {
         }
 
         if(one instanceof Note && two instanceof Note) {
-            let distance = notes.indexOf(two.letterName[0]) - notes.indexOf(one.letterName[0]);
+            let distance = scalePosition(two.letterName[0]) - scalePosition(one.letterName[0]);
             if(distance < 0) {
                 distance += 7;
             } 
@@ -101,7 +102,7 @@ export class Interval {
     }
 
     transposeUp(note: Note): Note {
-        let index = notes.indexOf(note.letterName) + this._simpleSize - 1;
+        let index = scalePosition(note.letterName) + this._simpleSize - 1;
         if(index >= 7) {
             index -= 7;
         }
@@ -112,7 +113,7 @@ export class Interval {
     }
     
     transposeDown(note: Note): Note {
-        let index = notes.indexOf(note.letterName) - this._simpleSize + 1;
+        let index = scalePosition(note.letterName) - this._simpleSize + 1;
         if(index < 0) {
             index += 7;
         }

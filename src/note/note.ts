@@ -1,4 +1,5 @@
 import { Accidental } from '../accidental';
+import { scalePosition } from '../util/scale-position';
 
 // TODO again fix for circular dependencies
 const notes: string[] = [ 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C' ];
@@ -13,7 +14,7 @@ export class Note {
     }
 
     get chromaticPosition(): number {
-        return (semitones[notes.indexOf(this._letter)] + this._accidental + 12) % 12;
+        return (semitones[scalePosition(this._letter)] + this._accidental + 12) % 12;
     }
 
     get letterName(): string {
