@@ -267,9 +267,12 @@ export class PartWriter {
         if(previous.length) {
             const get = (voicePart: number) => {
                 const voice = reconciledConstraint.voices[voicePart];
-                if(isDefined(voice)) {
+                if(voice instanceof AbsoluteNote) {
                     return [ voice ];
-                } 
+                }
+                if(voice instanceof Note) {
+                    return [ voice ].flatMap(mapToNearby(previous[0].voices[voicePart]));
+                }
                 return [ ...needed ].flatMap(mapToNearby(previous[0].voices[voicePart]));
             };
             const compare = (note: AbsoluteNote) => (one: AbsoluteNote, two: AbsoluteNote) => Math.abs(note.midi - one.midi) - Math.abs(note.midi - two.midi);
@@ -277,20 +280,26 @@ export class PartWriter {
             sopranoNotes = get(0).sort(compare(previous[0].voices[0]));
             altoNotes = get(1).sort(compare(previous[0].voices[1]));
             tenorNotes = get(2).sort(compare(previous[0].voices[2]));
-            if(reconciledConstraint.voices[3] == undefined) {
-                bassNotes = mapToNearby(previous[0].voices[3])(bassNote).sort(compare(previous[0].voices[3]));
-            } else {
+            if(reconciledConstraint.voices[3] instanceof AbsoluteNote) {
                 bassNotes = [ reconciledConstraint.voices[3] ];
+            } else {
+                bassNotes = mapToNearby(previous[0].voices[3])(bassNote).sort(compare(previous[0].voices[3]));
             }
         } else {
             const get = (needed: Note[]) => (voicePart: number) => {
                 const voice = reconciledConstraint.voices[voicePart];
-                if(isDefined(voice)) {
+                if(voice instanceof AbsoluteNote) {
                     return [ voice ];
-                } 
+                }
                 const low = voiceRange[voicePart][1].octavePosition;
                 const high = voiceRange[voicePart][2].octavePosition + 1;
                 const middle = (voiceRange[voicePart][1].midi + voiceRange[voicePart][2].midi) / 2;
+                if(voice instanceof Note) {
+                    return [ voice ]
+                        .flatMap(note => [ ...Array(high - low).keys() ]
+                            .map((i) => new AbsoluteNote(note.letterName, note.accidental, i + low)))
+                        .sort((first, second) => Math.abs(first.midi - middle) - Math.abs(second.midi - middle));
+                }
                 return [ ...needed ]
                     .flatMap(note => [ ...Array(high - low).keys() ]
                         .map((i) => new AbsoluteNote(note.letterName, note.accidental, i + low)))

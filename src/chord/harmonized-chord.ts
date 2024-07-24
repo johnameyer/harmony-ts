@@ -1,11 +1,11 @@
 import { RomanNumeral } from '../harmony/roman-numeral';
-import { AbsoluteNote } from '../note/absolute-note';
 import { Interval } from '../interval/interval';
 import { IChord } from './ichord';
+import { Note } from '../note/note';
 
 export class HarmonizedChord implements IChord {
 
-    protected _voices: (AbsoluteNote | undefined)[];
+    protected _voices: (Note | undefined)[];
 
     protected _romanNumeral!: RomanNumeral;
 
@@ -13,7 +13,7 @@ export class HarmonizedChord implements IChord {
 
     protected _intervals!: (Interval | undefined)[];
 
-    constructor({ voices, romanNumeral, flags }: { voices?: (AbsoluteNote | undefined)[]; romanNumeral: RomanNumeral; flags?: {[key: string]: boolean} }) {
+    constructor({ voices, romanNumeral, flags }: { voices?: (Note | undefined)[]; romanNumeral: RomanNumeral; flags?: {[key: string]: boolean} }) {
         if(voices) {
             this._voices = voices;
         } else {
