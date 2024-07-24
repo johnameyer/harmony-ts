@@ -1,9 +1,9 @@
 import { RomanNumeral } from '../harmony/roman-numeral';
-import { AbsoluteNote } from '../note/absolute-note';
 import { Interval } from '../interval/interval';
+import { Note } from '../note/note';
 
 export interface IChord {
-    voices: (AbsoluteNote | undefined)[];
+    voices: (Note | undefined)[];
 
     romanNumeral: RomanNumeral | undefined;
     

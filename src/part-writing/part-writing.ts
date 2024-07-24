@@ -14,6 +14,7 @@ import { ChordQuality } from '../chord/chord-quality';
 import { RomanNumeral } from '../harmony/roman-numeral';
 import { Accidental } from '../accidental';
 import { findIndices, groupIndices } from '../util/array-extensions';
+import { Note } from '../note/note';
 
 const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
@@ -22,6 +23,26 @@ const numVoicesWithInterval = (intervals: Interval[], interval: string) => inter
 const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
 const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
 const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
+
+function isStepwiseMotion(first: Note, second: Note) {
+    if(first instanceof AbsoluteNote && second instanceof AbsoluteNote) {
+        if(Math.abs(first.midi - second.midi) > 3) { // larger than an augmented second
+            return false;
+        }
+    }
+
+    return new Set([ 'U', '2', '7' ]).has(new Interval(first, second).simpleSize);
+}
+
+function doesResolveDown(first: Note, second: Note) {
+    if(first instanceof AbsoluteNote && second instanceof AbsoluteNote) {
+        if(Math.abs(first.midi - second.midi) > 3) { // larger than an augmented second
+            return false;
+        }
+    }
+
+    return new Interval(second, first).simpleSize == '2';
+}
 
 export type PartWritingRule = (settings: any, ...chords: IChord[]) => boolean;
 export type PartWritingPreference = (...chords: CompleteChord[]) => number;
@@ -235,7 +256,7 @@ export namespace PartWriting {
                 for(i = 0; i < voices.length - 2; i++) {
                     const higherVoice = voices[i];
                     const lowerVoice = voices[i + 1];
-                    if(!higherVoice || !lowerVoice) {
+                    if(!higherVoice || !lowerVoice || !(higherVoice instanceof AbsoluteNote && lowerVoice instanceof AbsoluteNote)) {
                         continue;
                     }
                     if(higherVoice.midi - lowerVoice.midi > 12) {
@@ -247,7 +268,7 @@ export namespace PartWriting {
                 }
                 const higherVoice = voices[i];
                 const lowerVoice = voices[i + 1];
-                if(!higherVoice || !lowerVoice) {
+                if(!higherVoice || !lowerVoice || !(higherVoice instanceof AbsoluteNote && lowerVoice instanceof AbsoluteNote)) {
                     return true;
                 }
                 if(higherVoice.midi < lowerVoice.midi) {
@@ -335,10 +356,10 @@ export namespace PartWriting {
                      const upper = currVoices[i];
                      const oldLower = prevVoices[i + 1];
                      const oldUpper = prevVoices[i];
-                     if(upper && oldLower && upper.midi < oldLower.midi) {
+                     if(upper && oldLower && (upper instanceof AbsoluteNote && oldLower instanceof AbsoluteNote) && upper.midi < oldLower.midi) {
                          return false;
                      }
-                     if(oldUpper && lower && oldUpper.midi < lower.midi) {
+                     if(oldUpper && lower && (oldUpper instanceof AbsoluteNote && lower instanceof AbsoluteNote) && oldUpper.midi < lower.midi) {
                          return false;
                      }
                  }
@@ -359,7 +380,10 @@ export namespace PartWriting {
                 if(!bassVoice || !sopranoVoice || !oldBassVoice || !oldSopranoVoice) {
                     return true;
                 }
-                const interval = new ComplexInterval(bassVoice, sopranoVoice);
+                if(!(bassVoice instanceof AbsoluteNote && sopranoVoice instanceof AbsoluteNote && oldBassVoice instanceof AbsoluteNote && oldSopranoVoice instanceof AbsoluteNote)) {
+                    return true;
+                }
+                const interval = new Interval(bassVoice, sopranoVoice);
                 if(interval.name == 'P5' && Motion.from(oldBassVoice, bassVoice, oldSopranoVoice, sopranoVoice) == Motion.SIMILAR) {
                     if(!romanNumeral) {
                         return true;
@@ -392,7 +416,7 @@ export namespace PartWriting {
                         return true;
                     }
                     if(new Interval(prevVoice, currVoice).simpleSize !== '2') {
-                        if(prevVoice.midi < currVoice.midi) {
+                        if(prevVoice instanceof AbsoluteNote && currVoice instanceof AbsoluteNote && prevVoice.midi < currVoice.midi) {
                             return false;
                         }
                         if(settings.frustratedLeadingTone) {
@@ -404,7 +428,7 @@ export namespace PartWriting {
                             if(!upperVoice) {
                                 return true;
                             }
-                            if(new Interval(prevVoice, currVoice).simpleSize === '2') {
+                            if(new Interval(prevVoice, upperVoice).simpleSize === '2') {
                                 resolvedInUpper = true;
                                 break;
                             }
@@ -467,6 +491,9 @@ export namespace PartWriting {
                 const voice = currVoices[index];
                 if(!oldVoice || !voice) {
                     return true;
+                }
+                if(!(oldVoice instanceof AbsoluteNote && voice instanceof AbsoluteNote)) {
+                    return new Set([ 'U', '2', '7' ]).has(new Interval(oldVoice, voice).simpleSize);
                 }
                 try {
                     const interval = new ComplexInterval(oldVoice, voice).complexSize;
@@ -597,10 +624,11 @@ export namespace PartWriting {
                     } else if(interval.simpleSize == '7' && interval.quality == IntervalQuality.DIMINISHED) {
                         return false;
                     }
-
-                    const difference = Math.abs(oldVoice.midi - voice.midi);
-                    if(difference > 7 && !(index === 3 && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && oldVoice.midi - voice.midi > 0 && (!romanNumeral || romanNumeral.inversion === 0))) {
-                        return false;
+                    if(oldVoice instanceof AbsoluteNote && voice instanceof AbsoluteNote) {
+                        const difference = Math.abs(oldVoice.midi - voice.midi);
+                        if(difference > 7 && !(index === 3 && interval.simpleSize === 'U' && interval.quality === IntervalQuality.PERFECT && oldVoice.midi - voice.midi > 0 && (!romanNumeral || romanNumeral.inversion === 0))) {
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -623,18 +651,7 @@ export namespace PartWriting {
                     if(!fourthNote || !fourthPrep) {
                         return true;
                     }
-                    try {
-                        if(new ComplexInterval(fourthNote, fourthPrep).complexSize === 'U'
-                        || new ComplexInterval(fourthNote, fourthPrep).complexSize === '2') {
-                            return true;
-                        }
-                    } catch {}
-                    try {
-                        if(new ComplexInterval(fourthPrep, fourthNote).complexSize === '2') {
-                            return true;
-                        }
-                    } catch {}
-                    return false;
+                    return isStepwiseMotion(fourthPrep, fourthNote);
                 }
                 return true;
             }
@@ -659,11 +676,7 @@ export namespace PartWriting {
                     if(!fourthNote || !fourthResolution) {
                         return true;
                     }
-                    try {
-                        if(new ComplexInterval(fourthResolution, fourthNote).complexSize !== '2') {
-                            return false;
-                        }
-                    } catch {
+                    if(!doesResolveDown(fourthNote, fourthResolution)) {
                         return false;
                     }
                     let sixthResolves = false;
@@ -680,12 +693,9 @@ export namespace PartWriting {
                         if(!sixthNote || !sixthResolution) {
                             return true;
                         }
-                        try {
-                            if(new ComplexInterval(sixthResolution, sixthNote).complexSize === '2') {
-                                sixthResolves = true;
-                                break;
-                            }
-                        } catch {}
+                        if(doesResolveDown(sixthNote, sixthResolution)) {
+                            sixthResolves = true;
+                        }
                     }
                     if(!sixthResolves) {
                         return false;
@@ -770,7 +780,7 @@ export namespace PartWriting {
                         if(new Interval(currRomanNumeral.root, prevRomanNumeral.root).simpleSize !== voiceChange.simpleSize) {
                             return false;
                         }
-                        if(Math.abs(voice.midi - oldVoice.midi) > 7) {
+                        if(voice instanceof AbsoluteNote && oldVoice instanceof AbsoluteNote && Math.abs(voice.midi - oldVoice.midi) > 7) {
                             // the inversion would be smaller
                             return false;
                         }
