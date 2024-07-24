@@ -1,5 +1,11 @@
 # harmony-ts
 
+## 0.14.5
+
+### Patch Changes
+
+- 468ea7d: Allow for providing notes without octaves as part-writer constraints
+
 ## 0.14.4
 
 ### Patch Changes
