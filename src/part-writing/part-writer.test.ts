@@ -288,6 +288,40 @@ describe('PartWriter', () => {
         
     });
 
+    test.each([ 
+        [
+            'I V43 I6',
+            [
+                [[ 'E4', 'C4', 'G3', 'C3' ], 'I' ] as [string[], string],
+                [[ 'F4', 'B3', 'G3', 'D3' ], 'V43' ] as [string[], string],
+                [[ 'G4', 'C4', 'G3', 'E3' ], 'I6' ] as [string[], string],
+            ],
+            [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths ],
+        ],
+    ])('specific progression %s with soprano and bass specified', (_, expected, enabled) => {
+        const scale = CMajor;
+        const constraints = [] as IncompleteChord[];
+        let first = true;
+        for(const [ voices, romanNumeral ] of expected) {
+            if(first) {
+                constraints.push(new IncompleteChord({ voices: voices.map(str => AbsoluteNote.fromString(str)), romanNumeral: RomanNumeral.fromString(romanNumeral, scale) }));
+                first = false;
+            } else {
+                constraints.push(new IncompleteChord({ voices: [ AbsoluteNote.fromString(voices[0]), undefined, undefined, AbsoluteNote.fromString(voices[3]) ], romanNumeral: RomanNumeral.fromString(romanNumeral, scale) }));
+            }
+        }
+
+        const harmonizer = new Harmonizer({ enabledProgressions: enabled, useProgressions: true });
+        const partWriter = new PartWriter(undefined, undefined, harmonizer);
+        const iterator = makePeekableIterator(partWriter.voiceAll(constraints, scale));
+
+        expect(iterator.hasItems).toBe(true);
+
+        const result = flattenResult(iterator[Symbol.iterator]()).next().value as CompleteChord[];
+        for(let i = 0; i < expected.length; i++) {
+            expect(result[i].voices.map(voice => voice.name)).toEqual(expected[i][0]);
+        }
+    });
     
     test.each([
         [
