@@ -145,6 +145,25 @@ describe('PartWriting', () => {
             expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
         });
 
+
+        // i V i VII III V/V v V/VII vii VII42 III6 viio43/IV IV6 Ger65 i64 V
+        // D4 E F G A B C D Eb E F F# G G# A
+        test.only.each(pair([
+            [ 'III6',      'F5',  'F4', 'C4', 'A3' ],
+            [ 'viio43/iv', 'F#5', 'A4', 'Eb4', 'C4' ],
+            [ 'IV6',       'G5',  'G4', 'D4', 'B3' ],
+            [ 'Ger65',     'G#5', 'D5', 'F4', 'Bb3' ],
+            [ 'i64',       'A5',  'D5', 'F4', 'A3' ],
+            [ 'V',         'A5',  'C#5', 'E4', 'A3' ],
+        ]))('%s to %s', (prev: any, chord: any) => {
+            chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], [Key.D, Scale.Quality.MINOR])),
+            prev = new CompleteChord(prev.slice(1).map(absoluteNote), RomanNumeral.fromString(prev[0], [Key.D, Scale.Quality.MINOR])),
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(true);
+            expect(PartWriting.Rules.checkAll(defaultPartWritingParameters, [ chord, prev ]).next().value).toBe(undefined);
+            expect(PartWriting.Rules.testAll(defaultPartWritingParameters, [ chord, prev ])).toBe(true);
+        });
+
         test('invalid sequence progression', () => {
             let chords: any[] = [
                 [ 'IV', 'C5', 'F4', 'A3', 'F3' ],

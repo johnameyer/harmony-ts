@@ -25,7 +25,64 @@ function qualityOfScalarIntervalBuiltOn(scaleDegree: ScaleDegree, size: number, 
     return qualityOfScalarInterval(scaleDegree, (scaleDegree + size - 1) % 7, scale);
 }
 
-export interface RomanNumeralParameters {
+function generateName({scaleDegree, intervalQualities, applied, accidental, inversion}: RomanNumeralParameters) {
+    let name = ScaleDegree.toRomanNumeral(scaleDegree);
+
+    if(intervalQualities[1] === IntervalQuality.DIMINISHED) {
+        name = name.toLowerCase();
+        if(intervalQualities[2] === undefined || intervalQualities[2] === IntervalQuality.DIMINISHED) {
+            name += 'o';
+        } else {
+            name += '0';
+        }
+    } else if(intervalQualities[1] === IntervalQuality.AUGMENTED) {
+        name += '+';
+    } else if(intervalQualities[0] === IntervalQuality.MINOR) {
+        name = name.toLowerCase();
+    }
+
+    // TODO use inversionSymbol instead
+    const hasSeventh = intervalQualities.length > 2;
+    switch(inversion) {
+        case 0:
+            if(hasSeventh) {
+                name += '7';
+            }
+            break;
+        case 1:
+            if(hasSeventh) {
+                name += '65';
+            } else {
+                name += '6';
+            }
+            break;
+        case 2:
+            if(hasSeventh) {
+                name += '43';
+            } else {
+                name += '64';
+            }
+            break;
+        case 3:
+            name += '42';
+            break;
+    }
+
+    if(applied) {
+        name += '/' + ScaleDegree.toRomanNumeral(applied);
+    }
+
+    if(accidental) {
+        name = Accidental.toString(accidental) + name;
+    }
+
+    return name;
+}
+
+export const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.intervals[1].quality === IntervalQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
+export const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.intervals[2].quality === IntervalQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
+
+export interface SimpleRomanNumeralParameters {
     scaleDegree: ScaleDegree;
 
     quality: ChordQuality;
@@ -35,6 +92,20 @@ export interface RomanNumeralParameters {
     hasSeventh?: boolean;
 
     fullyDiminishedSeventh?: boolean;
+
+    applied?: ScaleDegree | null;
+
+    accidental?: Accidental;
+
+    flags?: {[key: string]: boolean};
+}
+
+export interface RomanNumeralParameters {
+    scaleDegree: ScaleDegree;
+
+    intervalQualities: IntervalQuality[];
+
+    inversion?: number;
 
     applied?: ScaleDegree | null;
 
@@ -53,7 +124,7 @@ export class RomanNumeral {
 
     protected _inversionInterval: Interval;
 
-    readonly quality: ChordQuality;
+    // readonly quality: ChordQuality;
 
     readonly hasSeventh: boolean;
 
@@ -68,6 +139,8 @@ export class RomanNumeral {
      */
     protected _intervals: Interval[];
 
+    // protected _intervalQualities: IntervalQuality[];
+
     /**
      * Intervals above the bass
      */
@@ -77,6 +150,18 @@ export class RomanNumeral {
 
     static fromString(value: string, scale: Scale) {
         const _name = value;
+
+        switch(value) {
+            case 'It6': {
+                return new RomanNumeral({ scaleDegree: ScaleDegree.SUBDOMINANT, accidental: Accidental.SHARP, intervalQualities: [IntervalQuality.DIMINISHED, IntervalQuality.DIMINISHED], inversion: 1 }, scale);
+            }
+            case 'Fr43': {
+                return new RomanNumeral({ scaleDegree: ScaleDegree.SUPERTONIC, intervalQualities: [IntervalQuality.MAJOR, IntervalQuality.DIMINISHED, IntervalQuality.MINOR], inversion: 2 }, scale);
+            }
+            case 'Ger65': {
+                return new RomanNumeral({ scaleDegree: ScaleDegree.SUBDOMINANT, accidental: Accidental.SHARP, intervalQualities: [IntervalQuality.DIMINISHED, IntervalQuality.DIMINISHED, IntervalQuality.DIMINISHED], inversion: 1 }, scale);
+            }
+        }
         const match = value.match(/^(b|#)?(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?(?:\/(VI{0,2}|I{2,3}|IV|vi{0,2}|i{2,3}|iv))?$/);
         if(!match) {
             throw new Error('Invalid roman numeral ' + value);
@@ -115,65 +200,68 @@ export class RomanNumeral {
         }, scale);
     }
 
-    constructor(params: RomanNumeralParameters, scale: Scale) {
+    constructor(params: RomanNumeralParameters | SimpleRomanNumeralParameters, scale: Scale) {
         this.scaleDegree = params.scaleDegree;
-        this.quality = params.quality;
         this.inversion = params.inversion || 0;
 
         this.applied = params.applied || null;
         this.accidental = params.accidental || Accidental.NATURAL;
 
-        this._intervals = [ new Interval(IntervalQuality.PERFECT, 1) ];
+        if('intervalQualities' in params) {
+            this.hasSeventh = params.intervalQualities.length > 2;
 
-        this.hasSeventh = !!params.hasSeventh;
+            // this._intervalQualities = params.intervalQualities;
+            this._intervals = [new Interval(IntervalQuality.PERFECT, 1), ...params.intervalQualities.map((quality, i) => new Interval(quality, 2 * i + 3))];            
+        } else {
+            this._intervals = [ new Interval(IntervalQuality.PERFECT, 1) ];
 
-        let third = IntervalQuality.MAJOR;
-        let fifth = IntervalQuality.PERFECT;
-
-        switch (this.quality) {
-        case ChordQuality.AUGMENTED:
-            fifth = IntervalQuality.AUGMENTED;
-            break;
-        case ChordQuality.MAJOR:
-            break;
-        case ChordQuality.MINOR:
-            third = IntervalQuality.MINOR;
-            break;
-        case ChordQuality.DIMINISHED:
-            third = IntervalQuality.MINOR;
-            fifth = IntervalQuality.DIMINISHED;
-            break;
-        }
-        this._intervals.push(new Interval(third, 3), new Interval(fifth, 5));
-        this.hasSeventh = params.hasSeventh || false;
-        if(params.hasSeventh) {
-            let seventhQuality = IntervalQuality.MINOR;
+            let third = IntervalQuality.MAJOR;
+            let fifth = IntervalQuality.PERFECT;
             switch (params.quality) {
-            case ChordQuality.AUGMENTED:
-                seventhQuality = IntervalQuality.MAJOR;
-                break;
-            case ChordQuality.MAJOR:
-                if(this.scaleDegree != ScaleDegree.DOMINANT && this.scaleDegree !== ScaleDegree.SUBTONIC) {
-                    seventhQuality = IntervalQuality.MAJOR;
-                }
-                break;
-            case ChordQuality.MINOR:
-                break;
-            case ChordQuality.DIMINISHED:
-                if(params.fullyDiminishedSeventh) {
-                    seventhQuality = IntervalQuality.DIMINISHED;
-                }
-                break;
+                case ChordQuality.AUGMENTED:
+                    fifth = IntervalQuality.AUGMENTED;
+                    break;
+                case ChordQuality.MAJOR:
+                    break;
+                case ChordQuality.MINOR:
+                    third = IntervalQuality.MINOR;
+                    break;
+                case ChordQuality.DIMINISHED:
+                    third = IntervalQuality.MINOR;
+                    fifth = IntervalQuality.DIMINISHED;
+                    break;
             }
-            this._intervals.push(new Interval(seventhQuality, 7));
+            this._intervals.push(new Interval(third, 3), new Interval(fifth, 5));
+            this.hasSeventh = params.hasSeventh || false;
+            if(params.hasSeventh) {
+                let seventhQuality = IntervalQuality.MINOR;
+                switch (params.quality) {
+                case ChordQuality.AUGMENTED:
+                    seventhQuality = IntervalQuality.MAJOR;
+                    break;
+                case ChordQuality.MAJOR:
+                    if(this.scaleDegree != ScaleDegree.DOMINANT && this.scaleDegree !== ScaleDegree.SUBTONIC) {
+                        seventhQuality = IntervalQuality.MAJOR;
+                    }
+                    break;
+                case ChordQuality.MINOR:
+                    break;
+                case ChordQuality.DIMINISHED:
+                    if(params.fullyDiminishedSeventh) {
+                        seventhQuality = IntervalQuality.DIMINISHED;
+                    }
+                    break;
+                }
+                this._intervals.push(new Interval(seventhQuality, 7));
+            }
         }
 
         this._inversionInterval = this._intervals[this.inversion];
-        
+
         if(this.applied !== null) {
             if((this.scaleDegree !== ScaleDegree.DOMINANT && this.scaleDegree !== ScaleDegree.SUBTONIC)
-                || (this.scaleDegree === ScaleDegree.DOMINANT && this.quality !== ChordQuality.MAJOR)
-                || (this.scaleDegree === ScaleDegree.SUBTONIC && this.quality !== ChordQuality.DIMINISHED)) {
+                || (this.scaleDegree === ScaleDegree.DOMINANT && this.intervals[1].quality !== IntervalQuality.MAJOR)
+                || (this.scaleDegree === ScaleDegree.SUBTONIC && this.intervals[2].quality !== IntervalQuality.DIMINISHED)) {
                 throw new Error('Only V and viio can be applied chords, tried to apply ' + ScaleDegree.toRomanNumeral(this.scaleDegree));
             }
         }
@@ -182,32 +270,7 @@ export class RomanNumeral {
 
         this.flags = Object.freeze({ ...params.flags } || {});
 
-        this.name = ScaleDegree.toRomanNumeral(this.scaleDegree);
-        switch (this.quality) {
-        case ChordQuality.MINOR:
-            this.name = this.name.toLowerCase();
-            break;
-        case ChordQuality.DIMINISHED:
-            this.name = this.name.toLowerCase();
-            if(!params.hasSeventh || params.fullyDiminishedSeventh) {
-                this.name += 'o';
-            } else {
-                this.name += '0';
-            }
-            break;
-        case ChordQuality.AUGMENTED:
-            this.name += '+';
-            break;
-        }
-        this.name += this.inversionString;
-
-        if(this.applied) {
-            this.name += '/' + ScaleDegree.toRomanNumeral(this.applied);
-        }
-
-        if(this.accidental) {
-            this.name = Accidental.toString(this.accidental) + this.name;
-        }
+        this.name = generateName({ scaleDegree: this.scaleDegree, intervalQualities: this.intervals.slice(1).map(interval => interval.quality), applied: this.applied, accidental: this.accidental, inversion: this.inversion});
     }
 
     /*
@@ -226,14 +289,14 @@ export class RomanNumeral {
 
     get root(): Note {
         const scale = Scale.getNotesOfScale(this.scale);
-        if(this.scaleDegree == ScaleDegree.DOMINANT && this.quality === ChordQuality.MAJOR) {
+        if(isV(this)) {
             // dominant 5 is always built on the fifth of the tonic triad
             if(this.applied) {
                 return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[this.applied - 1])
                     .applyAccidental(this.accidental);
             }
             return new Interval(IntervalQuality.PERFECT, 5).transposeUp(scale[0]);
-        } else if(this.scaleDegree === ScaleDegree.SUBTONIC && this.quality === ChordQuality.DIMINISHED) {
+        } else if(isViio(this)) {
             // leading tone is always a semitone below the note
             if(this.applied) {
                 return new Interval(IntervalQuality.MINOR, 2).transposeDown(scale[this.applied - 1])
@@ -285,19 +348,21 @@ export class RomanNumeral {
         const index = notesOfScale.findIndex(other => other.letterName === this.root.letterName);
         const accidental = this.root.accidental - notesOfScale[index].accidental;
 
+        if(accidental < -2 || accidental > 2) {
+            return null;
+        }
+
         const resultant = new RomanNumeral({
-            quality: this.quality,
+            intervalQualities: this.intervals.slice(1).map(interval => interval.quality),
             scaleDegree: index + 1,
             inversion: this.inversion,
-            hasSeventh: this.hasSeventh,
             accidental: accidental,
-            fullyDiminishedSeventh: this.intervals.find(interval => interval.simpleSize === '7')?.quality === IntervalQuality.DIMINISHED,
         }, scale);
 
         if(resultant.notes.every(note => this.notes.some(other => note.name === other.name))) {
             return resultant;
         }
-        
+
         return null;
     }
 
@@ -341,13 +406,11 @@ export class RomanNumeral {
 
     asParams(): RomanNumeralParameters {
         return {
-            quality: this.quality,
+            intervalQualities: this.intervals.slice(1).map(interval => interval.quality),
             scaleDegree: this.scaleDegree,
             applied: this.applied,
             accidental: this.accidental,
             flags: this.flags,
-            fullyDiminishedSeventh: this.hasSeventh && this.intervals.find(Interval.ofSize('7'))?.quality === IntervalQuality.DIMINISHED,
-            hasSeventh: this.hasSeventh,
             inversion: this.inversion,
         };
     }
