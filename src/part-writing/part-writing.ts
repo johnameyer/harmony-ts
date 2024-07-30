@@ -10,8 +10,7 @@ import { Scale } from '../scale';
 import { isDefined } from '../util';
 import { IChord } from '../chord/ichord';
 import { CompleteChord } from '../chord/complete-chord';
-import { ChordQuality } from '../chord/chord-quality';
-import { RomanNumeral } from '../harmony/roman-numeral';
+import { isV, isViio, RomanNumeral } from '../harmony/roman-numeral';
 import { Accidental } from '../accidental';
 import { findIndices, groupIndices } from '../util/array-extensions';
 import { Note } from '../note/note';
@@ -20,9 +19,7 @@ const absoluteNote = (note: string) => AbsoluteNote.fromString(note);
 
 const numVoicesWithInterval = (intervals: Interval[], interval: string) => intervals.filter(Interval.ofSize(interval)).length;
 
-const isV = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.DOMINANT && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.NATURAL;
-const isViio = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUBTONIC && romanNumeral.quality === ChordQuality.DIMINISHED && romanNumeral.accidental === Accidental.NATURAL;
-const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.quality === ChordQuality.MAJOR && romanNumeral.accidental === Accidental.FLAT;
+const isbII = (romanNumeral: RomanNumeral) => romanNumeral.scaleDegree === ScaleDegree.SUPERTONIC && romanNumeral.accidental === Accidental.FLAT;
 
 function isStepwiseMotion(first: Note, second: Note) {
     if(first instanceof AbsoluteNote && second instanceof AbsoluteNote) {
@@ -518,17 +515,11 @@ export namespace PartWriting {
              * @param before the chord before `prev`
              */
             export function seventhResolution(settings: { scope: number }, chord: IChord, prev: IChord, ...before: IChord[]) {
+                if(before[0]?.romanNumeral == undefined || prev.romanNumeral == undefined || chord.romanNumeral === undefined ) {
+                    return true;
+                }
                 // V43 can support 3 4 5
-                if(before[0]
-                    && before[0].romanNumeral?.scaleDegree == ScaleDegree.TONIC
-                    && before[0].romanNumeral?.inversionInterval.simpleSize == 'U'
-                    && prev.romanNumeral?.scaleDegree == ScaleDegree.DOMINANT
-                    && prev.romanNumeral?.quality == ChordQuality.MAJOR
-                    && prev.romanNumeral?.inversionInterval.simpleSize == '5'
-                    && prev.romanNumeral?.hasSeventh
-                    && chord.romanNumeral?.scaleDegree == ScaleDegree.TONIC
-                    && chord.romanNumeral?.inversionInterval.simpleSize == '3'
-                ) {
+                if(before[0].romanNumeral.name === 'I' && prev.romanNumeral.name === 'V43' && chord.romanNumeral.name === 'I6') {
                     const index = prev.intervals?.findIndex(Interval.ofSize('7'));
                     if(index !== undefined
                         && index !== -1
