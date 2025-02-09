@@ -154,7 +154,7 @@ export namespace PartWriting {
                 if(!romanNumeral || !intervals) {
                     return true;
                 }
-                if(!intervals.filter(isDefined).every(interval => romanNumeral.intervals.map(interval => interval.name).includes(interval.name))) {
+                if(!voices.filter(isDefined).every(voice => romanNumeral.notes.map(note => note.name).includes(voice.simpleName))) {
                     return false;
                 }
                 const bass = voices[voices.length - 1];
@@ -222,8 +222,11 @@ export namespace PartWriting {
                 if(numVoicesWithInterval(definedIntervals, '3') == 0) {
                     return false;
                 }
-                if(chord.romanNumeral.hasSeventh) {
+                if(chord.romanNumeral.hasSeventh || chord.romanNumeral.intervals.length > 4) {
                     if(numVoicesWithInterval(definedIntervals, '7') == 0) {
+                        return false;
+                    }
+                    if(chord.romanNumeral.intervals.length >= 5 && numVoicesWithInterval(definedIntervals, '2') == 0) {
                         return false;
                     }
                     // can leave out fifth of root position 7

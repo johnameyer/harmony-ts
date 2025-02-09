@@ -180,6 +180,14 @@ describe('PartWriting', () => {
             expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).not.toBe(undefined);
             expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(false);
         });
+
+        test.each([
+            [[ 'V9', 'G2', 'B3', 'F4', 'A4' ]],
+        ])('%s should succeed', (chord: any) => {
+            chord = new CompleteChord(chord.slice(1).map(absoluteNote), RomanNumeral.fromString(chord[0], CMajor)),
+            expect(PartWriting.Rules.checkSingular(defaultPartWritingParameters, chord).next().value).not.toBe(undefined);
+            expect(PartWriting.Rules.testSingular(defaultPartWritingParameters, chord)).toBe(false);
+        });
     });
     
     test('new rule should be used', function() {

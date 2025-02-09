@@ -77,11 +77,11 @@ export class RomanNumeral {
 
     static fromString(value: string, scale: Scale) {
         const _name = value;
-        const match = value.match(/^(b|#)?(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42))?(?:\/(VI{0,2}|I{2,3}|IV|vi{0,2}|i{2,3}|iv))?$/);
+        const match = value.match(/^(b|#)?(?:(VI{0,2}|I{1,3}|IV)(\+)?|(vi{0,2}|i{1,3}|iv)(o|0)?)(?:(53|63?|64)|(7(?:53)?|653?|6?43|6?42)|(9))?(?:\/(VI{0,2}|I{2,3}|IV|vi{0,2}|i{2,3}|iv))?$/);
         if(!match) {
             throw new Error('Invalid roman numeral ' + value);
         }
-        const [ accidentalString, scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals, appliedString ] = match.slice(1);
+        const [ accidentalString, scaleDegreeMajor, augmented, scaleDegreeMinor, diminished, intervals, seventhIntervals, ninth, appliedString ] = match.slice(1);
         const scaleDegree = ScaleDegree.fromRomanNumeral(scaleDegreeMajor || scaleDegreeMinor);
         let applied: ScaleDegree | null = ScaleDegree.fromRomanNumeral(appliedString || 'I');
         if(applied === ScaleDegree.TONIC) {

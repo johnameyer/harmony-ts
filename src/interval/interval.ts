@@ -22,7 +22,7 @@ export class Interval {
     constructor(one: IntervalQuality | Note, two?: number | Note) {
         if(isNumber(one) && isNumber(two)) {
             this._quality = one;
-            this._simpleSize = two;
+            this._simpleSize = ((two - 1) % 7) + 1;
             this._semitones = semitones[this._simpleSize - 1];
             switch (this._quality) {
             case IntervalQuality.AUGMENTED:
