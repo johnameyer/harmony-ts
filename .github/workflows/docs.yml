@@ -1,0 +1,46 @@
+name: docs
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 'latest'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          check-latest: true
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Documentation
+        run: pnpm run docs
+
+      - name: Commit Files
+        run: |
+          git checkout --orphan gh-pages
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          find * -maxdepth 0 ! -name 'docs' -exec rm -r {} \;
+          mv docs/* ./
+          git add -A
+          git commit -m "Update docs"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          force: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
