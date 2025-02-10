@@ -765,6 +765,66 @@ export namespace PartWriting {
             }
 
             /**
+             * Require restorative motion (i.e. follow jumps with steps in opposite direction)
+             * @param chord the chord under consideration
+             * @param prev the previous chord
+             * @todo consider arpeggiation logic
+             * @todo consider if there are cases where we might hold a note before stepping down
+             * @todo consider the logic on the leading side of preferring the step as well
+             */
+            export function voiceJumpStepsOpposite(_: undefined, { voices: currVoices }: IChord, { voices: middleVoices }: IChord, { voices: firstVoices }: IChord = {} as IChord) {
+                // TODO figure out how to type last parameter so we properly do null checks
+                if(!firstVoices) {
+                    return true; 
+                }
+                const isAbsoluteNote = (note: Note): note is AbsoluteNote => 'midi' in note;
+                for(let i = 0; i < currVoices.length - 1; i++) {
+                    const first = firstVoices[i];
+                    const second = middleVoices[i];
+                    const third = currVoices[i];
+                    if(!first || !second || !third) {
+                        continue;
+                    }
+                    if(isAbsoluteNote(first) && isAbsoluteNote(second) && isAbsoluteNote(third)) {
+                        // TODO higher / lower construct to construct only one complex interval
+                        let jump: ComplexInterval;
+                        if(second.midi > first.midi) {
+                            jump = new ComplexInterval(first, second);
+                        } else {
+                            jump = new ComplexInterval(second, first);
+                        }
+                        if(new Set([ 'U', '2', '3' ]).has(jump.complexSize)) {
+                            continue;
+                        }
+                        let step;
+                        if(third.midi > second.midi) {
+                            step = new ComplexInterval(second, third);
+                        } else {
+                            step = new ComplexInterval(third, second);
+                        }
+                        if(step.complexSize !== '2') {
+                            return false;
+                        }
+                        // TODO some direction enum
+                        if(second.midi > first.midi) {
+                            if(third.midi > second.midi) {
+                                return false;
+                            } 
+                            continue;
+                            
+                        } else {
+                            if(third.midi > second.midi) {
+                                continue;
+                            } else {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            /**
              * Checks that the voices of a sequence maintain the same voicing over evey other chord
              * @param _ 
              * @param chord
@@ -989,13 +1049,14 @@ export namespace PartWriting {
              * Prefer smaller movements in soprano and inner voices
              * @param chord the chord under consideration
              * @param prev the previous chord
-             * @todo implement restorative and soprano special rules
              */
-            export function checkVoiceDisjunction(chord: CompleteChord, prev: CompleteChord) {
-                // TODO prefer restorative
+            export function checkVoiceDisjunction({ voices: currVoices }: CompleteChord, { voices: middleVoices }: CompleteChord) {
+                // TODO are there special soprano rules we need to consider?
                 let count = 0;
-                for(let i = 0; i < chord.voices.length - 1; i++) {
-                    count -= Math.abs(chord.voices[i].midi - prev.voices[i].midi);
+                for(let i = 0; i < currVoices.length - 1; i++) {
+                    // TODO use non-midi access
+                    const jumpSize = Math.abs(currVoices[i].midi - middleVoices[i].midi);
+                    count -= jumpSize * jumpSize;
                 }
                 return count;
             }

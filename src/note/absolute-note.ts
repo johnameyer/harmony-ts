@@ -22,7 +22,6 @@ export class AbsoluteNote extends Note {
     get octavePosition(): number {
         return this._octave;
     }
-
     
     get absolute(): boolean {
         return true;
