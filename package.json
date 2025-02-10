@@ -5,7 +5,7 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "devDependencies": {
-        "@changesets/cli": "^2.27.1",
+        "@changesets/cli": "^2.27.12",
         "@types/jest": "^29.5.11",
         "@types/node": "^22.13.1",
         "@typescript-eslint/eslint-plugin": "^6.17.0",
