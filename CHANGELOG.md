@@ -1,5 +1,12 @@
 # harmony-ts
 
+## 0.14.6
+
+### Patch Changes
+
+- dbcf614: Add rule to check that leaps are followed by steps in opposite direction
+- 4fc3131: Allow leading tones to resolve down to seventh of following chord
+
 ## 0.14.5
 
 ### Patch Changes
