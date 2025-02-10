@@ -400,7 +400,7 @@ export namespace PartWriting {
              * @param chord the chord to check
              * @param prev the chord before this chord
              */
-            export function leadingToneResolution(settings: { frustratedLeadingTone: boolean }, { voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized }: IChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals }: IChord) {
+            export function leadingToneResolution(settings: { disallowFrustratedLeadingTone: boolean }, { voices: currVoices, romanNumeral: currRomanNumeral, romanNumeralFinalized }: IChord, { voices: prevVoices, romanNumeral: prevRomanNumeral, intervals }: IChord) {
                 if(!romanNumeralFinalized || currRomanNumeral?.flags.sequence) {
                     return true;
                 }
@@ -415,11 +415,14 @@ export namespace PartWriting {
                     if(!prevVoice || !currVoice) {
                         return true;
                     }
-                    if(new Interval(prevVoice, currVoice).simpleSize !== '2') {
+                    if(new Interval(currVoice, prevVoice).name === 'AU') {
+                        // Allow resolving down to seventh of following chord (V7/ii ii7)
+                        return true;
+                    } else if(new Interval(prevVoice, currVoice).simpleSize !== '2') {
                         if(prevVoice instanceof AbsoluteNote && currVoice instanceof AbsoluteNote && prevVoice.midi < currVoice.midi) {
                             return false;
                         }
-                        if(settings.frustratedLeadingTone) {
+                        if(settings.disallowFrustratedLeadingTone) {
                             return false;
                         }
                         let resolvedInUpper = false;
@@ -444,7 +447,14 @@ export namespace PartWriting {
                     if(!prevVoice || !currVoice) {
                         return true;
                     }
-                    if(index === -1 || new Interval(prevVoice, currVoice).simpleSize != '2') {
+                    if(index === -1) {
+                        return false;
+                    }
+
+                    if(new Interval(currVoice, prevVoice).name === 'AU') {
+                        // Allow resolving to seventh of following chord (viio6/ii ii7)
+                        return true;
+                    } else if(new Interval(prevVoice, currVoice).simpleSize != '2') {
                         return false;
                     }
                 }
@@ -1210,7 +1220,7 @@ export const defaultPartWritingParameters: PartWritingParameters<typeof defaultP
             scope: 2,
         },
         leadingToneResolution: {
-            frustratedLeadingTone: true,
+            disallowFrustratedLeadingTone: false,
         },
         rapidKeyChange: {
             scope: 3,
