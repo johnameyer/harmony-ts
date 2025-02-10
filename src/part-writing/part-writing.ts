@@ -325,6 +325,48 @@ export namespace PartWriting {
                     );
             }
 
+            // Should be merged with parallel 5ths code?
+            export function checkParallels(_: undefined, ...chords: IChord[]) {
+                if(chords.length < 4) { // TODO configurable
+                    return true;
+                }
+                for(let lowerVoiceIndex = 1; lowerVoiceIndex < chords[0].voices.length; lowerVoiceIndex++) {
+                    voices: for(let higherVoiceIndex = 0; higherVoiceIndex < lowerVoiceIndex; higherVoiceIndex++) {
+                        const lowerVoice = chords[0].voices[lowerVoiceIndex];
+                        const higherVoice = chords[0].voices[higherVoiceIndex];
+                        if(!lowerVoice || !higherVoice) {
+                            continue voices;
+                        }
+                        const interval = new Interval(lowerVoice, higherVoice);
+
+                        let chordIndex = 1;
+                        while(chordIndex < chords.length) {
+                            const newLowerVoice = chords[chordIndex].voices[lowerVoiceIndex];
+                            const newHigherVoice = chords[chordIndex].voices[higherVoiceIndex];
+
+                            if(!newLowerVoice || !newHigherVoice) {
+                                continue voices;
+                            }
+
+                            const newInterval = new Interval(newLowerVoice, newHigherVoice);
+
+                            if(newInterval.simpleSize != interval.simpleSize) {
+                                continue voices;
+                            }
+
+                            // TODO continue if chord is 'same' (same roman numeral, V -> V42 or V -> V7)
+
+                            if(chordIndex >= 3) {
+                                return false;
+                            }
+
+                            chordIndex++;
+                        }
+                    }
+                }
+                return true;
+            }
+
             /**
              * Checks that the chord has no parallels by contrary motion (e.g. 15th to 8ve)
              * @param chord the chord to check
