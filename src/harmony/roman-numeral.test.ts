@@ -93,6 +93,17 @@ describe('RomanNumeral', () => {
             });
         });
 
+        describe('spelling', () => {
+            test.each([
+                [ 'It6', CMajor, ['F#', 'Ab', 'C'] ],
+                [ 'Ger65', CMajor, ['F#', 'Ab', 'C', 'Eb'] ],
+                [ 'Fr43', CMajor, ['D', 'F#', 'Ab', 'C'] ],
+            ])('%p', (value, scale, notes) => {
+                const romanNumeral = RomanNumeral.fromString(value, scale);
+                expect(romanNumeral.notes.map(note => note.name)).toStrictEqual(notes);
+            });
+        });
+
         describe('relativeToScale', () => {
             test.each([
                 [ 'i', CMinor, [ Key.EFlat, Scale.Quality.MAJOR ] as Scale, 'vi' ],

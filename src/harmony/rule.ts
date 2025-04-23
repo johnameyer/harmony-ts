@@ -1,5 +1,6 @@
 import { Accidental } from '../accidental';
 import { ChordQuality } from '../chord/chord-quality';
+import { IntervalQuality } from '../interval/interval-quality';
 import { Scale } from '../scale';
 import { RomanNumeral } from './roman-numeral';
 import { ScaleDegree } from './scale-degree';
@@ -39,9 +40,24 @@ export function checkAgainstRule(chord: RomanNumeral, rule: MatchingRule): boole
     if(chord.scaleDegree !== rule.scaleDegree) {
         return false;
     }
-    if(chord.quality !== rule.chordQuality) {
-        if(rule.matchingQuality) {
-            return false;
+    if(rule.matchingQuality) {
+        switch(rule.chordQuality) {
+            case ChordQuality.DIMINISHED: {
+                if(chord.intervals[1].quality !== IntervalQuality.MINOR || chord.intervals[2].quality !== IntervalQuality.DIMINISHED) { return false; }
+                break;
+            }
+            case ChordQuality.MINOR: {
+                if(chord.intervals[1].quality !== IntervalQuality.MINOR || chord.intervals[2].quality !== IntervalQuality.PERFECT) { return false; }
+                break;
+            }
+            case ChordQuality.MAJOR: {
+                if(chord.intervals[1].quality !== IntervalQuality.MAJOR || chord.intervals[2].quality !== IntervalQuality.PERFECT) { return false; }
+                break;
+            }
+            case ChordQuality.AUGMENTED: {
+                if(chord.intervals[1].quality !== IntervalQuality.MAJOR || chord.intervals[2].quality !== IntervalQuality.AUGMENTED) { return false; }
+                break;
+            }
         }
     }
     if(rule.inversions && !rule.inversions.includes(chord.inversion)) {
