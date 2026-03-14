@@ -42,6 +42,10 @@ export namespace Progression {
 
             [ match(I, { inversions: [ 1 ] }), matchAsIs(V) ],
 
+            /* IV-IV6 arpeggiation */
+            [ match(IV), match(IV, { inversions: [ 1 ] }) ],
+            [ match(IV, { inversions: [ 1 ] }), match(IV) ],
+
             /* V6 */
             [ match(I), matchAsIs(V, { inversions: [ 1 ] }) ],
             [ matchAsIs(V, { inversions: [ 1 ] }), match(I) ],
@@ -107,8 +111,28 @@ export namespace Progression {
         ].map(ruleOf);
 
         export const subdominantSevenths = [
+            // I/i -> ii065 (ii with seventh in first inversion)
+            [ match(I, { inversions: [ 0, 1 ] }), match(II, { inversions: [ 1 ], hasSeventh: true }) ],
+            
+            // ii065 -> V (ii with seventh in first inversion to V)
+            [ match(II, { inversions: [ 1 ], hasSeventh: true }), matchAsIs(V) ],
+            
             [ match(II, { inversions: [ 3 ], hasSeventh: true }), matchAsIs(V, { inversions: [ 1 ], hasSeventh: false }) ],
             [ match(II, { inversions: [ 3 ], hasSeventh: true }), matchAsIs(V, { inversions: [ 1 ], hasSeventh: true }) ],
+        ].map(ruleOf);
+
+        export const cadentialProgression = [
+            // ii -> V42 (V7 in third inversion - 7th in bass)
+            [ match(II, { inversions: [ 0, 1 ] }), matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }) ],
+            
+            // V42 -> I6 (V7 third inversion resolves to I in 6 position)
+            [ matchAsIs(V, { inversions: [ 3 ], hasSeventh: true }), matchAsIs(I, { inversions: [ 1 ] }) ],
+            
+            // I6 -> V (cadential approach)
+            [ matchAsIs(I, { inversions: [ 1 ] }), matchAsIs(V, { inversions: [ 0 ] }) ],
+            
+            // ii -> V (simpler ii to V)
+            [ match(II, { inversions: [ 0, 1 ] }), matchAsIs(V) ],
         ].map(ruleOf);
 
         export const tonicSubstitutes = [
@@ -153,7 +177,7 @@ export namespace Progression {
         ].map(ruleOf);
     }
 
-    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant, ...Progression.Shared.neopolitan ];
+    export const defaultProgressions = [ ...Progression.Shared.basic, ...Progression.Shared.basicInversions, ...Progression.Shared.dominantSevenths, ...Progression.Shared.basicPredominant, ...Progression.Shared.subdominantSevenths, ...Progression.Shared.cadentialProgression, ...Progression.Shared.submediant, ...Progression.Shared.tonicSubstitutes, ...Progression.Shared.mediant, ...Progression.Shared.neopolitan ];
 
     export function * matchingProgressions(scale: Scale, previous: RomanNumeral, progressions: ProgressionRule[] = defaultProgressions): Generator<RomanNumeral> {
         yield previous;
